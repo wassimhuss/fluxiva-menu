@@ -8,7 +8,7 @@ type CategoryInput = Pick<Category, 'restaurant_id' | 'name_en' | 'name_ar' | 's
 type ItemInput = Pick<MenuItem, 'restaurant_id' | 'category_id' | 'name_en' | 'name_ar' | 'description_en' | 'description_ar' | 'price_lbp' | 'image_url' | 'variants' | 'available' | 'sort_order'>
 
 export async function getPublicMenu(slug: string): Promise<RestaurantMenu | null> {
-  if (!supabase || slug === 'demo') return slug === 'demo' ? demoMenu : null
+  if (!supabase) return slug === 'demo' ? demoMenu : null
 
   const { data: restaurant, error } = await supabase
     .from('restaurants')
