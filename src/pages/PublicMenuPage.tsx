@@ -30,7 +30,7 @@ function MenuLoadingState({ slug }: { slug: string }) {
       <div className="public-menu-loading-orbit public-menu-loading-orbit-two" />
       <div className="public-menu-loading-card">
         <div className="public-menu-loading-mark">
-          {isDemo ? <img src="/hilal-oven-logo.png" alt="" /> : <div className="public-menu-loading-monogram"><Utensils size={25} /></div>}
+          {isDemo ? <><span className="public-menu-loading-fallback">HILAL</span><img src="/hilal-oven-logo.png" alt="" /></> : <div className="public-menu-loading-monogram"><Utensils size={25} /></div>}
         </div>
         <span className="public-menu-loading-kicker">FLUXIVA MENU</span>
         <h1>{isDemo ? 'Hilal Oven' : 'Preparing your menu'}</h1>
