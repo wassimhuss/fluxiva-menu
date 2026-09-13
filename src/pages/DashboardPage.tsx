@@ -158,11 +158,23 @@ export function DashboardPage() {
     if (!menu) return
     setSaving(true); setError('')
     try {
-      const logo_url = await uploadRestaurantAsset(menu.restaurant.id, file)
+      const logo_url = await uploadRestaurantAsset(menu.restaurant.id, file, 'logo')
       await updateRestaurant(menu.restaurant.id, { logo_url })
       setMenu({ ...menu, restaurant: { ...menu.restaurant, logo_url } })
       showSuccess('Restaurant logo updated.')
     } catch (caught) { setError(caught instanceof Error ? caught.message : 'Could not upload logo') }
+    finally { setSaving(false) }
+  }
+
+  async function uploadCover(file: File) {
+    if (!menu) return
+    setSaving(true); setError('')
+    try {
+      const cover_image_url = await uploadRestaurantAsset(menu.restaurant.id, file, 'cover')
+      await updateRestaurant(menu.restaurant.id, { cover_image_url })
+      setMenu({ ...menu, restaurant: { ...menu.restaurant, cover_image_url } })
+      showSuccess('Menu cover photo updated.')
+    } catch (caught) { setError(caught instanceof Error ? caught.message : 'Could not upload cover photo') }
     finally { setSaving(false) }
   }
 
@@ -285,9 +297,16 @@ export function DashboardPage() {
               <div className="settings-brand">
                 <label className="logo-uploader" style={{ backgroundColor: menu.restaurant.primary_color }}>
                   {menu.restaurant.logo_url ? <img src={menu.restaurant.logo_url} alt="Restaurant logo" /> : menu.restaurant.name_en.slice(0, 2).toUpperCase()}
-                  <input type="file" accept="image/png,image/jpeg,image/webp" onChange={(e) => e.target.files?.[0] && uploadLogo(e.target.files[0])} />
+                  <input disabled={saving} type="file" accept="image/png,image/jpeg,image/webp" onChange={(e) => e.target.files?.[0] && uploadLogo(e.target.files[0])} />
                 </label>
                 <div><h2>{menu.restaurant.name_en}</h2><p>{menu.restaurant.name_ar}</p><code>/m/{menu.restaurant.slug}</code><small>Tap the logo to upload a new image.</small></div>
+              </div>
+              <div className="cover-setting">
+                <div className="cover-setting-copy"><b>Menu cover photo</b><small>Shown behind your logo and restaurant name. Large images are resized and compressed automatically.</small></div>
+                <label className={`cover-uploader ${menu.restaurant.cover_image_url ? 'has-image' : ''}`} style={menu.restaurant.cover_image_url ? { backgroundImage: `linear-gradient(rgba(15,35,30,.28),rgba(15,35,30,.48)),url(${menu.restaurant.cover_image_url})` } : { backgroundColor: menu.restaurant.primary_color }}>
+                  <span><ImagePlus />{saving ? 'Uploading…' : menu.restaurant.cover_image_url ? 'Replace cover' : 'Upload cover'}</span>
+                  <input disabled={saving} type="file" accept="image/png,image/jpeg,image/webp" onChange={(e) => e.target.files?.[0] && uploadCover(e.target.files[0])} />
+                </label>
               </div>
               <div className="form-grid">
                 <label>English name<input required value={menu.restaurant.name_en} onChange={(e) => restaurantField('name_en', e.target.value)} /></label>

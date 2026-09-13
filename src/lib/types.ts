@@ -10,6 +10,7 @@ export interface Restaurant {
   description_en?: string
   description_ar?: string
   logo_url?: string
+  cover_image_url?: string
   primary_color: string
   phone?: string
   whatsapp?: string

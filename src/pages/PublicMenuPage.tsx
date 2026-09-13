@@ -67,7 +67,8 @@ export function PublicMenuPage() {
 
   const { restaurant, categories } = menu
   const rtl = language === 'ar'
-  const coverImage = restaurant.slug === 'demo' ? "url('/hilal-oven-cover.jpg')" : 'none'
+  const coverUrl = restaurant.cover_image_url || (restaurant.slug === 'demo' ? '/hilal-oven-cover.jpg' : '')
+  const coverImage = coverUrl ? `url(${coverUrl})` : 'none'
   return (
     <main className="public-menu" dir={rtl ? 'rtl' : 'ltr'} style={{ '--restaurant-color': restaurant.primary_color, '--cover-image': coverImage } as React.CSSProperties}>
       <header className="menu-cover">

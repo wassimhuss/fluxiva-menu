@@ -240,3 +240,19 @@
 .dashboard-toast .notice{margin:0;box-shadow:0 13px 35px rgba(30,69,52,.16)}
 @keyframes dashboard-toast-in{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
 @media(max-width:600px){.dashboard-toast{top:78px;right:14px}}
+
+/* Restaurant cover uploader and dashboard preview. */
+.cover-setting{display:grid;grid-template-columns:minmax(180px,.65fr) minmax(280px,1.35fr);gap:24px;align-items:center;padding:24px 0;border-bottom:1px solid var(--line)}
+.cover-setting-copy{display:flex;flex-direction:column;gap:6px}
+.cover-setting-copy b{font-size:13px}
+.cover-setting-copy small{color:var(--muted);font-size:10px;line-height:1.55}
+.cover-uploader{position:relative;display:grid;place-items:center;height:148px;border-radius:14px;overflow:hidden;cursor:pointer;background-size:cover;background-position:center;border:1px dashed rgba(255,255,255,.62);box-shadow:inset 0 0 0 1px rgba(21,54,45,.08)}
+.cover-uploader:after{content:"";position:absolute;inset:0;background:linear-gradient(120deg,transparent,rgba(255,255,255,.09),transparent);transform:translateX(-110%);transition:transform .45s ease}
+.cover-uploader:hover:after{transform:translateX(110%)}
+.cover-uploader>span{position:relative;z-index:1;display:flex;align-items:center;gap:7px;padding:9px 12px;border-radius:9px;background:rgba(255,255,255,.92);color:var(--green);font-size:10px;font-weight:700;box-shadow:0 6px 18px rgba(20,46,39,.16)}
+.cover-uploader>span svg{width:16px;height:16px}
+.cover-uploader input{display:none}
+@media(max-width:700px){
+  .cover-setting{grid-template-columns:1fr;gap:13px}
+  .cover-uploader{height:138px}
+}
