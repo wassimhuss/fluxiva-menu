@@ -168,3 +168,16 @@
   .footer-contact-copy strong{font-size:9px}
   .footer-bottom{margin-top:12px;padding-top:10px}
 }
+
+/* Compact opening hours in the menu header */
+.menu-opening-hours{display:inline-flex;align-items:center;gap:8px;margin-top:14px;padding:7px 11px;border:1px solid rgba(255,255,255,.2);border-radius:9px;background:rgba(255,255,255,.1);color:#fff;text-align:left}
+.menu-opening-hours svg{width:15px;height:15px;flex:0 0 auto;color:#f1b091}
+.menu-opening-hours span{display:flex;flex-direction:column;gap:1px}
+.menu-opening-hours small{font-size:8px;letter-spacing:.4px;text-transform:uppercase;color:rgba(255,255,255,.68)}
+.menu-opening-hours strong{font-size:10px;font-weight:600;color:#fff}
+[dir=rtl] .menu-opening-hours{text-align:right}
+@media(max-width:600px){
+  .menu-opening-hours{margin-top:11px;padding:6px 9px;gap:7px}
+  .menu-opening-hours svg{width:14px;height:14px}
+  .menu-opening-hours strong{font-size:9px}
+}
