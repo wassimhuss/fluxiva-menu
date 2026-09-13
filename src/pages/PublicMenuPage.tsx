@@ -1,4 +1,4 @@
-import { Clock3, Instagram, MapPin, MessageCircle, Phone, Search, Utensils } from 'lucide-react'
+import { ChevronRight, Clock3, Instagram, MapPin, MessageCircle, Phone, Search, Utensils } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { Loading } from '../components/Status'
@@ -72,14 +72,18 @@ export function PublicMenuPage() {
           {!visibleItems.length && <p className="empty-items">{rtl ? 'لا توجد أصناف هنا.' : 'No items found here.'}</p>}
         </section>
       </div>
-      <footer className="menu-footer"><div className="footer-contact">
-        {restaurant.phone && <a href={`tel:${restaurant.phone}`}><Phone />{restaurant.phone}</a>}
-        {restaurant.whatsapp && <a href={`https://wa.me/${restaurant.whatsapp.replace(/\D/g, '')}`} target="_blank" rel="noreferrer"><MessageCircle />WhatsApp</a>}
-        {(restaurant.address_en || restaurant.address_ar) && <span><MapPin />{localText(language, restaurant.address_en ?? '', restaurant.address_ar ?? '')}</span>}
-        {restaurant.maps_url && <a href={restaurant.maps_url} target="_blank" rel="noreferrer"><MapPin />{language === 'ar' ? 'الموقع' : 'Directions'}</a>}
-        {restaurant.instagram && <span><Instagram />{restaurant.instagram}</span>}
-        {restaurant.opening_hours && <span><Clock3 />{restaurant.opening_hours}</span>}
-      </div><div className="footer-credit"><span>Menu by</span><b>fluxiva menu</b></div></footer>
+      <footer className="menu-footer"><div className="footer-shell">
+        <div className="footer-intro"><span className="footer-kicker">{language === 'ar' ? 'تواصل معنا' : 'Stay connected'}</span><h2>{localText(language, restaurant.name_en, restaurant.name_ar)}</h2><p>{language === 'ar' ? 'نحن بانتظاركم كل يوم' : 'Fresh from our oven, every day.'}</p></div>
+        <div className="footer-contact-grid">
+          {restaurant.phone && <a className="footer-contact-item" href={`tel:${restaurant.phone}`}><span className="footer-contact-icon"><Phone /></span><span className="footer-contact-copy"><small>{language === 'ar' ? 'اتصل بنا' : 'Call us'}</small><strong>{restaurant.phone}</strong></span></a>}
+          {restaurant.whatsapp && <a className="footer-contact-item footer-contact-item-accent" href={`https://wa.me/${restaurant.whatsapp.replace(/\D/g, '')}`} target="_blank" rel="noreferrer"><span className="footer-contact-icon"><MessageCircle /></span><span className="footer-contact-copy"><small>WhatsApp</small><strong>{language === 'ar' ? 'راسلنا الآن' : 'Message us'}</strong></span><ChevronRight className="footer-arrow" /></a>}
+          {(restaurant.address_en || restaurant.address_ar) && <div className="footer-contact-item footer-contact-item-wide"><span className="footer-contact-icon"><MapPin /></span><span className="footer-contact-copy"><small>{language === 'ar' ? 'زورونا' : 'Visit us'}</small><strong>{localText(language, restaurant.address_en ?? '', restaurant.address_ar ?? '')}</strong></span></div>}
+          {restaurant.maps_url && <a className="footer-contact-item" href={restaurant.maps_url} target="_blank" rel="noreferrer"><span className="footer-contact-icon"><MapPin /></span><span className="footer-contact-copy"><small>{language === 'ar' ? 'الموقع' : 'Directions'}</small><strong>{language === 'ar' ? 'افتح الخريطة' : 'Open map'}</strong></span><ChevronRight className="footer-arrow" /></a>}
+          {restaurant.instagram && <span className="footer-contact-item"><span className="footer-contact-icon"><Instagram /></span><span className="footer-contact-copy"><small>{language === 'ar' ? 'تابعونا' : 'Follow us'}</small><strong>{restaurant.instagram}</strong></span></span>}
+          {restaurant.opening_hours && <span className="footer-contact-item"><span className="footer-contact-icon"><Clock3 /></span><span className="footer-contact-copy"><small>{language === 'ar' ? 'ساعات العمل' : 'Opening hours'}</small><strong>{restaurant.opening_hours}</strong></span></span>}
+        </div>
+        <div className="footer-bottom"><span>{language === 'ar' ? 'صحة وهنا' : 'Made for good food.'}</span><span>Menu by <b>fluxiva</b></span></div>
+      </div></footer>
     </main>
   )
 }
