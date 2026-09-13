@@ -48,8 +48,9 @@ export function PublicMenuPage() {
 
   const { restaurant, categories } = menu
   const rtl = language === 'ar'
+  const coverImage = restaurant.slug === 'demo' ? "url('/cedar-oven-cover.jpg')" : 'none'
   return (
-    <main className="public-menu" dir={rtl ? 'rtl' : 'ltr'} style={{ '--restaurant-color': restaurant.primary_color } as React.CSSProperties}>
+    <main className="public-menu" dir={rtl ? 'rtl' : 'ltr'} style={{ '--restaurant-color': restaurant.primary_color, '--cover-image': coverImage } as React.CSSProperties}>
       <header className="menu-cover">
         <div className="menu-cover-pattern" />
         <div className="menu-toolbar"><span className="powered">Powered by <b>fluxiva</b></span><div className="language-toggle"><button className={language === 'en' ? 'selected' : ''} onClick={() => setLanguage('en')}>EN</button><button className={language === 'ar' ? 'selected' : ''} onClick={() => setLanguage('ar')}>ع</button></div></div>

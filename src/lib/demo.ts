@@ -16,7 +16,7 @@ function item(category: string, name_en: string, name_ar: string, description_en
 export const demoMenu: RestaurantMenu = {
   restaurant: {
     id: 'demo-restaurant', slug: 'demo', name_en: 'Cedar Oven', name_ar: 'فرن الأرز',
-    description_en: 'Fresh from our oven, every day.', description_ar: 'طازج من فرننا، كل يوم.', primary_color: '#b84d2f',
+    description_en: 'Fresh from our oven, every day.', description_ar: 'طازج من فرننا، كل يوم.', logo_url: '/cedar-oven-logo.svg', primary_color: '#b84d2f',
     phone: '+961 70 123 456', whatsapp: '+96170123456', instagram: '@cedaroven', maps_url: 'https://maps.google.com/?q=Tripoli,Lebanon',
     address_en: 'Tripoli, Lebanon', address_ar: 'طرابلس، لبنان', opening_hours: 'Every day · 10:00 – 23:00', temporarily_closed: false,
     default_language: 'en', subscription_status: 'active',

@@ -184,6 +184,10 @@
   .footer-contact-copy strong{font-size:8px}
 }
 
+/* Use a real bakery photo and a readable overlay for the demo cover. */
+.menu-cover{background-image:linear-gradient(180deg,rgba(14,31,27,.68),rgba(184,77,47,.42) 52%,rgba(14,31,27,.72)),var(--cover-image,none);background-size:cover;background-position:center 44%}
+.menu-cover-pattern{opacity:.07}
+
 /* Give the category navigation a clean transition below the cover. */
 .category-tabs{padding:12px 18px 13px;gap:7px;background:#f8f6f0;border-bottom:1px solid #e6e3da}
 .category-tabs button{padding:9px 14px;border:1px solid transparent;border-radius:9px;color:#78837e;background:transparent}
