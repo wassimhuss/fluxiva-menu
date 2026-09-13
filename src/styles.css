@@ -168,3 +168,18 @@
   .footer-contact-copy strong{font-size:9px}
   .footer-bottom{margin-top:12px;padding-top:10px}
 }
+
+/* Keep the remaining footer contacts together in one compact row. */
+.footer-contact-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px 8px;width:100%}
+.footer-contact-item,.footer-contact-item-wide{min-width:0;justify-content:flex-start;flex-direction:column;gap:4px;text-align:center}
+.footer-contact-item-wide{grid-column:auto}
+.footer-contact-copy{align-items:center;max-width:100%}
+.footer-contact-copy strong{max-width:100%}
+[dir=rtl] .footer-contact-item{text-align:center}
+@media(max-width:600px){
+  .footer-contact-grid{gap:8px 5px}
+  .footer-contact-item,.footer-contact-item-wide{gap:3px}
+  .footer-contact-icon{flex-basis:21px}
+  .footer-contact-copy small{font-size:7px}
+  .footer-contact-copy strong{font-size:8px}
+}
