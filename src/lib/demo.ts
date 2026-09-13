@@ -6,11 +6,14 @@ const categories: Category[] = [
 ].map(([id, name_en, name_ar], index) => ({ id: `cat-${id}`, restaurant_id: 'demo-restaurant', name_en, name_ar, sort_order: index + 1 }))
 
 const categoryId = (name: string) => categories.find((category) => category.name_en === name)?.id ?? categories[0].id
+const categoryImages: Record<string, string> = {
+  Manakish: '/menu/manakish.jpg', Croissants: '/menu/croissants.jpg', Soiree: '/menu/soiree.jpg', Pizza: '/menu/pizza.jpg', 'Cold drinks': '/menu/drinks.jpg',
+}
 const variant = (id: string, name_en: string, name_ar: string, price_lbp: number): Variant => ({ id, name_en, name_ar, price_lbp })
 let itemNumber = 0
 function item(category: string, name_en: string, name_ar: string, description_en: string, description_ar: string, price_lbp: number, variants: Variant[] = []): MenuItem {
   itemNumber += 1
-  return { id: `demo-item-${itemNumber}`, restaurant_id: 'demo-restaurant', category_id: categoryId(category), name_en, name_ar, description_en, description_ar, price_lbp, variants, available: true, sort_order: itemNumber }
+  return { id: `demo-item-${itemNumber}`, restaurant_id: 'demo-restaurant', category_id: categoryId(category), name_en, name_ar, description_en, description_ar, price_lbp, image_url: categoryImages[category], variants, available: true, sort_order: itemNumber }
 }
 
 export const demoMenu: RestaurantMenu = {
