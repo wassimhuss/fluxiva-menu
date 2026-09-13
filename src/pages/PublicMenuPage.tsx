@@ -1,7 +1,6 @@
 import { Instagram, MapPin, MessageCircle, Utensils } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { useParams } from 'react-router-dom'
-import { Loading } from '../components/Status'
 import { getPublicMenu } from '../lib/api'
 import { formatLbp, localText } from '../lib/format'
 import type { Language, MenuItem, RestaurantMenu } from '../lib/types'
@@ -20,6 +19,26 @@ function MenuCard({ item, language, color }: { item: MenuItem; language: Languag
         {item.available && item.variants?.length > 0 && <div className="variant-buttons">{item.variants.map((choice, index) => <button key={choice.id ?? index} className={index === variantIndex ? 'selected' : ''} style={index === variantIndex ? { backgroundColor: color, borderColor: color } : undefined} onClick={() => setVariantIndex(index)}>{localText(language, choice.name_en, choice.name_ar)}</button>)}</div>}
       </div>
     </article>
+  )
+}
+
+function MenuLoadingState({ slug }: { slug: string }) {
+  const isDemo = slug === 'demo'
+  return (
+    <main className="public-menu-loading" aria-busy="true" aria-live="polite">
+      <div className="public-menu-loading-orbit public-menu-loading-orbit-one" />
+      <div className="public-menu-loading-orbit public-menu-loading-orbit-two" />
+      <div className="public-menu-loading-card">
+        <div className="public-menu-loading-mark">
+          {isDemo ? <img src="/hilal-oven-logo.png" alt="" /> : <div className="public-menu-loading-monogram"><Utensils size={25} /></div>}
+        </div>
+        <span className="public-menu-loading-kicker">FLUXIVA MENU</span>
+        <h1>{isDemo ? 'Hilal Oven' : 'Preparing your menu'}</h1>
+        <p>{isDemo ? 'Opening today’s menu' : 'Opening menu'}</p>
+        <div className="public-menu-loading-progress" aria-hidden="true"><span /></div>
+        <span className="public-menu-loading-arabic">جاري فتح القائمة</span>
+      </div>
+    </main>
   )
 }
 
@@ -43,7 +62,7 @@ export function PublicMenuPage() {
     return matchesCategory
   }) ?? [], [menu, activeCategory])
 
-  if (loading) return <main className="public-menu-state"><Loading label="Opening menu…" /></main>
+  if (loading) return <MenuLoadingState slug={slug} />
   if (error || !menu) return <main className="public-menu-state"><Utensils size={34} /><h1>Menu unavailable</h1><p>{error || 'This restaurant menu is not currently available.'}</p></main>
 
   const { restaurant, categories } = menu
