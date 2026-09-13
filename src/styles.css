@@ -80,6 +80,12 @@
   .qr-print-area .modal-close,.qr-print-area .qr-actions{display:none}
 }
 @media(max-width:600px){
+  .menu-cover{min-height:245px}
+  .menu-toolbar{padding:14px 18px}
+  .restaurant-identity{padding:7px 20px 24px}
+  .restaurant-monogram,.restaurant-identity>img{width:58px;height:58px;font-size:21px;margin-bottom:9px}
+  .restaurant-identity h1{font-size:29px;margin:5px 0 2px}
+  .restaurant-identity>p{font-size:12px}
   .category-actions .icon-button:nth-child(-n+2),.item-actions .icon-button:nth-child(-n+2){display:none}
   .category-actions{flex-wrap:wrap;justify-content:flex-end}
   .dashboard-items article{grid-template-columns:39px 1fr auto auto;gap:7px}
@@ -89,5 +95,9 @@
   .theme-presets{align-items:flex-start;flex-direction:column;gap:10px}
   .qr-actions{flex-wrap:wrap}
   .qr-actions .button{min-width:30%;padding-inline:10px}
-  .footer-contact{flex-direction:column;gap:9px;margin-bottom:14px}
+  .menu-footer{padding:22px 18px 19px}
+  .footer-contact{display:grid;grid-template-columns:1fr 1fr;gap:8px 12px;margin:0 auto 15px;max-width:320px;text-align:left}
+  .footer-contact>*{min-height:30px;justify-content:flex-start;padding:3px 2px}
+  .footer-contact>*:nth-child(3){grid-column:1/-1}
+  .footer-credit{padding-top:13px;border-top:1px solid rgba(99,114,109,.15)}
 }
