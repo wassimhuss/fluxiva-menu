@@ -1,4 +1,4 @@
-import { Instagram, MapPin, MessageCircle, Search, Utensils } from 'lucide-react'
+import { Instagram, MapPin, MessageCircle, Utensils } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { Loading } from '../components/Status'
@@ -30,7 +30,6 @@ export function PublicMenuPage() {
   const [error, setError] = useState('')
   const [language, setLanguage] = useState<Language>('en')
   const [activeCategory, setActiveCategory] = useState('')
-  const [search, setSearch] = useState('')
 
   useEffect(() => {
     getPublicMenu(slug).then((data) => {
@@ -41,9 +40,8 @@ export function PublicMenuPage() {
 
   const visibleItems = useMemo(() => menu?.items.filter((item) => {
     const matchesCategory = !activeCategory || item.category_id === activeCategory
-    const needle = search.toLowerCase()
-    return matchesCategory && (!needle || item.name_en.toLowerCase().includes(needle) || item.name_ar.includes(search))
-  }) ?? [], [menu, activeCategory, search])
+    return matchesCategory
+  }) ?? [], [menu, activeCategory])
 
   if (loading) return <main className="public-menu-state"><Loading label="Opening menu…" /></main>
   if (error || !menu) return <main className="public-menu-state"><Utensils size={34} /><h1>Menu unavailable</h1><p>{error || 'This restaurant menu is not currently available.'}</p></main>
@@ -64,7 +62,6 @@ export function PublicMenuPage() {
 
       <div className="menu-body">
         {restaurant.temporarily_closed && <div className="closed-banner">{language === 'ar' ? 'المطعم مغلق مؤقتاً' : 'The restaurant is temporarily closed'}</div>}
-        <div className="menu-search"><Search /><input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={rtl ? 'ابحث في القائمة…' : 'Search the menu…'} /></div>
         <nav className="category-tabs">{categories.map((category) => <button key={category.id} className={activeCategory === category.id ? 'selected' : ''} onClick={() => setActiveCategory(category.id)}>{localText(language, category.name_en, category.name_ar)}</button>)}</nav>
         <section className="items-section">
           <div className="section-title"><span /><h2>{localText(language, categories.find((category) => category.id === activeCategory)?.name_en ?? 'Menu', categories.find((category) => category.id === activeCategory)?.name_ar ?? 'القائمة')}</h2><span /></div>
