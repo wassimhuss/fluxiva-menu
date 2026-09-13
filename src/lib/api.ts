@@ -3,9 +3,9 @@ import { demoMenu } from './demo'
 import { supabase } from './supabase'
 import type { Category, MenuItem, Restaurant, RestaurantMenu, Variant } from './types'
 
-type RestaurantInput = Pick<Restaurant, 'name_en' | 'name_ar' | 'slug' | 'primary_color' | 'phone' | 'address_en' | 'address_ar' | 'default_language'>
+type RestaurantInput = Pick<Restaurant, 'name_en' | 'name_ar' | 'slug' | 'primary_color' | 'phone' | 'whatsapp' | 'instagram' | 'maps_url' | 'address_en' | 'address_ar' | 'opening_hours' | 'temporarily_closed' | 'default_language'>
 type CategoryInput = Pick<Category, 'restaurant_id' | 'name_en' | 'name_ar' | 'sort_order'>
-type ItemInput = Pick<MenuItem, 'restaurant_id' | 'category_id' | 'name_en' | 'name_ar' | 'description_en' | 'description_ar' | 'price_lbp' | 'variants' | 'available' | 'sort_order'>
+type ItemInput = Pick<MenuItem, 'restaurant_id' | 'category_id' | 'name_en' | 'name_ar' | 'description_en' | 'description_ar' | 'price_lbp' | 'image_url' | 'variants' | 'available' | 'sort_order'>
 
 export async function getPublicMenu(slug: string): Promise<RestaurantMenu | null> {
   if (!supabase || slug === 'demo') return slug === 'demo' ? demoMenu : null
@@ -21,7 +21,7 @@ export async function getPublicMenu(slug: string): Promise<RestaurantMenu | null
 
   const [categoriesResult, itemsResult] = await Promise.all([
     supabase.from('menu_categories').select('*').eq('restaurant_id', restaurant.id).order('sort_order'),
-    supabase.from('menu_items').select('*').eq('restaurant_id', restaurant.id).eq('available', true).order('sort_order'),
+    supabase.from('menu_items').select('*').eq('restaurant_id', restaurant.id).order('sort_order'),
   ])
   if (categoriesResult.error) throw categoriesResult.error
   if (itemsResult.error) throw itemsResult.error

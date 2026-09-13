@@ -1,4 +1,4 @@
-import { Instagram, MapPin, Phone, Search, Utensils } from 'lucide-react'
+import { Clock3, Instagram, MapPin, MessageCircle, Phone, Search, Utensils } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { Loading } from '../components/Status'
@@ -11,12 +11,13 @@ function MenuCard({ item, language, color }: { item: MenuItem; language: Languag
   const variant = item.variants?.[variantIndex]
   const price = variant?.price_lbp ?? item.price_lbp
   return (
-    <article className="public-item">
+    <article className={`public-item ${item.available ? '' : 'sold-out'}`}>
       {item.image_url && <img src={item.image_url} alt="" />}
       <div className="public-item-content">
         <div className="item-heading"><h3>{localText(language, item.name_en, item.name_ar)}</h3><strong style={{ color }}>{formatLbp(price)}</strong></div>
         {(item.description_en || item.description_ar) && <p>{localText(language, item.description_en ?? '', item.description_ar ?? '')}</p>}
-        {item.variants?.length > 0 && <div className="variant-buttons">{item.variants.map((choice, index) => <button key={choice.id ?? index} className={index === variantIndex ? 'selected' : ''} style={index === variantIndex ? { backgroundColor: color, borderColor: color } : undefined} onClick={() => setVariantIndex(index)}>{localText(language, choice.name_en, choice.name_ar)}</button>)}</div>}
+        {!item.available && <span className="sold-out-label">{language === 'ar' ? 'غير متوفر حالياً' : 'Currently unavailable'}</span>}
+        {item.available && item.variants?.length > 0 && <div className="variant-buttons">{item.variants.map((choice, index) => <button key={choice.id ?? index} className={index === variantIndex ? 'selected' : ''} style={index === variantIndex ? { backgroundColor: color, borderColor: color } : undefined} onClick={() => setVariantIndex(index)}>{localText(language, choice.name_en, choice.name_ar)}</button>)}</div>}
       </div>
     </article>
   )
@@ -60,13 +61,17 @@ export function PublicMenuPage() {
           <p>{localText(language, restaurant.description_en ?? 'Freshly made for you.', restaurant.description_ar ?? 'نحضّره طازجاً من أجلك.')}</p>
           <div className="restaurant-links">
             {restaurant.phone && <a href={`tel:${restaurant.phone}`}><Phone />{restaurant.phone}</a>}
+            {restaurant.whatsapp && <a href={`https://wa.me/${restaurant.whatsapp.replace(/\D/g, '')}`} target="_blank" rel="noreferrer"><MessageCircle />WhatsApp</a>}
             {(restaurant.address_en || restaurant.address_ar) && <span><MapPin />{localText(language, restaurant.address_en ?? '', restaurant.address_ar ?? '')}</span>}
+            {restaurant.maps_url && <a href={restaurant.maps_url} target="_blank" rel="noreferrer"><MapPin />{language === 'ar' ? 'الموقع' : 'Directions'}</a>}
             {restaurant.instagram && <span><Instagram />{restaurant.instagram}</span>}
+            {restaurant.opening_hours && <span><Clock3 />{restaurant.opening_hours}</span>}
           </div>
         </div>
       </header>
 
       <div className="menu-body">
+        {restaurant.temporarily_closed && <div className="closed-banner">{language === 'ar' ? 'المطعم مغلق مؤقتاً' : 'The restaurant is temporarily closed'}</div>}
         <div className="menu-search"><Search /><input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={rtl ? 'ابحث في القائمة…' : 'Search the menu…'} /></div>
         <nav className="category-tabs">{categories.map((category) => <button key={category.id} className={activeCategory === category.id ? 'selected' : ''} onClick={() => setActiveCategory(category.id)}>{localText(language, category.name_en, category.name_ar)}</button>)}</nav>
         <section className="items-section">

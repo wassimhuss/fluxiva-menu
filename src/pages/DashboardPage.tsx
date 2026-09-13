@@ -1,18 +1,34 @@
-import { ChevronRight, ExternalLink, Eye, EyeOff, LayoutDashboard, LogOut, Menu, Plus, QrCode, Settings, Store, Trash2, X } from 'lucide-react'
+import { ArrowDown, ArrowUp, ChevronRight, ExternalLink, Eye, EyeOff, ImagePlus, LayoutDashboard, LogOut, Menu, Pencil, Plus, QrCode, Settings, Store, Trash2, Upload, X } from 'lucide-react'
 import QRCode from 'qrcode'
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Brand } from '../components/Brand'
 import { Loading, Notice } from '../components/Status'
-import { cleanVariants, createCategory, createItem, deleteCategory, deleteItem, getOwnerMenu, updateItem, updateRestaurant, uploadRestaurantAsset } from '../lib/api'
+import { cleanVariants, createCategory, createItem, deleteCategory, deleteItem, getOwnerMenu, updateCategory, updateItem, updateRestaurant, uploadRestaurantAsset } from '../lib/api'
 import { useAuth } from '../lib/auth'
 import { demoMenu } from '../lib/demo'
 import { formatLbp } from '../lib/format'
 import type { Category, MenuItem, RestaurantMenu, Variant } from '../lib/types'
 
 type Panel = 'overview' | 'menu' | 'settings'
-type ItemDraft = { category_id: string; name_en: string; name_ar: string; description_en: string; description_ar: string; price_lbp: string; variants: Variant[] }
-const emptyItem = (categoryId = ''): ItemDraft => ({ category_id: categoryId, name_en: '', name_ar: '', description_en: '', description_ar: '', price_lbp: '', variants: [] })
+type ItemDraft = { category_id: string; name_en: string; name_ar: string; description_en: string; description_ar: string; price_lbp: string; variants: Variant[]; image_file: File | null; image_url?: string }
+const emptyItem = (categoryId = ''): ItemDraft => ({ category_id: categoryId, name_en: '', name_ar: '', description_en: '', description_ar: '', price_lbp: '', variants: [], image_file: null })
+
+function csvRows(text: string) {
+  const rows: string[][] = []
+  let row: string[] = []; let cell = ''; let quoted = false
+  for (let index = 0; index < text.length; index += 1) {
+    const char = text[index]
+    if (char === '"') { if (quoted && text[index + 1] === '"') { cell += '"'; index += 1 } else quoted = !quoted }
+    else if (char === ',' && !quoted) { row.push(cell.trim()); cell = '' }
+    else if ((char === '\n' || char === '\r') && !quoted) { if (char === '\r' && text[index + 1] === '\n') index += 1; row.push(cell.trim()); if (row.some(Boolean)) rows.push(row); row = []; cell = '' }
+    else cell += char
+  }
+  if (cell || row.length) { row.push(cell.trim()); if (row.some(Boolean)) rows.push(row) }
+  if (rows.length < 2) return []
+  const headers = rows[0].map((header) => header.toLowerCase().replace(/\s+/g, '_'))
+  return rows.slice(1).map((values) => Object.fromEntries(headers.map((header, index) => [header, values[index] ?? ''])))
+}
 
 export function DashboardPage() {
   const { session, demoMode, signOut } = useAuth()
@@ -24,10 +40,16 @@ export function DashboardPage() {
   const [error, setError] = useState('')
   const [categoryModal, setCategoryModal] = useState(false)
   const [itemModal, setItemModal] = useState(false)
+  const [importModal, setImportModal] = useState(false)
   const [qrModal, setQrModal] = useState(false)
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null)
+  const [editingItem, setEditingItem] = useState<MenuItem | null>(null)
   const [categoryDraft, setCategoryDraft] = useState({ name_en: '', name_ar: '' })
   const [itemDraft, setItemDraft] = useState<ItemDraft>(emptyItem())
+  const [importFile, setImportFile] = useState<File | null>(null)
+  const [importStatus, setImportStatus] = useState('')
   const [qrData, setQrData] = useState('')
+  const [qrSvg, setQrSvg] = useState('')
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
@@ -40,21 +62,41 @@ export function DashboardPage() {
 
   async function openQr() {
     setQrModal(true)
-    setQrData(await QRCode.toDataURL(menuUrl, { width: 800, margin: 2, color: { dark: '#173f35', light: '#ffffff' } }))
+    const options = { width: 800, margin: 2, color: { dark: '#173f35', light: '#ffffff' } }
+    setQrData(await QRCode.toDataURL(menuUrl, options))
+    setQrSvg(await QRCode.toString(menuUrl, { type: 'svg', margin: 2, color: { dark: '#173f35', light: '#ffffff' } }))
   }
 
   function downloadQr() {
     const link = document.createElement('a'); link.href = qrData; link.download = `${menu?.restaurant.slug}-menu-qr.png`; link.click()
   }
 
-  async function addCategory(event: React.FormEvent) {
+  function downloadQrSvg() {
+    const link = document.createElement('a'); link.href = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(qrSvg)}`; link.download = `${menu?.restaurant.slug}-menu-qr.svg`; link.click()
+  }
+
+  function printQr() { window.print() }
+
+  async function saveCategory(event: React.FormEvent) {
     event.preventDefault(); if (!menu) return
     setSaving(true); setError('')
     try {
-      const category = await createCategory({ restaurant_id: menu.restaurant.id, ...categoryDraft, sort_order: menu.categories.length + 1 })
-      setMenu({ ...menu, categories: [...menu.categories, category] }); setCategoryModal(false); setCategoryDraft({ name_en: '', name_ar: '' })
+      if (editingCategory) {
+        await updateCategory(editingCategory.id, categoryDraft)
+        setMenu({ ...menu, categories: menu.categories.map((entry) => entry.id === editingCategory.id ? { ...entry, ...categoryDraft } : entry) })
+      } else {
+        const category = await createCategory({ restaurant_id: menu.restaurant.id, ...categoryDraft, sort_order: menu.categories.length + 1 })
+        setMenu({ ...menu, categories: [...menu.categories, category] })
+      }
+      setCategoryModal(false); setEditingCategory(null); setCategoryDraft({ name_en: '', name_ar: '' })
     } catch (caught) { setError(caught instanceof Error ? caught.message : 'Could not add category') }
     finally { setSaving(false) }
+  }
+
+  function openCategory(category?: Category) {
+    setEditingCategory(category ?? null)
+    setCategoryDraft(category ? { name_en: category.name_en, name_ar: category.name_ar } : { name_en: '', name_ar: '' })
+    setCategoryModal(true)
   }
 
   async function removeCategory(category: Category) {
@@ -63,12 +105,23 @@ export function DashboardPage() {
     catch (caught) { setError(caught instanceof Error ? caught.message : 'Could not delete category') }
   }
 
-  async function addItem(event: React.FormEvent) {
+  async function saveItem(event: React.FormEvent) {
     event.preventDefault(); if (!menu) return
     setSaving(true); setError('')
     try {
-      const item = await createItem({ restaurant_id: menu.restaurant.id, category_id: itemDraft.category_id, name_en: itemDraft.name_en, name_ar: itemDraft.name_ar, description_en: itemDraft.description_en, description_ar: itemDraft.description_ar, price_lbp: Number(itemDraft.price_lbp) || 0, variants: cleanVariants(itemDraft.variants), available: true, sort_order: menu.items.filter((entry) => entry.category_id === itemDraft.category_id).length + 1 })
-      setMenu({ ...menu, items: [...menu.items, item] }); setItemModal(false); setItemDraft(emptyItem(menu.categories[0]?.id))
+      const input = { restaurant_id: menu.restaurant.id, category_id: itemDraft.category_id, name_en: itemDraft.name_en, name_ar: itemDraft.name_ar, description_en: itemDraft.description_en, description_ar: itemDraft.description_ar, price_lbp: Number(itemDraft.price_lbp) || 0, variants: cleanVariants(itemDraft.variants), available: editingItem?.available ?? true, sort_order: editingItem?.sort_order ?? menu.items.filter((entry) => entry.category_id === itemDraft.category_id).length + 1 }
+      let item: MenuItem
+      if (editingItem) {
+        item = { ...editingItem, ...input }
+        await updateItem(editingItem.id, input)
+      } else item = await createItem(input)
+      if (itemDraft.image_file) {
+        const image_url = await uploadRestaurantAsset(menu.restaurant.id, itemDraft.image_file)
+        await updateItem(item.id, { image_url })
+        item = { ...item, image_url }
+      }
+      setMenu({ ...menu, items: editingItem ? menu.items.map((entry) => entry.id === item.id ? item : entry) : [...menu.items, item] })
+      setItemModal(false); setEditingItem(null); setItemDraft(emptyItem(menu.categories[0]?.id))
     } catch (caught) { setError(caught instanceof Error ? caught.message : 'Could not add item') }
     finally { setSaving(false) }
   }
@@ -84,8 +137,8 @@ export function DashboardPage() {
     event.preventDefault(); if (!menu) return
     setSaving(true); setError('')
     try {
-      const { name_en, name_ar, description_en, description_ar, primary_color, phone, instagram, address_en, address_ar, default_language } = menu.restaurant
-      await updateRestaurant(menu.restaurant.id, { name_en, name_ar, description_en, description_ar, primary_color, phone, instagram, address_en, address_ar, default_language })
+      const { name_en, name_ar, description_en, description_ar, primary_color, phone, whatsapp, instagram, maps_url, address_en, address_ar, opening_hours, temporarily_closed, default_language } = menu.restaurant
+      await updateRestaurant(menu.restaurant.id, { name_en, name_ar, description_en, description_ar, primary_color, phone, whatsapp, instagram, maps_url, address_en, address_ar, opening_hours, temporarily_closed, default_language })
     } catch (caught) { setError(caught instanceof Error ? caught.message : 'Could not save restaurant') }
     finally { setSaving(false) }
   }
@@ -101,7 +154,7 @@ export function DashboardPage() {
     finally { setSaving(false) }
   }
 
-  function restaurantField(key: keyof RestaurantMenu['restaurant'], value: string) {
+  function restaurantField(key: keyof RestaurantMenu['restaurant'], value: string | boolean) {
     if (!menu) return
     setMenu({ ...menu, restaurant: { ...menu.restaurant, [key]: value } })
   }
@@ -112,7 +165,55 @@ export function DashboardPage() {
     catch (caught) { setError(caught instanceof Error ? caught.message : 'Could not delete item') }
   }
 
-  function openItem(categoryId = menu?.categories[0]?.id ?? '') { setItemDraft(emptyItem(categoryId)); setItemModal(true) }
+  async function moveCategory(category: Category, direction: -1 | 1) {
+    if (!menu) return
+    const index = menu.categories.findIndex((entry) => entry.id === category.id); const nextIndex = index + direction
+    if (index < 0 || nextIndex < 0 || nextIndex >= menu.categories.length) return
+    const next = menu.categories[nextIndex]
+    await Promise.all([updateCategory(category.id, { sort_order: next.sort_order }), updateCategory(next.id, { sort_order: category.sort_order })])
+    const categories = [...menu.categories]; categories[index] = { ...next, sort_order: category.sort_order }; categories[nextIndex] = { ...category, sort_order: next.sort_order }
+    setMenu({ ...menu, categories })
+  }
+
+  async function moveItem(item: MenuItem, direction: -1 | 1) {
+    if (!menu) return
+    const siblings = menu.items.filter((entry) => entry.category_id === item.category_id).sort((a, b) => a.sort_order - b.sort_order)
+    const index = siblings.findIndex((entry) => entry.id === item.id); const nextIndex = index + direction
+    if (index < 0 || nextIndex < 0 || nextIndex >= siblings.length) return
+    const next = siblings[nextIndex]
+    await Promise.all([updateItem(item.id, { sort_order: next.sort_order }), updateItem(next.id, { sort_order: item.sort_order })])
+    const items = menu.items.map((entry) => entry.id === item.id ? { ...entry, sort_order: next.sort_order } : entry.id === next.id ? { ...entry, sort_order: item.sort_order } : entry)
+    setMenu({ ...menu, items })
+  }
+
+  function openItem(categoryId = menu?.categories[0]?.id ?? '', item?: MenuItem) {
+    setEditingItem(item ?? null)
+    setItemDraft(item ? { category_id: item.category_id, name_en: item.name_en, name_ar: item.name_ar, description_en: item.description_en ?? '', description_ar: item.description_ar ?? '', price_lbp: String(item.price_lbp || ''), variants: structuredClone(item.variants), image_file: null, image_url: item.image_url } : emptyItem(categoryId))
+    setItemModal(true)
+  }
+
+  async function importCsv(event: React.FormEvent) {
+    event.preventDefault(); if (!menu || !importFile) return
+    setSaving(true); setImportStatus('Reading your file…'); setError('')
+    try {
+      const rows = csvRows(await importFile.text())
+      if (!rows.length) throw new Error('Add at least one CSV row with name_en, name_ar and price_lbp columns.')
+      let nextMenu = menu
+      for (const row of rows) {
+        if (!row.name_en || !row.name_ar) continue
+        let category = nextMenu.categories.find((entry) => entry.name_en.toLowerCase() === (row.category_en || 'Imported').toLowerCase())
+        if (!category) {
+          category = await createCategory({ restaurant_id: menu.restaurant.id, name_en: row.category_en || 'Imported', name_ar: row.category_ar || 'مستوردة', sort_order: nextMenu.categories.length + 1 })
+          nextMenu = { ...nextMenu, categories: [...nextMenu.categories, category] }
+        }
+        const item = await createItem({ restaurant_id: menu.restaurant.id, category_id: category.id, name_en: row.name_en, name_ar: row.name_ar, description_en: row.description_en || '', description_ar: row.description_ar || '', price_lbp: Number(row.price_lbp) || 0, variants: [], available: row.available !== 'false', sort_order: nextMenu.items.filter((entry) => entry.category_id === category.id).length + 1 })
+        nextMenu = { ...nextMenu, items: [...nextMenu.items, item] }
+      }
+      setMenu(nextMenu); setImportStatus(`Imported ${nextMenu.items.length - menu.items.length} items.`); setImportFile(null)
+    } catch (caught) { setError(caught instanceof Error ? caught.message : 'Could not import CSV') }
+    finally { setSaving(false) }
+  }
+
   function addVariant() { setItemDraft((current) => ({ ...current, variants: [...current.variants, { id: crypto.randomUUID(), name_en: '', name_ar: '', price_lbp: 0 }] })) }
   function updateVariant(index: number, key: keyof Variant, value: string | number) { setItemDraft((current) => ({ ...current, variants: current.variants.map((variant, position) => position === index ? { ...variant, [key]: value } : variant) })) }
 
@@ -153,8 +254,8 @@ export function DashboardPage() {
           </>}
 
           {panel === 'menu' && <>
-            <div className="page-heading"><div><span className="eyebrow"><span /> Menu editor</span><h1>Categories and items.</h1><p>Changes appear on your public menu immediately.</p></div><div className="button-row"><button className="button button-outline" onClick={() => setCategoryModal(true)}><Plus /> Category</button><button className="button button-primary" onClick={() => openItem()}><Plus /> Item</button></div></div>
-            {!menu.categories.length ? <div className="empty-card"><Store /><h2>Create your first category</h2><p>Start with Pizza, Drinks, Desserts or any section that fits your menu.</p><button className="button button-primary" onClick={() => setCategoryModal(true)}><Plus /> Add category</button></div> : <div className="category-list">{menu.categories.map((category) => <section className="dashboard-card category-card" key={category.id}><div className="category-heading"><div><h2>{category.name_en}<small>{category.name_ar}</small></h2><span>{menu.items.filter((item) => item.category_id === category.id).length} items</span></div><div><button className="icon-button danger" onClick={() => removeCategory(category)} title="Delete category"><Trash2 /></button><button className="button button-small button-outline" onClick={() => openItem(category.id)}><Plus /> Add item</button></div></div><div className="dashboard-items">{menu.items.filter((item) => item.category_id === category.id).map((item) => <article key={item.id} className={!item.available ? 'unavailable' : ''}><div className="item-icon">{item.image_url ? <img src={item.image_url} alt="" /> : item.name_en.slice(0, 1)}</div><div className="dashboard-item-info"><b>{item.name_en}<small>{item.name_ar}</small></b><span>{item.variants.length ? `${item.variants.length} sizes · from ${formatLbp(Math.min(...item.variants.map((variant) => variant.price_lbp)))}` : formatLbp(item.price_lbp)}</span></div><button className="visibility" onClick={() => toggleAvailability(item)}>{item.available ? <><Eye /> Visible</> : <><EyeOff /> Hidden</>}</button><button className="icon-button danger" onClick={() => removeItem(item)}><Trash2 /></button></article>)}{!menu.items.some((item) => item.category_id === category.id) && <p className="empty-row">No items in this category yet.</p>}</div></section>)}</div>}
+            <div className="page-heading"><div><span className="eyebrow"><span /> Menu editor</span><h1>Categories and items.</h1><p>Changes appear on your public menu immediately.</p></div><div className="button-row"><button className="button button-outline" onClick={() => setImportModal(true)}><Upload /> Import CSV</button><button className="button button-outline" onClick={() => openCategory()}><Plus /> Category</button><button className="button button-primary" onClick={() => openItem()}><Plus /> Item</button></div></div>
+            {!menu.categories.length ? <div className="empty-card"><Store /><h2>Create your first category</h2><p>Start with Pizza, Drinks, Desserts or any section that fits your menu.</p><button className="button button-primary" onClick={() => openCategory()}><Plus /> Add category</button></div> : <div className="category-list">{menu.categories.map((category, categoryIndex) => <section className="dashboard-card category-card" key={category.id}><div className="category-heading"><div><h2>{category.name_en}<small>{category.name_ar}</small></h2><span>{menu.items.filter((item) => item.category_id === category.id).length} items</span></div><div className="category-actions"><button className="icon-button" disabled={categoryIndex === 0} onClick={() => moveCategory(category, -1)} title="Move category up"><ArrowUp /></button><button className="icon-button" disabled={categoryIndex === menu.categories.length - 1} onClick={() => moveCategory(category, 1)} title="Move category down"><ArrowDown /></button><button className="icon-button" onClick={() => openCategory(category)} title="Edit category"><Pencil /></button><button className="icon-button danger" onClick={() => removeCategory(category)} title="Delete category"><Trash2 /></button><button className="button button-small button-outline" onClick={() => openItem(category.id)}><Plus /> Add item</button></div></div><div className="dashboard-items">{menu.items.filter((item) => item.category_id === category.id).sort((a, b) => a.sort_order - b.sort_order).map((item, itemIndex, siblings) => <article key={item.id} className={!item.available ? 'unavailable' : ''}><div className="item-icon">{item.image_url ? <img src={item.image_url} alt="" /> : item.name_en.slice(0, 1)}</div><div className="dashboard-item-info"><b>{item.name_en}<small>{item.name_ar}</small></b><span>{item.variants.length ? `${item.variants.length} sizes · from ${formatLbp(Math.min(...item.variants.map((variant) => variant.price_lbp)))}` : formatLbp(item.price_lbp)}</span></div><button className="visibility" onClick={() => toggleAvailability(item)}>{item.available ? <><Eye /> Visible</> : <><EyeOff /> Hidden</>}</button><div className="item-actions"><button className="icon-button" onClick={() => moveItem(item, -1)} disabled={itemIndex === 0} title="Move item up"><ArrowUp /></button><button className="icon-button" onClick={() => moveItem(item, 1)} disabled={itemIndex === siblings.length - 1} title="Move item down"><ArrowDown /></button><button className="icon-button" onClick={() => openItem(category.id, item)} title="Edit item"><Pencil /></button><button className="icon-button danger" onClick={() => removeItem(item)} title="Delete item"><Trash2 /></button></div></article>)}{!menu.items.some((item) => item.category_id === category.id) && <p className="empty-row">No items in this category yet.</p>}</div></section>)}</div>}
           </>}
 
           {panel === 'settings' && <>
@@ -172,24 +273,32 @@ export function DashboardPage() {
                 <label dir="rtl">الاسم بالعربية<input required value={menu.restaurant.name_ar} onChange={(e) => restaurantField('name_ar', e.target.value)} /></label>
                 <label>English tagline<input value={menu.restaurant.description_en ?? ''} onChange={(e) => restaurantField('description_en', e.target.value)} placeholder="Fresh from our oven" /></label>
                 <label dir="rtl">الوصف بالعربية<input value={menu.restaurant.description_ar ?? ''} onChange={(e) => restaurantField('description_ar', e.target.value)} placeholder="طازج من فرننا" /></label>
-                <label>Phone<input value={menu.restaurant.phone ?? ''} onChange={(e) => restaurantField('phone', e.target.value)} /></label>
+                <label>Phone<input value={menu.restaurant.phone ?? ''} onChange={(e) => restaurantField('phone', e.target.value)} placeholder="+961 70 123 456" /></label>
+                <label>WhatsApp number<input value={menu.restaurant.whatsapp ?? ''} onChange={(e) => restaurantField('whatsapp', e.target.value)} placeholder="+961 70 123 456" /></label>
                 <label>Instagram<input value={menu.restaurant.instagram ?? ''} onChange={(e) => restaurantField('instagram', e.target.value)} placeholder="@restaurant" /></label>
+                <label>Google Maps link<input value={menu.restaurant.maps_url ?? ''} onChange={(e) => restaurantField('maps_url', e.target.value)} placeholder="https://maps.google.com/..." /></label>
                 <label>English address<textarea value={menu.restaurant.address_en ?? ''} onChange={(e) => restaurantField('address_en', e.target.value)} /></label>
                 <label dir="rtl">العنوان بالعربية<textarea value={menu.restaurant.address_ar ?? ''} onChange={(e) => restaurantField('address_ar', e.target.value)} /></label>
+                <label>Opening hours<input value={menu.restaurant.opening_hours ?? ''} onChange={(e) => restaurantField('opening_hours', e.target.value)} placeholder="Every day · 10:00 – 23:00" /></label>
+                <label className="closed-toggle"><span>Menu status</span><button type="button" className={`status-switch ${menu.restaurant.temporarily_closed ? 'on' : ''}`} onClick={() => restaurantField('temporarily_closed', !menu.restaurant.temporarily_closed)}><i />{menu.restaurant.temporarily_closed ? 'Temporarily closed' : 'Open for customers'}</button></label>
                 <label>Brand color<input className="settings-color" type="color" value={menu.restaurant.primary_color} onChange={(e) => restaurantField('primary_color', e.target.value)} /></label>
                 <label>Default language<select value={menu.restaurant.default_language} onChange={(e) => restaurantField('default_language', e.target.value)}><option value="en">English</option><option value="ar">العربية</option></select></label>
               </div>
+              <div className="theme-presets"><b>Quick themes</b><div>{[['#173f35', 'Cedar'], ['#b84d2f', 'Oven'], ['#7b4f34', 'Earth'], ['#244c70', 'Coast']].map(([color, name]) => <button type="button" key={color} onClick={() => restaurantField('primary_color', color)} className={menu.restaurant.primary_color === color ? 'selected' : ''}><i style={{ backgroundColor: color }} />{name}</button>)}</div></div>
+              <div className="bilingual-preview"><div><span>English preview</span><b style={{ color: menu.restaurant.primary_color }}>{menu.restaurant.name_en}</b><small>{menu.restaurant.description_en || 'Fresh from our oven.'}</small></div><div dir="rtl"><span>معاينة عربية</span><b style={{ color: menu.restaurant.primary_color }}>{menu.restaurant.name_ar}</b><small>{menu.restaurant.description_ar || 'طازج من فرننا.'}</small></div></div>
               <button className="button button-primary" disabled={saving}>{saving ? 'Saving…' : 'Save restaurant details'}</button>
             </form>
           </>}
         </div>
       </section>
 
-      {categoryModal && <div className="modal-backdrop"><form className="modal-card" onSubmit={addCategory}><button type="button" className="modal-close" onClick={() => setCategoryModal(false)}><X /></button><span className="eyebrow"><span /> New section</span><h2>Add a category</h2><p>Give it a name in both menu languages.</p><label>English name<input required autoFocus value={categoryDraft.name_en} onChange={(e) => setCategoryDraft({ ...categoryDraft, name_en: e.target.value })} placeholder="Pizza" /></label><label dir="rtl">الاسم بالعربية<input required value={categoryDraft.name_ar} onChange={(e) => setCategoryDraft({ ...categoryDraft, name_ar: e.target.value })} placeholder="بيتزا" /></label><button className="button button-primary full" disabled={saving}>{saving ? 'Adding…' : 'Add category'}</button></form></div>}
+      {categoryModal && <div className="modal-backdrop"><form className="modal-card" onSubmit={saveCategory}><button type="button" className="modal-close" onClick={() => { setCategoryModal(false); setEditingCategory(null) }}><X /></button><span className="eyebrow"><span /> {editingCategory ? 'Edit section' : 'New section'}</span><h2>{editingCategory ? 'Edit category' : 'Add a category'}</h2><p>Give it a name in both menu languages.</p><label>English name<input required autoFocus value={categoryDraft.name_en} onChange={(e) => setCategoryDraft({ ...categoryDraft, name_en: e.target.value })} placeholder="Pizza" /></label><label dir="rtl">الاسم بالعربية<input required value={categoryDraft.name_ar} onChange={(e) => setCategoryDraft({ ...categoryDraft, name_ar: e.target.value })} placeholder="بيتزا" /></label><button className="button button-primary full" disabled={saving}>{saving ? 'Saving…' : editingCategory ? 'Save category' : 'Add category'}</button></form></div>}
 
-      {itemModal && <div className="modal-backdrop"><form className="modal-card modal-large" onSubmit={addItem}><button type="button" className="modal-close" onClick={() => setItemModal(false)}><X /></button><span className="eyebrow"><span /> New item</span><h2>Add a menu item</h2><div className="form-grid"><label>Category<select required value={itemDraft.category_id} onChange={(e) => setItemDraft({ ...itemDraft, category_id: e.target.value })}><option value="">Choose category</option>{menu.categories.map((category) => <option value={category.id} key={category.id}>{category.name_en}</option>)}</select></label><span /><label>English name<input required value={itemDraft.name_en} onChange={(e) => setItemDraft({ ...itemDraft, name_en: e.target.value })} placeholder="Margherita" /></label><label dir="rtl">الاسم بالعربية<input required value={itemDraft.name_ar} onChange={(e) => setItemDraft({ ...itemDraft, name_ar: e.target.value })} placeholder="مارغريتا" /></label><label>English description<textarea value={itemDraft.description_en} onChange={(e) => setItemDraft({ ...itemDraft, description_en: e.target.value })} placeholder="Tomato, mozzarella and basil" /></label><label dir="rtl">الوصف بالعربية<textarea value={itemDraft.description_ar} onChange={(e) => setItemDraft({ ...itemDraft, description_ar: e.target.value })} placeholder="طماطم، موزاريلا وريحان" /></label></div><div className="price-section"><label>Base price (LBP)<input required={itemDraft.variants.length === 0} min="0" type="number" value={itemDraft.price_lbp} onChange={(e) => setItemDraft({ ...itemDraft, price_lbp: e.target.value })} placeholder="350000" /></label><div className="variant-title"><div><b>Size options</b><small>Optional — add sizes when prices differ.</small></div><button type="button" onClick={addVariant}><Plus /> Add size</button></div>{itemDraft.variants.map((variant, index) => <div className="variant-row" key={variant.id}><input required placeholder="S" value={variant.name_en} onChange={(e) => updateVariant(index, 'name_en', e.target.value)} /><input placeholder="ص" dir="rtl" value={variant.name_ar} onChange={(e) => updateVariant(index, 'name_ar', e.target.value)} /><input required min="1" type="number" placeholder="Price LBP" value={variant.price_lbp || ''} onChange={(e) => updateVariant(index, 'price_lbp', Number(e.target.value))} /><button type="button" onClick={() => setItemDraft((current) => ({ ...current, variants: current.variants.filter((_, position) => position !== index) }))}><X /></button></div>)}</div><button className="button button-primary full" disabled={saving || !menu.categories.length}>{saving ? 'Adding…' : 'Add menu item'}</button></form></div>}
+      {itemModal && <div className="modal-backdrop"><form className="modal-card modal-large" onSubmit={saveItem}><button type="button" className="modal-close" onClick={() => { setItemModal(false); setEditingItem(null) }}><X /></button><span className="eyebrow"><span /> {editingItem ? 'Edit item' : 'New item'}</span><h2>{editingItem ? 'Edit menu item' : 'Add a menu item'}</h2><div className="form-grid"><label>Category<select required value={itemDraft.category_id} onChange={(e) => setItemDraft({ ...itemDraft, category_id: e.target.value })}><option value="">Choose category</option>{menu.categories.map((category) => <option value={category.id} key={category.id}>{category.name_en}</option>)}</select></label><label className="image-upload">Item photo<span><ImagePlus /> {itemDraft.image_file?.name || (itemDraft.image_url ? 'Replace current photo' : 'Choose an image')}</span><input type="file" accept="image/png,image/jpeg,image/webp" onChange={(e) => setItemDraft({ ...itemDraft, image_file: e.target.files?.[0] ?? null })} /></label><label>English name<input required value={itemDraft.name_en} onChange={(e) => setItemDraft({ ...itemDraft, name_en: e.target.value })} placeholder="Margherita" /></label><label dir="rtl">الاسم بالعربية<input required value={itemDraft.name_ar} onChange={(e) => setItemDraft({ ...itemDraft, name_ar: e.target.value })} placeholder="مارغريتا" /></label><label>English description<textarea value={itemDraft.description_en} onChange={(e) => setItemDraft({ ...itemDraft, description_en: e.target.value })} placeholder="Tomato, mozzarella and basil" /></label><label dir="rtl">الوصف بالعربية<textarea value={itemDraft.description_ar} onChange={(e) => setItemDraft({ ...itemDraft, description_ar: e.target.value })} placeholder="طماطم، موزاريلا وريحان" /></label></div><div className="price-section"><label>Base price (LBP)<input required={itemDraft.variants.length === 0} min="0" type="number" value={itemDraft.price_lbp} onChange={(e) => setItemDraft({ ...itemDraft, price_lbp: e.target.value })} placeholder="350000" /></label><div className="variant-title"><div><b>Size options</b><small>Optional — add sizes when prices differ.</small></div><button type="button" onClick={addVariant}><Plus /> Add size</button></div>{itemDraft.variants.map((variant, index) => <div className="variant-row" key={variant.id}><input required placeholder="S" value={variant.name_en} onChange={(e) => updateVariant(index, 'name_en', e.target.value)} /><input placeholder="ص" dir="rtl" value={variant.name_ar} onChange={(e) => updateVariant(index, 'name_ar', e.target.value)} /><input required min="1" type="number" placeholder="Price LBP" value={variant.price_lbp || ''} onChange={(e) => updateVariant(index, 'price_lbp', Number(e.target.value))} /><button type="button" onClick={() => setItemDraft((current) => ({ ...current, variants: current.variants.filter((_, position) => position !== index) }))}><X /></button></div>)}</div><button className="button button-primary full" disabled={saving || !menu.categories.length}>{saving ? 'Saving…' : editingItem ? 'Save menu item' : 'Add menu item'}</button></form></div>}
 
-      {qrModal && <div className="modal-backdrop"><div className="modal-card qr-modal"><button className="modal-close" onClick={() => setQrModal(false)}><X /></button><span className="eyebrow"><span /> Ready to scan</span><h2>Your menu QR code</h2><p>Print it on table cards, packaging or your storefront.</p>{qrData && <img src={qrData} alt="Restaurant menu QR code" />}<code>{menuUrl}</code><button className="button button-primary full" onClick={downloadQr}><QrCode /> Download PNG</button></div></div>}
+      {importModal && <div className="modal-backdrop"><form className="modal-card" onSubmit={importCsv}><button type="button" className="modal-close" onClick={() => { setImportModal(false); setImportStatus(''); setImportFile(null) }}><X /></button><span className="eyebrow"><span /> Bulk import</span><h2>Import menu items</h2><p>Upload a CSV exported from Excel or Google Sheets. Columns: category_en, category_ar, name_en, name_ar, description_en, description_ar, price_lbp, available.</p><label className="file-drop"><Upload /><b>{importFile?.name || 'Choose CSV file'}</b><small>One item per row</small><input type="file" accept=".csv,text/csv" onChange={(e) => setImportFile(e.target.files?.[0] ?? null)} /></label>{importStatus && <p className="notice notice-success">{importStatus}</p>}<button className="button button-primary full" disabled={saving || !importFile}>{saving ? 'Importing…' : 'Import items'}</button></form></div>}
+
+      {qrModal && <div className="modal-backdrop"><div className="modal-card qr-modal qr-print-area"><button className="modal-close" onClick={() => setQrModal(false)}><X /></button><span className="eyebrow"><span /> Ready to scan</span><h2>Your menu QR code</h2><p>Print it on table cards, packaging or your storefront.</p>{qrData && <img src={qrData} alt="Restaurant menu QR code" />}<code>{menuUrl}</code><div className="qr-actions"><button className="button button-primary" onClick={downloadQr}><QrCode /> PNG</button><button className="button button-outline" onClick={downloadQrSvg}>SVG</button><button className="button button-outline" onClick={printQr}>Print</button></div></div></div>}
     </main>
   )
 }

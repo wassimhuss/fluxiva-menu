@@ -12,9 +12,13 @@ export interface Restaurant {
   logo_url?: string
   primary_color: string
   phone?: string
+  whatsapp?: string
   instagram?: string
+  maps_url?: string
   address_en?: string
   address_ar?: string
+  opening_hours?: string
+  temporarily_closed?: boolean
   default_language: Language
   subscription_status: SubscriptionStatus
   trial_ends_at?: string
