@@ -5,6 +5,17 @@ import { getPublicMenu } from '../lib/api'
 import { formatLbp, localText } from '../lib/format'
 import type { Language, MenuItem, RestaurantMenu } from '../lib/types'
 
+function footerPalette(hex: string) {
+  const color = hex.replace('#', '')
+  const red = Number.parseInt(color.slice(0, 2), 16)
+  const green = Number.parseInt(color.slice(2, 4), 16)
+  const blue = Number.parseInt(color.slice(4, 6), 16)
+  const isLight = (red * 299 + green * 587 + blue * 114) / 1000 > 165
+  return isLight
+    ? { ink: '#18332d', muted: 'rgba(24,51,45,.68)', soft: 'rgba(24,51,45,.08)', line: 'rgba(24,51,45,.14)' }
+    : { ink: '#ffffff', muted: 'rgba(255,255,255,.7)', soft: 'rgba(255,255,255,.11)', line: 'rgba(255,255,255,.16)' }
+}
+
 function MenuCard({ item, language, color }: { item: MenuItem; language: Language; color: string }) {
   const [variantIndex, setVariantIndex] = useState(0)
   const variant = item.variants?.[variantIndex]
@@ -71,6 +82,7 @@ export function PublicMenuPage() {
   const coverImage = coverUrl ? `url(${coverUrl})` : 'none'
   const footerContactCount = [restaurant.whatsapp, restaurant.address_en || restaurant.address_ar, restaurant.instagram].filter(Boolean).length
   const instagramHandle = restaurant.instagram?.replace(/^@/, '')
+  const footerColors = footerPalette(restaurant.primary_color)
   return (
     <main className="public-menu" dir={rtl ? 'rtl' : 'ltr'} style={{ '--restaurant-color': restaurant.primary_color, '--cover-image': coverImage } as React.CSSProperties}>
       <header className="menu-cover">
@@ -92,7 +104,7 @@ export function PublicMenuPage() {
           {!visibleItems.length && <p className="empty-items">{rtl ? 'لا توجد أصناف هنا.' : 'No items found here.'}</p>}
         </section>
       </div>
-      <footer className="menu-footer"><div className="footer-shell">
+      <footer className="menu-footer" style={{ '--footer-ink': footerColors.ink, '--footer-muted': footerColors.muted, '--footer-soft': footerColors.soft, '--footer-line': footerColors.line } as React.CSSProperties}><div className="footer-shell">
         {footerContactCount > 0 && <div className="footer-contact-grid" style={{ '--footer-contact-count': footerContactCount } as React.CSSProperties}>
           {restaurant.whatsapp && <a className="footer-contact-item footer-contact-item-accent" href={`https://wa.me/${restaurant.whatsapp.replace(/\D/g, '')}`} target="_blank" rel="noreferrer"><span className="footer-contact-icon"><MessageCircle /></span><span className="footer-contact-copy"><small>WhatsApp</small><strong>{language === 'ar' ? 'راسلنا الآن' : 'Message us'}</strong></span></a>}
           {(restaurant.address_en || restaurant.address_ar) && <div className="footer-contact-item footer-contact-item-wide"><span className="footer-contact-icon"><MapPin /></span><span className="footer-contact-copy"><small>{language === 'ar' ? 'زورونا' : 'Visit us'}</small><strong>{localText(language, restaurant.address_en ?? '', restaurant.address_ar ?? '')}</strong></span></div>}

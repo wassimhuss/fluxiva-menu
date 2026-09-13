@@ -92,29 +92,33 @@
   .qr-actions .button{min-width:30%;padding-inline:10px}
 }
 
-/* Compact public footer that follows each restaurant's brand color. */
-.menu-footer{background:#f8f6f0;padding:0 18px 22px;color:#273a34;text-align:center}
-.footer-shell{max-width:684px;margin:auto;overflow:hidden;border:1px solid rgba(31,55,47,.1);border-top:3px solid var(--restaurant-color);border-radius:16px;background:#fff;box-shadow:0 9px 28px rgba(31,55,47,.07)}
-.footer-contact-grid{display:grid;grid-template-columns:repeat(var(--footer-contact-count,3),minmax(0,1fr));width:100%;background:linear-gradient(180deg,color-mix(in srgb,var(--restaurant-color) 7%,white),#fff)}
-.footer-contact-item{min-width:0;min-height:82px;padding:15px 10px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;color:#273a34;text-align:center}
-.footer-contact-item+.footer-contact-item{border-inline-start:1px solid color-mix(in srgb,var(--restaurant-color) 14%,#e7e5de)}
-.footer-contact-item:hover{background:color-mix(in srgb,var(--restaurant-color) 9%,white)}
-.footer-contact-icon{width:31px;height:31px;display:grid;place-items:center;border-radius:10px;background:color-mix(in srgb,var(--restaurant-color) 12%,white);color:var(--restaurant-color)}
+/* Full-width public footer that follows each restaurant's brand color. */
+.menu-footer{position:relative;overflow:hidden;background:var(--restaurant-color);background-image:linear-gradient(125deg,rgba(255,255,255,.09),transparent 42%,rgba(0,0,0,.12));padding:23px 18px 14px;color:var(--footer-ink);text-align:center}
+.menu-footer:before{content:"";position:absolute;width:230px;height:230px;right:-145px;top:-155px;border:1px solid var(--footer-line);border-radius:50%;pointer-events:none}
+.footer-shell{position:relative;z-index:1;max-width:720px;margin:auto}
+.footer-contact-grid{display:grid;grid-template-columns:repeat(var(--footer-contact-count,3),minmax(0,1fr));width:100%;overflow:hidden;border:1px solid var(--footer-line);border-radius:14px;background:var(--footer-soft);backdrop-filter:blur(8px)}
+.footer-contact-item{min-width:0;min-height:72px;padding:12px 10px;display:flex;align-items:center;justify-content:center;gap:9px;color:var(--footer-ink);text-align:start}
+.footer-contact-item+.footer-contact-item{border-inline-start:1px solid var(--footer-line)}
+.footer-contact-item:hover{background:var(--footer-soft)}
+.footer-contact-icon{flex:0 0 30px;width:30px;height:30px;display:grid;place-items:center;border-radius:9px;background:var(--footer-soft);color:var(--footer-ink)}
 .footer-contact-icon svg{width:15px;height:15px}
-.footer-contact-copy{display:flex;flex-direction:column;align-items:center;gap:2px;min-width:0;max-width:100%}
-.footer-contact-copy small{color:#8a948f;font-size:8px;letter-spacing:.25px}
+.footer-contact-copy{display:flex;flex-direction:column;gap:2px;min-width:0;max-width:100%}
+.footer-contact-copy small{color:var(--footer-muted);font-size:8px;letter-spacing:.25px}
 .footer-contact-copy strong{max-width:100%;font-size:10px;font-weight:700;line-height:1.3;overflow:hidden;text-overflow:ellipsis}
-.footer-contact-item-accent .footer-contact-copy strong{color:var(--restaurant-color)}
-.footer-bottom{display:flex;align-items:center;justify-content:space-between;padding:11px 14px;background:#fff;border-top:1px solid color-mix(in srgb,var(--restaurant-color) 12%,#ebe9e2);color:#98a09c;font-size:9px}
-.footer-bottom b{color:var(--restaurant-color);font-size:11px;margin-inline-start:4px}
+.footer-bottom{display:flex;align-items:center;justify-content:space-between;margin-top:13px;padding:11px 2px 0;border-top:1px solid var(--footer-line);color:var(--footer-muted);font-size:9px}
+.footer-bottom b{color:var(--footer-ink);font-size:11px;margin-inline-start:4px}
+[dir=rtl] .footer-contact-item{text-align:end}
 @media(max-width:600px){
-  .menu-footer{padding:0 12px 15px}
-  .footer-shell{border-radius:13px}
-  .footer-contact-item{min-height:76px;padding:12px 5px;gap:6px}
-  .footer-contact-icon{width:28px;height:28px;border-radius:9px}
+  .menu-footer{padding:18px 12px 11px}
+  .footer-contact-grid{border-radius:12px}
+  .footer-contact-item{min-height:66px;padding:9px 5px;flex-direction:column;gap:5px;text-align:center}
+  [dir=rtl] .footer-contact-item{text-align:center}
+  .footer-contact-icon{flex-basis:26px;width:26px;height:26px;border-radius:8px}
+  .footer-contact-icon svg{width:14px;height:14px}
+  .footer-contact-copy{align-items:center}
   .footer-contact-copy small{font-size:7px}
   .footer-contact-copy strong{font-size:8px;white-space:normal}
-  .footer-bottom{padding:9px 10px;font-size:8px}
+  .footer-bottom{margin-top:10px;padding:9px 1px 0;font-size:8px}
   .footer-bottom b{font-size:10px}
 }
 
