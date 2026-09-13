@@ -59,14 +59,6 @@ export function PublicMenuPage() {
           {restaurant.logo_url ? <img src={restaurant.logo_url} alt="" /> : <div className="restaurant-monogram">{restaurant.name_en.slice(0, 2).toUpperCase()}</div>}
           <h1>{localText(language, restaurant.name_en, restaurant.name_ar)}</h1>
           <p>{localText(language, restaurant.description_en ?? 'Freshly made for you.', restaurant.description_ar ?? 'نحضّره طازجاً من أجلك.')}</p>
-          <div className="restaurant-links">
-            {restaurant.phone && <a href={`tel:${restaurant.phone}`}><Phone />{restaurant.phone}</a>}
-            {restaurant.whatsapp && <a href={`https://wa.me/${restaurant.whatsapp.replace(/\D/g, '')}`} target="_blank" rel="noreferrer"><MessageCircle />WhatsApp</a>}
-            {(restaurant.address_en || restaurant.address_ar) && <span><MapPin />{localText(language, restaurant.address_en ?? '', restaurant.address_ar ?? '')}</span>}
-            {restaurant.maps_url && <a href={restaurant.maps_url} target="_blank" rel="noreferrer"><MapPin />{language === 'ar' ? 'الموقع' : 'Directions'}</a>}
-            {restaurant.instagram && <span><Instagram />{restaurant.instagram}</span>}
-            {restaurant.opening_hours && <span><Clock3 />{restaurant.opening_hours}</span>}
-          </div>
         </div>
       </header>
 
@@ -80,7 +72,14 @@ export function PublicMenuPage() {
           {!visibleItems.length && <p className="empty-items">{rtl ? 'لا توجد أصناف هنا.' : 'No items found here.'}</p>}
         </section>
       </div>
-      <footer className="menu-footer"><span>Menu by</span><b>fluxiva menu</b></footer>
+      <footer className="menu-footer"><div className="footer-contact">
+        {restaurant.phone && <a href={`tel:${restaurant.phone}`}><Phone />{restaurant.phone}</a>}
+        {restaurant.whatsapp && <a href={`https://wa.me/${restaurant.whatsapp.replace(/\D/g, '')}`} target="_blank" rel="noreferrer"><MessageCircle />WhatsApp</a>}
+        {(restaurant.address_en || restaurant.address_ar) && <span><MapPin />{localText(language, restaurant.address_en ?? '', restaurant.address_ar ?? '')}</span>}
+        {restaurant.maps_url && <a href={restaurant.maps_url} target="_blank" rel="noreferrer"><MapPin />{language === 'ar' ? 'الموقع' : 'Directions'}</a>}
+        {restaurant.instagram && <span><Instagram />{restaurant.instagram}</span>}
+        {restaurant.opening_hours && <span><Clock3 />{restaurant.opening_hours}</span>}
+      </div><div className="footer-credit"><span>Menu by</span><b>fluxiva menu</b></div></footer>
     </main>
   )
 }
