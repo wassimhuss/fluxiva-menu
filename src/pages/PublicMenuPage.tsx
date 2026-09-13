@@ -69,6 +69,8 @@ export function PublicMenuPage() {
   const rtl = language === 'ar'
   const coverUrl = restaurant.cover_image_url || (restaurant.slug === 'demo' ? '/hilal-oven-cover.jpg' : '')
   const coverImage = coverUrl ? `url(${coverUrl})` : 'none'
+  const footerContactCount = [restaurant.whatsapp, restaurant.address_en || restaurant.address_ar, restaurant.instagram].filter(Boolean).length
+  const instagramHandle = restaurant.instagram?.replace(/^@/, '')
   return (
     <main className="public-menu" dir={rtl ? 'rtl' : 'ltr'} style={{ '--restaurant-color': restaurant.primary_color, '--cover-image': coverImage } as React.CSSProperties}>
       <header className="menu-cover">
@@ -91,12 +93,11 @@ export function PublicMenuPage() {
         </section>
       </div>
       <footer className="menu-footer"><div className="footer-shell">
-        <div className="footer-intro"><span className="footer-kicker">{language === 'ar' ? 'تواصل معنا' : 'Stay connected'}</span><h2>{localText(language, restaurant.name_en, restaurant.name_ar)}</h2><p>{language === 'ar' ? 'نحن بانتظاركم كل يوم' : 'Fresh from our oven, every day.'}</p></div>
-        <div className="footer-contact-grid">
+        {footerContactCount > 0 && <div className="footer-contact-grid" style={{ '--footer-contact-count': footerContactCount } as React.CSSProperties}>
           {restaurant.whatsapp && <a className="footer-contact-item footer-contact-item-accent" href={`https://wa.me/${restaurant.whatsapp.replace(/\D/g, '')}`} target="_blank" rel="noreferrer"><span className="footer-contact-icon"><MessageCircle /></span><span className="footer-contact-copy"><small>WhatsApp</small><strong>{language === 'ar' ? 'راسلنا الآن' : 'Message us'}</strong></span></a>}
           {(restaurant.address_en || restaurant.address_ar) && <div className="footer-contact-item footer-contact-item-wide"><span className="footer-contact-icon"><MapPin /></span><span className="footer-contact-copy"><small>{language === 'ar' ? 'زورونا' : 'Visit us'}</small><strong>{localText(language, restaurant.address_en ?? '', restaurant.address_ar ?? '')}</strong></span></div>}
-          {restaurant.instagram && <span className="footer-contact-item"><span className="footer-contact-icon"><Instagram /></span><span className="footer-contact-copy"><small>{language === 'ar' ? 'تابعونا' : 'Follow us'}</small><strong>{restaurant.instagram}</strong></span></span>}
-        </div>
+          {restaurant.instagram && <a className="footer-contact-item" href={`https://instagram.com/${instagramHandle}`} target="_blank" rel="noreferrer"><span className="footer-contact-icon"><Instagram /></span><span className="footer-contact-copy"><small>{language === 'ar' ? 'تابعونا' : 'Follow us'}</small><strong>{restaurant.instagram}</strong></span></a>}
+        </div>}
         <div className="footer-bottom"><span>{language === 'ar' ? 'صحة وهنا' : 'Made for good food.'}</span><span>Menu by <b>fluxiva</b></span></div>
       </div></footer>
     </main>
