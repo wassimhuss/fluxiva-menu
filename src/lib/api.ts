@@ -51,6 +51,7 @@ export async function createRestaurant(session: Session, input: RestaurantInput)
     subscription_status: 'trial',
     trial_ends_at: new Date(Date.now() + 14 * 86400000).toISOString(),
   }).select().single()
+  if (error?.code === '23505') throw new Error('This menu link is already taken. Choose a different one.')
   if (error) throw error
   return data as Restaurant
 }
@@ -100,6 +101,9 @@ export async function deleteItem(id: string) {
 }
 
 export async function uploadRestaurantAsset(restaurantId: string, file: File) {
+  const supportedTypes = ['image/jpeg', 'image/png', 'image/webp']
+  if (!supportedTypes.includes(file.type)) throw new Error('Choose a JPG, PNG or WebP image.')
+  if (file.size > 8 * 1024 * 1024) throw new Error('Images must be smaller than 8 MB.')
   if (!supabase) return URL.createObjectURL(file)
   const extension = file.name.split('.').pop() || 'jpg'
   const path = `${restaurantId}/${crypto.randomUUID()}.${extension}`

@@ -1,6 +1,6 @@
 import { ArrowDown, ArrowUp, ChevronRight, ExternalLink, Eye, EyeOff, ImagePlus, LayoutDashboard, LogOut, Menu, Pencil, Plus, QrCode, Settings, Store, Trash2, Upload, X } from 'lucide-react'
 import QRCode from 'qrcode'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Brand } from '../components/Brand'
 import { Loading, Notice } from '../components/Status'
@@ -38,6 +38,7 @@ export function DashboardPage() {
   const [panel, setPanel] = useState<Panel>('overview')
   const [mobileNav, setMobileNav] = useState(false)
   const [error, setError] = useState('')
+  const [success, setSuccess] = useState('')
   const [categoryModal, setCategoryModal] = useState(false)
   const [itemModal, setItemModal] = useState(false)
   const [importModal, setImportModal] = useState(false)
@@ -51,12 +52,21 @@ export function DashboardPage() {
   const [qrData, setQrData] = useState('')
   const [qrSvg, setQrSvg] = useState('')
   const [saving, setSaving] = useState(false)
+  const successTimer = useRef<number | undefined>(undefined)
 
   useEffect(() => {
     if (demoMode) { setMenu(structuredClone(demoMenu)); setLoading(false); return }
     if (!session) return
     getOwnerMenu(session).then((data) => data ? setMenu(data) : navigate('/onboarding')).catch((caught) => setError(caught instanceof Error ? caught.message : 'Could not load restaurant')).finally(() => setLoading(false))
   }, [session, demoMode, navigate])
+
+  useEffect(() => () => window.clearTimeout(successTimer.current), [])
+
+  function showSuccess(message: string) {
+    window.clearTimeout(successTimer.current)
+    setSuccess(message)
+    successTimer.current = window.setTimeout(() => setSuccess(''), 3200)
+  }
 
   const menuUrl = useMemo(() => menu ? `${import.meta.env.VITE_APP_URL || window.location.origin}/m/${menu.restaurant.slug}` : '', [menu])
 
@@ -89,6 +99,7 @@ export function DashboardPage() {
         setMenu({ ...menu, categories: [...menu.categories, category] })
       }
       setCategoryModal(false); setEditingCategory(null); setCategoryDraft({ name_en: '', name_ar: '' })
+      showSuccess(editingCategory ? 'Category updated.' : 'Category added.')
     } catch (caught) { setError(caught instanceof Error ? caught.message : 'Could not add category') }
     finally { setSaving(false) }
   }
@@ -101,7 +112,7 @@ export function DashboardPage() {
 
   async function removeCategory(category: Category) {
     if (!menu || !window.confirm(`Delete ${category.name_en} and all items inside it?`)) return
-    try { await deleteCategory(category.id); setMenu({ ...menu, categories: menu.categories.filter((entry) => entry.id !== category.id), items: menu.items.filter((item) => item.category_id !== category.id) }) }
+    try { await deleteCategory(category.id); setMenu({ ...menu, categories: menu.categories.filter((entry) => entry.id !== category.id), items: menu.items.filter((item) => item.category_id !== category.id) }); showSuccess('Category deleted.') }
     catch (caught) { setError(caught instanceof Error ? caught.message : 'Could not delete category') }
   }
 
@@ -109,19 +120,16 @@ export function DashboardPage() {
     event.preventDefault(); if (!menu) return
     setSaving(true); setError('')
     try {
-      const input = { restaurant_id: menu.restaurant.id, category_id: itemDraft.category_id, name_en: itemDraft.name_en, name_ar: itemDraft.name_ar, description_en: itemDraft.description_en, description_ar: itemDraft.description_ar, price_lbp: Number(itemDraft.price_lbp) || 0, variants: cleanVariants(itemDraft.variants), available: editingItem?.available ?? true, sort_order: editingItem?.sort_order ?? menu.items.filter((entry) => entry.category_id === itemDraft.category_id).length + 1 }
+      const image_url = itemDraft.image_file ? await uploadRestaurantAsset(menu.restaurant.id, itemDraft.image_file) : itemDraft.image_url
+      const input = { restaurant_id: menu.restaurant.id, category_id: itemDraft.category_id, name_en: itemDraft.name_en, name_ar: itemDraft.name_ar, description_en: itemDraft.description_en, description_ar: itemDraft.description_ar, price_lbp: Number(itemDraft.price_lbp) || 0, image_url, variants: cleanVariants(itemDraft.variants), available: editingItem?.available ?? true, sort_order: editingItem?.sort_order ?? menu.items.filter((entry) => entry.category_id === itemDraft.category_id).length + 1 }
       let item: MenuItem
       if (editingItem) {
         item = { ...editingItem, ...input }
         await updateItem(editingItem.id, input)
       } else item = await createItem(input)
-      if (itemDraft.image_file) {
-        const image_url = await uploadRestaurantAsset(menu.restaurant.id, itemDraft.image_file)
-        await updateItem(item.id, { image_url })
-        item = { ...item, image_url }
-      }
       setMenu({ ...menu, items: editingItem ? menu.items.map((entry) => entry.id === item.id ? item : entry) : [...menu.items, item] })
       setItemModal(false); setEditingItem(null); setItemDraft(emptyItem(menu.categories[0]?.id))
+      showSuccess(editingItem ? 'Menu item updated.' : 'Menu item added.')
     } catch (caught) { setError(caught instanceof Error ? caught.message : 'Could not add item') }
     finally { setSaving(false) }
   }
@@ -129,16 +137,19 @@ export function DashboardPage() {
   async function toggleAvailability(item: MenuItem) {
     if (!menu) return
     const available = !item.available
+    setError('')
     setMenu({ ...menu, items: menu.items.map((entry) => entry.id === item.id ? { ...entry, available } : entry) })
-    try { await updateItem(item.id, { available }) } catch { setMenu(menu) }
+    try { await updateItem(item.id, { available }) }
+    catch (caught) { setMenu(menu); setError(caught instanceof Error ? caught.message : 'Could not update item visibility') }
   }
 
   async function saveRestaurant(event: React.FormEvent) {
     event.preventDefault(); if (!menu) return
     setSaving(true); setError('')
     try {
-      const { name_en, name_ar, description_en, description_ar, primary_color, phone, whatsapp, instagram, maps_url, address_en, address_ar, opening_hours, temporarily_closed, default_language } = menu.restaurant
-      await updateRestaurant(menu.restaurant.id, { name_en, name_ar, description_en, description_ar, primary_color, phone, whatsapp, instagram, maps_url, address_en, address_ar, opening_hours, temporarily_closed, default_language })
+      const { name_en, name_ar, description_en, description_ar, primary_color, whatsapp, instagram, address_en, address_ar, temporarily_closed, default_language } = menu.restaurant
+      await updateRestaurant(menu.restaurant.id, { name_en, name_ar, description_en, description_ar, primary_color, whatsapp, instagram, address_en, address_ar, temporarily_closed, default_language })
+      showSuccess('Restaurant details saved.')
     } catch (caught) { setError(caught instanceof Error ? caught.message : 'Could not save restaurant') }
     finally { setSaving(false) }
   }
@@ -150,6 +161,7 @@ export function DashboardPage() {
       const logo_url = await uploadRestaurantAsset(menu.restaurant.id, file)
       await updateRestaurant(menu.restaurant.id, { logo_url })
       setMenu({ ...menu, restaurant: { ...menu.restaurant, logo_url } })
+      showSuccess('Restaurant logo updated.')
     } catch (caught) { setError(caught instanceof Error ? caught.message : 'Could not upload logo') }
     finally { setSaving(false) }
   }
@@ -161,7 +173,7 @@ export function DashboardPage() {
 
   async function removeItem(item: MenuItem) {
     if (!menu || !window.confirm(`Delete ${item.name_en}?`)) return
-    try { await deleteItem(item.id); setMenu({ ...menu, items: menu.items.filter((entry) => entry.id !== item.id) }) }
+    try { await deleteItem(item.id); setMenu({ ...menu, items: menu.items.filter((entry) => entry.id !== item.id) }); showSuccess('Menu item deleted.') }
     catch (caught) { setError(caught instanceof Error ? caught.message : 'Could not delete item') }
   }
 
@@ -170,9 +182,12 @@ export function DashboardPage() {
     const index = menu.categories.findIndex((entry) => entry.id === category.id); const nextIndex = index + direction
     if (index < 0 || nextIndex < 0 || nextIndex >= menu.categories.length) return
     const next = menu.categories[nextIndex]
-    await Promise.all([updateCategory(category.id, { sort_order: next.sort_order }), updateCategory(next.id, { sort_order: category.sort_order })])
-    const categories = [...menu.categories]; categories[index] = { ...next, sort_order: category.sort_order }; categories[nextIndex] = { ...category, sort_order: next.sort_order }
-    setMenu({ ...menu, categories })
+    setError('')
+    try {
+      await Promise.all([updateCategory(category.id, { sort_order: next.sort_order }), updateCategory(next.id, { sort_order: category.sort_order })])
+      const categories = [...menu.categories]; categories[index] = { ...next, sort_order: category.sort_order }; categories[nextIndex] = { ...category, sort_order: next.sort_order }
+      setMenu({ ...menu, categories })
+    } catch (caught) { setError(caught instanceof Error ? caught.message : 'Could not reorder categories') }
   }
 
   async function moveItem(item: MenuItem, direction: -1 | 1) {
@@ -181,12 +196,16 @@ export function DashboardPage() {
     const index = siblings.findIndex((entry) => entry.id === item.id); const nextIndex = index + direction
     if (index < 0 || nextIndex < 0 || nextIndex >= siblings.length) return
     const next = siblings[nextIndex]
-    await Promise.all([updateItem(item.id, { sort_order: next.sort_order }), updateItem(next.id, { sort_order: item.sort_order })])
-    const items = menu.items.map((entry) => entry.id === item.id ? { ...entry, sort_order: next.sort_order } : entry.id === next.id ? { ...entry, sort_order: item.sort_order } : entry)
-    setMenu({ ...menu, items })
+    setError('')
+    try {
+      await Promise.all([updateItem(item.id, { sort_order: next.sort_order }), updateItem(next.id, { sort_order: item.sort_order })])
+      const items = menu.items.map((entry) => entry.id === item.id ? { ...entry, sort_order: next.sort_order } : entry.id === next.id ? { ...entry, sort_order: item.sort_order } : entry)
+      setMenu({ ...menu, items })
+    } catch (caught) { setError(caught instanceof Error ? caught.message : 'Could not reorder menu items') }
   }
 
   function openItem(categoryId = menu?.categories[0]?.id ?? '', item?: MenuItem) {
+    if (!menu?.categories.length) { openCategory(); return }
     setEditingItem(item ?? null)
     setItemDraft(item ? { category_id: item.category_id, name_en: item.name_en, name_ar: item.name_ar, description_en: item.description_en ?? '', description_ar: item.description_ar ?? '', price_lbp: String(item.price_lbp || ''), variants: structuredClone(item.variants), image_file: null, image_url: item.image_url } : emptyItem(categoryId))
     setItemModal(true)
@@ -217,13 +236,14 @@ export function DashboardPage() {
   function addVariant() { setItemDraft((current) => ({ ...current, variants: [...current.variants, { id: crypto.randomUUID(), name_en: '', name_ar: '', price_lbp: 0 }] })) }
   function updateVariant(index: number, key: keyof Variant, value: string | number) { setItemDraft((current) => ({ ...current, variants: current.variants.map((variant, position) => position === index ? { ...variant, [key]: value } : variant) })) }
 
-  if (loading || !menu) return <main className="dashboard-loading"><Loading label="Loading your restaurant…" />{error && <Notice tone="error">{error}</Notice>}</main>
+  if (loading) return <main className="dashboard-loading"><Loading label="Loading your restaurant…" /></main>
+  if (!menu) return <main className="dashboard-loading"><div className="dashboard-load-error"><Store /><h1>We couldn’t open your restaurant.</h1><p>{error || 'Please check your connection and try again.'}</p><button className="button button-primary" onClick={() => window.location.reload()}>Try again</button></div></main>
   const trialDays = menu.restaurant.trial_ends_at ? Math.max(0, Math.ceil((new Date(menu.restaurant.trial_ends_at).getTime() - Date.now()) / 86400000)) : 14
 
   return (
     <main className="dashboard-layout">
       <aside className={`dashboard-sidebar ${mobileNav ? 'open' : ''}`}>
-        <div className="sidebar-top"><Brand light /><button className="mobile-close" onClick={() => setMobileNav(false)}><X /></button></div>
+        <div className="sidebar-top"><Brand light /><button className="mobile-close" aria-label="Close navigation" onClick={() => setMobileNav(false)}><X /></button></div>
         <div className="restaurant-switcher"><span className="mini-monogram" style={{ backgroundColor: menu.restaurant.primary_color }}>{menu.restaurant.name_en.slice(0, 2).toUpperCase()}</span><span><b>{menu.restaurant.name_en}</b><small>Owner workspace</small></span><ChevronRight /></div>
         <nav>
           <button className={panel === 'overview' ? 'selected' : ''} onClick={() => { setPanel('overview'); setMobileNav(false) }}><LayoutDashboard /> Overview</button>
@@ -235,9 +255,10 @@ export function DashboardPage() {
       {mobileNav && <button className="sidebar-backdrop" onClick={() => setMobileNav(false)} aria-label="Close navigation" />}
 
       <section className="dashboard-main">
-        <header className="dashboard-header"><button className="mobile-menu" onClick={() => setMobileNav(true)}><Menu /></button><div><span>Restaurant dashboard</span><b>{menu.restaurant.name_en}</b></div><div className="header-actions"><Link className="button button-small button-outline" to={`/m/${menu.restaurant.slug}`} target="_blank">View menu <ExternalLink /></Link><button className="button button-small button-primary" onClick={openQr}><QrCode /> QR code</button></div></header>
+        <header className="dashboard-header"><button className="mobile-menu" aria-label="Open navigation" onClick={() => setMobileNav(true)}><Menu /></button><div><span>Restaurant dashboard</span><b>{menu.restaurant.name_en}</b></div><div className="header-actions"><Link className="button button-small button-outline" to={`/m/${menu.restaurant.slug}`} target="_blank">View menu <ExternalLink /></Link><button className="button button-small button-primary" onClick={openQr}><QrCode /> QR code</button></div></header>
         <div className="dashboard-content">
           {error && <Notice tone="error">{error}</Notice>}
+          {success && <div className="dashboard-toast" role="status"><Notice tone="success">{success}</Notice></div>}
           {demoMode && <Notice>This preview uses sample data. Connect Supabase to save changes and create owner accounts.</Notice>}
 
           {panel === 'overview' && <>
@@ -248,7 +269,7 @@ export function DashboardPage() {
               <article className="stat-card accent"><span>{menu.restaurant.subscription_status === 'trial' ? 'Free trial' : 'Subscription'}</span><strong>{menu.restaurant.subscription_status === 'trial' ? `${trialDays} days` : menu.restaurant.subscription_status}</strong><small>{menu.restaurant.subscription_status === 'trial' ? 'remaining in your trial' : 'Restaurant access'}</small></article>
             </div>
             <div className="overview-columns">
-              <article className="dashboard-card"><div className="card-heading"><div><h2>Quick actions</h2><p>The most common menu tasks.</p></div></div><div className="quick-actions"><button onClick={() => { setPanel('menu'); openItem() }}><span><Plus /></span><div><b>Add an item</b><small>Name, price and size options</small></div><ChevronRight /></button><button onClick={() => { setPanel('menu'); setCategoryModal(true) }}><span><Menu /></span><div><b>Add a category</b><small>Group your menu items</small></div><ChevronRight /></button><button onClick={openQr}><span><QrCode /></span><div><b>Download QR code</b><small>Ready to print and share</small></div><ChevronRight /></button></div></article>
+              <article className="dashboard-card"><div className="card-heading"><div><h2>Quick actions</h2><p>The most common menu tasks.</p></div></div><div className="quick-actions"><button onClick={() => { setPanel('menu'); openItem() }}><span><Plus /></span><div><b>Add an item</b><small>Name, price and size options</small></div><ChevronRight /></button><button onClick={() => { setPanel('menu'); openCategory() }}><span><Menu /></span><div><b>Add a category</b><small>Group your menu items</small></div><ChevronRight /></button><button onClick={openQr}><span><QrCode /></span><div><b>Download QR code</b><small>Ready to print and share</small></div><ChevronRight /></button></div></article>
               <article className="dashboard-card qr-preview"><div className="card-heading"><div><h2>Your menu link</h2><p>Share this link anywhere.</p></div></div><div className="link-preview"><span>{menuUrl.replace(/^https?:\/\//, '')}</span><Link to={`/m/${menu.restaurant.slug}`} target="_blank"><ExternalLink /></Link></div><div className="phone-mini"><div className="phone-mini-cover" style={{ backgroundColor: menu.restaurant.primary_color }}><span>{menu.restaurant.name_en.slice(0, 2).toUpperCase()}</span><b>{menu.restaurant.name_en}</b></div><div><i /><i /><i /></div></div></article>
             </div>
           </>}
@@ -273,13 +294,10 @@ export function DashboardPage() {
                 <label dir="rtl">الاسم بالعربية<input required value={menu.restaurant.name_ar} onChange={(e) => restaurantField('name_ar', e.target.value)} /></label>
                 <label>English tagline<input value={menu.restaurant.description_en ?? ''} onChange={(e) => restaurantField('description_en', e.target.value)} placeholder="Fresh from our oven" /></label>
                 <label dir="rtl">الوصف بالعربية<input value={menu.restaurant.description_ar ?? ''} onChange={(e) => restaurantField('description_ar', e.target.value)} placeholder="طازج من فرننا" /></label>
-                <label>Phone<input value={menu.restaurant.phone ?? ''} onChange={(e) => restaurantField('phone', e.target.value)} placeholder="+961 70 123 456" /></label>
                 <label>WhatsApp number<input value={menu.restaurant.whatsapp ?? ''} onChange={(e) => restaurantField('whatsapp', e.target.value)} placeholder="+961 70 123 456" /></label>
                 <label>Instagram<input value={menu.restaurant.instagram ?? ''} onChange={(e) => restaurantField('instagram', e.target.value)} placeholder="@restaurant" /></label>
-                <label>Google Maps link<input value={menu.restaurant.maps_url ?? ''} onChange={(e) => restaurantField('maps_url', e.target.value)} placeholder="https://maps.google.com/..." /></label>
                 <label>English address<textarea value={menu.restaurant.address_en ?? ''} onChange={(e) => restaurantField('address_en', e.target.value)} /></label>
                 <label dir="rtl">العنوان بالعربية<textarea value={menu.restaurant.address_ar ?? ''} onChange={(e) => restaurantField('address_ar', e.target.value)} /></label>
-                <label>Opening hours<input value={menu.restaurant.opening_hours ?? ''} onChange={(e) => restaurantField('opening_hours', e.target.value)} placeholder="Every day · 10:00 – 23:00" /></label>
                 <label className="closed-toggle"><span>Menu status</span><button type="button" className={`status-switch ${menu.restaurant.temporarily_closed ? 'on' : ''}`} onClick={() => restaurantField('temporarily_closed', !menu.restaurant.temporarily_closed)}><i />{menu.restaurant.temporarily_closed ? 'Temporarily closed' : 'Open for customers'}</button></label>
                 <label>Brand color<input className="settings-color" type="color" value={menu.restaurant.primary_color} onChange={(e) => restaurantField('primary_color', e.target.value)} /></label>
                 <label>Default language<select value={menu.restaurant.default_language} onChange={(e) => restaurantField('default_language', e.target.value)}><option value="en">English</option><option value="ar">العربية</option></select></label>

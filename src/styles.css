@@ -230,3 +230,13 @@
 @media(prefers-reduced-motion:reduce){
   .public-menu-loading-mark:before,.public-menu-loading-mark:after,.public-menu-loading-progress span,.public-menu-loading-orbit-one,.public-menu-loading-orbit-two{animation:none}
 }
+
+/* Owner dashboard recovery state. */
+.dashboard-load-error{width:min(420px,calc(100% - 32px));padding:34px;text-align:center;background:#fff;border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow)}
+.dashboard-load-error>svg{width:34px;height:34px;color:var(--orange)}
+.dashboard-load-error h1{font-family:'Playfair Display',serif;font-size:27px;margin:15px 0 8px}
+.dashboard-load-error p{color:var(--muted);font-size:13px;line-height:1.6;margin-bottom:20px}
+.dashboard-toast{position:fixed;z-index:45;top:92px;right:24px;width:min(330px,calc(100% - 28px));animation:dashboard-toast-in .22s ease-out}
+.dashboard-toast .notice{margin:0;box-shadow:0 13px 35px rgba(30,69,52,.16)}
+@keyframes dashboard-toast-in{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+@media(max-width:600px){.dashboard-toast{top:78px;right:14px}}

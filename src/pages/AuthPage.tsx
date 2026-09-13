@@ -50,7 +50,7 @@ export function AuthPage({ mode }: { mode: 'login' | 'signup' }) {
           {error && <Notice tone="error">{error}</Notice>}
           {message && <Notice tone="success">{message}</Notice>}
           <label>Email address<input required type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="owner@restaurant.com" /></label>
-          <label>Password<span className="password-field"><input required minLength={8} type={showPassword ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="At least 8 characters" /><button type="button" onClick={() => setShowPassword(!showPassword)} aria-label="Show password">{showPassword ? <EyeOff /> : <Eye />}</button></span></label>
+          <label>Password<span className="password-field"><input required aria-label="Password" minLength={8} type={showPassword ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="At least 8 characters" /><button type="button" onClick={() => setShowPassword(!showPassword)} aria-label={showPassword ? 'Hide password' : 'Show password'}>{showPassword ? <EyeOff /> : <Eye />}</button></span></label>
           <button className="button button-primary full" disabled={busy}>{busy ? 'Please wait…' : isSignup ? 'Create account' : 'Sign in'}</button>
           <p className="auth-switch">{isSignup ? 'Already have an account?' : 'New to Fluxiva Menu?'} <Link to={isSignup ? '/login' : '/signup'}>{isSignup ? 'Sign in' : 'Start free'}</Link></p>
           {!isSupabaseConfigured && <small className="demo-hint">Supabase credentials are not connected yet.</small>}
