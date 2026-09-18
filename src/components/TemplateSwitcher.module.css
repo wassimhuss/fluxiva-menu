@@ -1,0 +1,60 @@
+/* Preview-only template picker. Temporary scaffolding until the owner's chosen
+   template is stored on the restaurant row. */
+
+.bar {
+  position: fixed;
+  inset-block-end: max(16px, env(safe-area-inset-bottom));
+  inset-inline: 0;
+  z-index: 200;
+  display: flex;
+  justify-content: center;
+  padding-inline: 14px;
+  pointer-events: none;
+}
+
+.inner {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 100%;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding: 6px;
+  border-radius: 999px;
+  background: rgba(14, 20, 18, .86);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, .14);
+  box-shadow: 0 16px 40px rgba(9, 14, 13, .34);
+}
+
+.inner::-webkit-scrollbar { display: none; }
+
+.label {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, .42);
+  padding-inline: 12px 8px;
+  white-space: nowrap;
+}
+
+.option {
+  border: 0;
+  background: none;
+  color: rgba(255, 255, 255, .66);
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 9px 16px;
+  border-radius: 999px;
+  white-space: nowrap;
+  transition: background .22s ease, color .22s ease;
+}
+
+.option:hover { color: #fff; background: rgba(255, 255, 255, .1); }
+
+.option.active {
+  background: #fff;
+  color: #0e1412;
+}
