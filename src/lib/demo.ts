@@ -1,4 +1,4 @@
-import type { Category, MenuItem, RestaurantMenu, Variant } from './types'
+import type { Category, MenuItem, PlatformAuditEntry, PlatformRestaurant, RestaurantMenu, Variant } from './types'
 
 const categories: Category[] = [
   ['manakish', 'Manakish', 'مناقيش'], ['croissants', 'Croissants', 'كرواسون'], ['soiree', 'Soiree', 'سوارية'],
@@ -62,3 +62,30 @@ export const demoMenu: RestaurantMenu = {
     item('Cold drinks', 'Soft Drink', 'مشروب غازي', 'Choose cola, orange or lemon-lime', 'اختر كولا، برتقال أو ليمون', 100000),
   ]
 }
+
+// ---------------------------------------------------------------------------
+// Operator console sample data
+// ---------------------------------------------------------------------------
+
+/** Days from now as an ISO timestamp; negative values are in the past. */
+const daysFromNow = (days: number) => new Date(Date.now() + days * 86400000).toISOString()
+
+/**
+ * Deliberately spans every lifecycle the console has to surface — perpetual,
+ * renewing soon, lapsed, mid-trial, trial run out and suspended — so the
+ * filters and attention ordering are visible without real customers.
+ */
+export const demoPlatformRestaurants: PlatformRestaurant[] = [
+  { id: 'demo-restaurant', slug: 'demo', name_en: 'Hilal Oven', name_ar: 'فرن الهلال', primary_color: '#4f5535', template_id: 'classic', temporarily_closed: false, subscription_status: 'active', subscription_ends_at: undefined, created_at: daysFromNow(-420), owner_email: 'owner@hilaloven.com', item_count: 26 },
+  { id: 'demo-2', slug: 'cedar-grill', name_en: 'Cedar Grill', name_ar: 'مشاوي الأرز', primary_color: '#8c3b2a', template_id: 'kiosk', temporarily_closed: false, subscription_status: 'active', subscription_ends_at: daysFromNow(12), created_at: daysFromNow(-360), owner_email: 'hello@cedargrill.com', item_count: 41 },
+  { id: 'demo-3', slug: 'beirut-bites', name_en: 'Beirut Bites', name_ar: 'لقمة بيروت', primary_color: '#2f5d62', template_id: 'aurora', temporarily_closed: false, subscription_status: 'active', subscription_ends_at: daysFromNow(-6), created_at: daysFromNow(-400), owner_email: 'team@beirutbites.com', item_count: 18 },
+  { id: 'demo-4', slug: 'saida-sweets', name_en: 'Saida Sweets', name_ar: 'حلويات صيدا', primary_color: '#b8860b', template_id: 'reel', temporarily_closed: false, subscription_status: 'trial', trial_ends_at: daysFromNow(9), created_at: daysFromNow(-5), owner_email: 'info@saidasweets.com', item_count: 12 },
+  { id: 'demo-5', slug: 'zahle-kitchen', name_en: 'Zahle Kitchen', name_ar: 'مطبخ زحلة', primary_color: '#3f6d4e', template_id: 'noir', temporarily_closed: true, subscription_status: 'trial', trial_ends_at: daysFromNow(-3), created_at: daysFromNow(-17), owner_email: 'chef@zahlekitchen.com', item_count: 7 },
+  { id: 'demo-6', slug: 'byblos-cafe', name_en: 'Byblos Cafe', name_ar: 'مقهى جبيل', primary_color: '#6b4f8a', template_id: 'story', temporarily_closed: false, subscription_status: 'suspended', subscription_ends_at: daysFromNow(-58), created_at: daysFromNow(-500), owner_email: 'contact@bybloscafe.com', item_count: 23 },
+]
+
+export const demoPlatformAudit: PlatformAuditEntry[] = [
+  { id: 'audit-1', actor_email: 'you@fluxiva.com', action: 'subscription.active', restaurant_slug: 'cedar-grill', details: { previous_ends_at: daysFromNow(-353), ends_at: daysFromNow(12) }, created_at: daysFromNow(-353) },
+  { id: 'audit-2', actor_email: 'you@fluxiva.com', action: 'subscription.suspended', restaurant_slug: 'byblos-cafe', details: { previous_ends_at: daysFromNow(-58), ends_at: null }, created_at: daysFromNow(-58) },
+  { id: 'audit-3', actor_email: 'you@fluxiva.com', action: 'subscription.active', restaurant_slug: 'beirut-bites', details: { previous_ends_at: null, ends_at: daysFromNow(-6) }, created_at: daysFromNow(-371) },
+]

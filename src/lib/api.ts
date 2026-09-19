@@ -1,7 +1,7 @@
 import type { Session } from '@supabase/supabase-js'
-import { demoMenu } from './demo'
+import { demoMenu, demoPlatformAudit, demoPlatformRestaurants } from './demo'
 import { supabase } from './supabase'
-import type { Category, MenuItem, Restaurant, RestaurantMenu, Variant } from './types'
+import type { AdminRole, Category, MenuItem, PlatformAuditEntry, PlatformRestaurant, Restaurant, RestaurantMenu, Variant } from './types'
 
 type RestaurantInput = Pick<Restaurant, 'name_en' | 'name_ar' | 'slug' | 'primary_color' | 'phone' | 'whatsapp' | 'instagram' | 'maps_url' | 'address_en' | 'address_ar' | 'opening_hours' | 'temporarily_closed' | 'default_language'>
 type CategoryInput = Pick<Category, 'restaurant_id' | 'name_en' | 'name_ar' | 'sort_order'>
@@ -147,13 +147,39 @@ export async function uploadRestaurantAsset(restaurantId: string, file: File, pu
   return supabase.storage.from('menu-assets').getPublicUrl(path).data.publicUrl
 }
 
-export async function listPlatformRestaurants() {
-  if (!supabase) return [demoMenu.restaurant]
-  const { data, error } = await supabase.rpc('platform_list_restaurants')
-  if (error) throw error
-  return data as Restaurant[]
+/**
+ * The signed-in user's operator role, or null for everyone else.
+ *
+ * Demo mode has no Supabase and therefore no real data to protect, so it opens
+ * the console to make the operator tooling demonstrable.
+ */
+export async function getAdminRole(): Promise<AdminRole | null> {
+  if (!supabase) return 'super_admin'
+  const { data, error } = await supabase.rpc('platform_admin_role')
+  // A failure here means "not an operator" as far as the UI is concerned; the
+  // database rejects the privileged calls regardless of what this returns.
+  if (error) return null
+  return (data as AdminRole | null) ?? null
 }
 
+export async function listPlatformRestaurants(): Promise<PlatformRestaurant[]> {
+  if (!supabase) return demoPlatformRestaurants
+  const { data, error } = await supabase.rpc('platform_list_restaurants')
+  if (error) throw error
+  return (data ?? []) as PlatformRestaurant[]
+}
+
+export async function getPlatformAudit(limit = 50): Promise<PlatformAuditEntry[]> {
+  if (!supabase) return demoPlatformAudit
+  const { data, error } = await supabase.rpc('platform_audit', { limit_input: limit })
+  if (error) throw error
+  return (data ?? []) as PlatformAuditEntry[]
+}
+
+/**
+ * Passing a null `endsAt` for an activation lets the database extend from the
+ * existing renewal date, so renewing early does not discard remaining time.
+ */
 export async function setSubscription(restaurantId: string, status: Restaurant['subscription_status'], endsAt: string | null) {
   if (!supabase) return
   const { error } = await supabase.rpc('platform_set_subscription', {

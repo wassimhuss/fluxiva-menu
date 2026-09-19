@@ -1,4 +1,4 @@
-import { ArrowDown, ArrowUp, ChevronRight, ExternalLink, Eye, EyeOff, ImagePlus, LayoutDashboard, LogOut, Menu, Palette, Pencil, Plus, QrCode, Settings, Store, Trash2, Upload, X } from 'lucide-react'
+import { ArrowDown, ArrowUp, ChevronRight, ExternalLink, Eye, EyeOff, ImagePlus, LayoutDashboard, LogOut, Menu, Palette, Pencil, Plus, QrCode, Settings, ShieldCheck, Store, Trash2, Upload, X } from 'lucide-react'
 import QRCode from 'qrcode'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
@@ -32,7 +32,7 @@ function csvRows(text: string) {
 }
 
 export function DashboardPage() {
-  const { session, demoMode, signOut } = useAuth()
+  const { session, demoMode, adminRole, signOut } = useAuth()
   const navigate = useNavigate()
   const [menu, setMenu] = useState<RestaurantMenu | null>(null)
   const [loading, setLoading] = useState(true)
@@ -281,7 +281,7 @@ export function DashboardPage() {
           <button className={panel === 'design' ? 'selected' : ''} onClick={() => { setPanel('design'); setMobileNav(false) }}><Palette /> Menu design</button>
           <button className={panel === 'settings' ? 'selected' : ''} onClick={() => { setPanel('settings'); setMobileNav(false) }}><Settings /> Restaurant settings</button>
         </nav>
-        <div className="sidebar-bottom"><Link to={`/m/${menu.restaurant.slug}`} target="_blank"><ExternalLink /> Open public menu</Link><button onClick={async () => { await signOut(); navigate('/') }}><LogOut /> Sign out</button>{demoMode && <Link className="platform-link" to="/platform">Fluxiva control</Link>}</div>
+        <div className="sidebar-bottom"><Link to={`/m/${menu.restaurant.slug}`} target="_blank"><ExternalLink /> Open public menu</Link><button onClick={async () => { await signOut(); navigate('/') }}><LogOut /> Sign out</button>{adminRole && <Link className="platform-link" to="/platform"><ShieldCheck /> Operator console</Link>}</div>
       </aside>
       {mobileNav && <button className="sidebar-backdrop" onClick={() => setMobileNav(false)} aria-label="Close navigation" />}
 

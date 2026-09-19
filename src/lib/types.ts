@@ -1,6 +1,35 @@
 export type Language = 'en' | 'ar'
 export type SubscriptionStatus = 'trial' | 'active' | 'suspended'
 
+/** Operator console roles. Only `super_admin` may change subscriptions. */
+export type AdminRole = 'super_admin' | 'support'
+
+/** A restaurant as the operator console sees it, with owner and menu context. */
+export interface PlatformRestaurant {
+  id: string
+  slug: string
+  name_en: string
+  name_ar: string
+  primary_color: string
+  template_id?: string
+  temporarily_closed?: boolean
+  subscription_status: SubscriptionStatus
+  trial_ends_at?: string
+  subscription_ends_at?: string
+  created_at: string
+  owner_email?: string
+  item_count: number
+}
+
+export interface PlatformAuditEntry {
+  id: string
+  actor_email?: string
+  action: string
+  restaurant_slug?: string
+  details: { previous_ends_at?: string | null; ends_at?: string | null }
+  created_at: string
+}
+
 export interface Restaurant {
   id: string
   owner_id?: string

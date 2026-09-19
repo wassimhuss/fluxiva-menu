@@ -9,7 +9,7 @@ A bilingual QR menu SaaS for Lebanese restaurants. Owners can create a restauran
 - `/onboarding` — restaurant setup
 - `/dashboard` — menu, design and QR management
 - `/m/:slug` — public bilingual menu
-- `/platform` — private subscription controls for the Fluxiva operator
+- `/platform` — private operator console for the Fluxiva team
 
 The menu editor supports item/category editing and ordering, item photos, sold-out labels, quick theme presets, WhatsApp and Google Maps links, opening hours, and a bilingual preview.
 
@@ -34,6 +34,22 @@ Create a new Static Site from this repository. Render reads `render.yaml`. Add t
 - `VITE_APP_URL` — the final public Render URL
 
 The rewrite rule keeps restaurant URLs such as `/m/cedar-oven` working when opened directly or from a QR code.
+
+## Operator console
+
+`/platform` lists every restaurant with its owner, menu size, subscription state and whether its public menu is currently being served, ordered so lapsed and soon-to-lapse accounts come first. Subscription changes are recorded in an audit trail with the operator's email.
+
+Access is controlled by `private.platform_admins`, a table in a schema revoked from `anon` and `authenticated`. Two roles exist: `super_admin` may change subscriptions, `support` is read-only. `public.platform_admin_role()` reports the caller's role so the app can hide the console, and the privileged functions re-check the role themselves — a non-operator who reaches the route is redirected, and the database would reject them regardless.
+
+Grant yourself access after creating your account:
+
+```sql
+insert into private.platform_admins (user_id, role)
+select id, 'super_admin' from auth.users where email = 'your@email.com'
+on conflict (user_id) do update set role = 'super_admin';
+```
+
+Paid subscriptions expire: a menu is served while the status is `active` **and** `subscription_ends_at` is null or in the future, or while an unexpired trial runs. A null end date means no expiry, so activating without a date keeps a restaurant online indefinitely. Activating through the console extends a year from the existing renewal date rather than from today, so renewing early never discards time already paid for.
 
 ## Current MVP scope
 
