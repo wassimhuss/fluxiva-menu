@@ -41,7 +41,9 @@ export function TemplateSwitcher({ active, onSelect }: { active: string; onSelec
             <button
               key={template.id}
               className={`${styles.option} ${active === template.id ? styles.active : ''}`}
-              onClick={() => onSelect(template.id)}
+              // Collapse on pick: the whole point of choosing a design is to
+              // look at it, and the open panel sits over the menu.
+              onClick={() => { onSelect(template.id); setOpen(false) }}
             >
               <span className={styles.optionName}>{template.name}</span>
               {template.scroll && <span className={styles.optionScroll}>{template.scroll}</span>}

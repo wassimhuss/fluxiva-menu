@@ -129,7 +129,7 @@
   position: sticky;
   inset-block-start: 0;
   z-index: 20;
-  padding: 13px 0;
+  padding: 2px 0;
   background: var(--aurora-bar);
   backdrop-filter: blur(16px);
 }
@@ -138,7 +138,11 @@
   display: flex;
   gap: 9px;
   overflow-x: auto;
-  padding-inline: 20px;
+  /* `overflow-x: auto` makes the browser compute overflow-y to `auto` as well,
+     so this box clips vertically too. The active chip lifts 2px and casts a
+     24px glow, both of which were being sliced off — hence the room above and
+     below. */
+  padding: 11px 20px 15px;
   scrollbar-width: none;
   justify-content: flex-start;
 }
@@ -156,6 +160,8 @@
   padding: 11px 20px;
   border-radius: 999px;
   white-space: nowrap;
+  /* Never let the row squeeze a chip narrower than its label. */
+  flex: 0 0 auto;
   box-shadow: 0 4px 14px rgba(27, 36, 34, .05);
   transition: transform .3s cubic-bezier(.34, 1.56, .64, 1), background .25s ease, color .25s ease;
 }
