@@ -1,4 +1,4 @@
-import type { Category, MenuItem, PlatformAuditEntry, PlatformRestaurant, RestaurantMenu, Variant } from './types'
+import type { Category, MenuContactCard, MenuItem, PlatformAuditEntry, PlatformRestaurant, RestaurantMenu, Variant } from './types'
 
 const categories: Category[] = [
   ['manakish', 'Manakish', 'مناقيش'], ['croissants', 'Croissants', 'كرواسون'], ['soiree', 'Soiree', 'سوارية'],
@@ -89,3 +89,15 @@ export const demoPlatformAudit: PlatformAuditEntry[] = [
   { id: 'audit-2', actor_email: 'you@fluxiva.com', action: 'subscription.suspended', restaurant_slug: 'byblos-cafe', details: { previous_ends_at: daysFromNow(-58), ends_at: null }, created_at: daysFromNow(-58) },
   { id: 'audit-3', actor_email: 'you@fluxiva.com', action: 'subscription.active', restaurant_slug: 'beirut-bites', details: { previous_ends_at: null, ends_at: daysFromNow(-6) }, created_at: daysFromNow(-371) },
 ]
+
+/** Contact card shown by the unavailable screen in demo mode. */
+export const demoContactCard: MenuContactCard = {
+  name_en: demoMenu.restaurant.name_en,
+  name_ar: demoMenu.restaurant.name_ar,
+  logo_url: demoMenu.restaurant.logo_url,
+  primary_color: demoMenu.restaurant.primary_color,
+  phone: demoMenu.restaurant.phone,
+  whatsapp: demoMenu.restaurant.whatsapp,
+  instagram: demoMenu.restaurant.instagram,
+  default_language: demoMenu.restaurant.default_language,
+}

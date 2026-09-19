@@ -1,0 +1,85 @@
+/* Warns the owner before their menu stops being served — and tells them plainly
+   once it has, because nothing else in the dashboard would say so. */
+
+.banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  border-radius: 14px;
+  padding: 16px 18px;
+  margin-bottom: 18px;
+  border: 1px solid;
+}
+
+.icon {
+  display: grid;
+  place-items: center;
+  inline-size: 36px;
+  block-size: 36px;
+  border-radius: 10px;
+  flex-shrink: 0;
+}
+
+.icon svg { width: 19px; }
+
+.body { flex: 1; min-inline-size: 0; }
+
+.title {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -.2px;
+  margin: 0 0 4px;
+}
+
+.text {
+  font-size: 13.5px;
+  line-height: 1.55;
+  margin: 0;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.action {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 9px 15px;
+  border-radius: 9px;
+  border: 1px solid currentColor;
+  transition: transform .2s ease, opacity .2s ease;
+}
+
+.action:hover { transform: translateY(-1px); opacity: .85; }
+
+.action svg { width: 15px; }
+
+/* ---------- Tones ---------- */
+
+/* Menu is already offline. */
+.offline {
+  background: #fdecea;
+  border-color: #f2c2ba;
+  color: #8f2f22;
+}
+
+.offline .icon { background: #f7d3cd; color: #8f2f22; }
+
+/* Still serving, but not for much longer. */
+.soon {
+  background: #fdf5e7;
+  border-color: #ecd4a8;
+  color: #8a5f20;
+}
+
+.soon .icon { background: #f7e6c6; color: #8a5f20; }
+
+@media (prefers-reduced-motion: reduce) {
+  .action:hover { transform: none; }
+}

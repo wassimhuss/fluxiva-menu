@@ -1,0 +1,109 @@
+/* What a customer sees when a QR code leads to a menu that is not being served.
+   They are standing in a restaurant holding a phone, so the job is to get them
+   to a human quickly — not to explain anything about billing. */
+
+.screen {
+  min-block-size: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: 32px 22px calc(env(safe-area-inset-bottom, 0px) + 32px);
+  background: var(--tint, #f6f5f1);
+  color: #1b2422;
+  font-family: 'DM Sans', 'Tajawal', sans-serif;
+}
+
+.card {
+  inline-size: min(100%, 420px);
+  background: #fff;
+  border-radius: 24px;
+  padding: 34px 28px 30px;
+  text-align: center;
+  box-shadow: 0 20px 54px rgba(27, 36, 34, .1);
+}
+
+.logo {
+  inline-size: 78px;
+  block-size: 78px;
+  border-radius: 24px;
+  object-fit: cover;
+  margin-bottom: 18px;
+}
+
+.monogram {
+  inline-size: 78px;
+  block-size: 78px;
+  border-radius: 24px;
+  margin: 0 auto 18px;
+  display: grid;
+  place-items: center;
+  background: var(--brand, #173f35);
+  color: var(--brand-ink, #fff);
+  font-size: 26px;
+  font-weight: 700;
+}
+
+.name {
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -.8px;
+  margin: 0 0 14px;
+}
+
+.primary {
+  font-size: 15.5px;
+  line-height: 1.6;
+  color: rgba(27, 36, 34, .74);
+  margin: 0 0 6px;
+}
+
+.secondary {
+  font-size: 14px;
+  line-height: 1.6;
+  color: rgba(27, 36, 34, .45);
+  margin: 0;
+}
+
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  margin-top: 24px;
+}
+
+.action {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  font-size: 14.5px;
+  font-weight: 600;
+  padding: 14px 18px;
+  border-radius: 14px;
+  background: var(--brand, #173f35);
+  color: var(--brand-ink, #fff);
+  transition: transform .2s ease, opacity .2s ease;
+}
+
+.action:hover { transform: translateY(-2px); opacity: .92; }
+
+.actionQuiet {
+  background: rgba(27, 36, 34, .06);
+  color: #1b2422;
+}
+
+.action svg { width: 17px; }
+
+.mark {
+  display: block;
+  margin-top: 26px;
+  font-size: 11px;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+  color: rgba(27, 36, 34, .34);
+}
+
+.mark b { color: rgba(27, 36, 34, .56); font-weight: 600; }
+
+@media (prefers-reduced-motion: reduce) {
+  .action:hover { transform: none; }
+}

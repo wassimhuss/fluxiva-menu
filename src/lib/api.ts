@@ -1,7 +1,7 @@
 import type { Session } from '@supabase/supabase-js'
-import { demoMenu, demoPlatformAudit, demoPlatformRestaurants } from './demo'
+import { demoContactCard, demoMenu, demoPlatformAudit, demoPlatformRestaurants } from './demo'
 import { supabase } from './supabase'
-import type { AdminRole, Category, MenuItem, PlatformAuditEntry, PlatformRestaurant, Restaurant, RestaurantMenu, Variant } from './types'
+import type { AdminRole, Category, MenuContactCard, MenuItem, PlatformAuditEntry, PlatformRestaurant, Restaurant, RestaurantMenu, Variant } from './types'
 
 type RestaurantInput = Pick<Restaurant, 'name_en' | 'name_ar' | 'slug' | 'primary_color' | 'phone' | 'whatsapp' | 'instagram' | 'maps_url' | 'address_en' | 'address_ar' | 'opening_hours' | 'temporarily_closed' | 'default_language'>
 type CategoryInput = Pick<Category, 'restaurant_id' | 'name_en' | 'name_ar' | 'sort_order'>
@@ -58,6 +58,18 @@ export async function getPublicMenu(slug: string): Promise<RestaurantMenu | null
   if (categoriesResult.error) throw categoriesResult.error
   if (itemsResult.error) throw itemsResult.error
   return { restaurant, categories: categoriesResult.data ?? [], items: itemsResult.data ?? [] }
+}
+
+/**
+ * Contact details for a slug whose menu is not being served. Returns null when
+ * the slug does not exist at all.
+ */
+export async function getMenuContactCard(slug: string): Promise<MenuContactCard | null> {
+  if (!supabase) return slug === 'demo' ? demoContactCard : null
+  const { data, error } = await supabase.rpc('menu_contact_card', { slug_input: slug })
+  if (error) return null
+  const card = (data as MenuContactCard[] | null)?.[0]
+  return card ?? null
 }
 
 export async function getOwnerMenu(session: Session): Promise<RestaurantMenu | null> {

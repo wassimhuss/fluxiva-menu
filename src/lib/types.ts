@@ -1,6 +1,18 @@
 export type Language = 'en' | 'ar'
 export type SubscriptionStatus = 'trial' | 'active' | 'suspended'
 
+/** The little that is shown when a menu is not currently being served. */
+export interface MenuContactCard {
+  name_en: string
+  name_ar: string
+  logo_url?: string
+  primary_color: string
+  phone?: string
+  whatsapp?: string
+  instagram?: string
+  default_language: Language
+}
+
 /** Operator console roles. Only `super_admin` may change subscriptions. */
 export type AdminRole = 'super_admin' | 'support'
 

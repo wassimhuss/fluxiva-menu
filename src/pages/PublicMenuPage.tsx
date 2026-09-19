@@ -1,11 +1,12 @@
 import { Utensils } from 'lucide-react'
 import { Suspense, useCallback, useEffect, useMemo, useState } from 'react'
 import { useParams, useSearchParams } from 'react-router-dom'
+import { MenuUnavailable } from '../components/MenuUnavailable'
 import { TemplateSwitcher } from '../components/TemplateSwitcher'
-import { getPublicMenu } from '../lib/api'
+import { getMenuContactCard, getPublicMenu } from '../lib/api'
 import { formatLbp, localText } from '../lib/format'
 import { deriveTheme } from '../lib/theme'
-import type { Language, RestaurantMenu } from '../lib/types'
+import type { Language, MenuContactCard, RestaurantMenu } from '../lib/types'
 import { resolveTemplateId, templateComponents } from '../templates/registry'
 
 function MenuLoadingState({ slug }: { slug: string }) {
@@ -39,15 +40,18 @@ export function PublicMenuPage() {
   const { slug = '' } = useParams()
   const [searchParams, setSearchParams] = useSearchParams()
   const [menu, setMenu] = useState<RestaurantMenu | null>(null)
+  const [contact, setContact] = useState<MenuContactCard | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [language, setLanguage] = useState<Language>('en')
   const [activeCategory, setActiveCategory] = useState('')
 
   useEffect(() => {
-    getPublicMenu(slug).then((data) => {
+    getPublicMenu(slug).then(async (data) => {
       setMenu(data)
       if (data) { setLanguage(data.restaurant.default_language); setActiveCategory(data.categories[0]?.id ?? '') }
+      // No servable menu: fetch just enough to point the customer at a human.
+      else setContact(await getMenuContactCard(slug))
     }).catch(() => setError('This menu could not be loaded.')).finally(() => setLoading(false))
   }, [slug])
 
@@ -70,15 +74,7 @@ export function PublicMenuPage() {
   }, [searchParams, setSearchParams])
 
   if (loading) return <MenuLoadingState slug={slug} />
-  if (error || !menu) {
-    return (
-      <main className="public-menu-state">
-        <Utensils size={34} />
-        <h1>Menu unavailable</h1>
-        <p>{error || 'This restaurant menu is not currently available.'}</p>
-      </main>
-    )
-  }
+  if (error || !menu) return <MenuUnavailable contact={contact} />
 
   const { restaurant, categories, items } = menu
   const coverUrl = restaurant.cover_image_url || (restaurant.slug === 'demo' ? '/hilal-oven-cover.jpg' : '')

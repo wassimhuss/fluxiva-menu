@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom'
 import { Loading, Notice } from '../components/Status'
 import { getPlatformAudit, listPlatformRestaurants, setSubscription } from '../lib/api'
 import { useAuth } from '../lib/auth'
+import { subscriptionState } from '../lib/subscription'
 import type { PlatformAuditEntry, PlatformRestaurant, SubscriptionStatus } from '../lib/types'
 import { TEMPLATES } from '../templates/registry'
 import styles from './Platform.module.css'
@@ -22,8 +23,6 @@ interface Lifecycle {
   serving: boolean
 }
 
-const DAY = 86400000
-const dayDiff = (iso?: string) => iso ? Math.ceil((new Date(iso).getTime() - Date.now()) / DAY) : null
 const formatDate = (iso?: string | null) => iso ? new Date(iso).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) : '—'
 
 function relative(days: number) {
@@ -33,31 +32,27 @@ function relative(days: number) {
   return days > 0 ? `in ${absolute} days` : `${absolute} days ago`
 }
 
-/**
- * Mirrors `public.subscription_is_live` in migration 005. If the rule there
- * changes, change it here too — this drives the Offline badge, and a console
- * that disagrees with the database is worse than no console.
- */
+/** Presentation for the console, built on the shared liveness rule. */
 function lifecycleOf(restaurant: PlatformRestaurant): Lifecycle {
-  if (restaurant.subscription_status === 'suspended') {
-    return { bucket: 'suspended', tone: 'Muted', status: 'Suspended', detail: `Since ${formatDate(restaurant.subscription_ends_at)}`, rank: 40, serving: false }
+  const state = subscriptionState(restaurant)
+  const days = state.daysLeft ?? 0
+
+  if (state.kind === 'suspended') {
+    return { bucket: 'suspended', tone: 'Muted', status: 'Suspended', detail: `Since ${formatDate(state.endsAt)}`, rank: 40, serving: false }
   }
 
-  if (restaurant.subscription_status === 'trial') {
-    const days = dayDiff(restaurant.trial_ends_at) ?? 0
-    if (days < 0) return { bucket: 'expired', tone: 'Danger', status: 'Trial ended', detail: relative(days), rank: 0, serving: false }
+  if (state.kind === 'trial') {
+    if (!state.serving) return { bucket: 'expired', tone: 'Danger', status: 'Trial ended', detail: relative(days), rank: 0, serving: false }
     return { bucket: 'trial', tone: 'Trial', status: 'In trial', detail: `Ends ${relative(days)}`, rank: days <= 3 ? 5 : 20, serving: true }
   }
 
-  // Active. A null end date means no expiry, matching the database.
-  if (!restaurant.subscription_ends_at) {
+  if (state.daysLeft === null) {
     return { bucket: 'active', tone: 'Live', status: 'Active', detail: 'No end date set', rank: 30, serving: true }
   }
 
-  const days = dayDiff(restaurant.subscription_ends_at) ?? 0
-  if (days < 0) return { bucket: 'expired', tone: 'Danger', status: 'Expired', detail: `Lapsed ${relative(days)}`, rank: 1, serving: false }
+  if (!state.serving) return { bucket: 'expired', tone: 'Danger', status: 'Expired', detail: `Lapsed ${relative(days)}`, rank: 1, serving: false }
   if (days <= 30) return { bucket: 'expiring', tone: 'Warn', status: 'Renewal due', detail: `Renews ${relative(days)}`, rank: 10, serving: true }
-  return { bucket: 'active', tone: 'Live', status: 'Active', detail: `Renews ${formatDate(restaurant.subscription_ends_at)}`, rank: 30, serving: true }
+  return { bucket: 'active', tone: 'Live', status: 'Active', detail: `Renews ${formatDate(state.endsAt)}`, rank: 30, serving: true }
 }
 
 const FILTERS: { id: Filter; label: string; matches: (l: Lifecycle) => boolean }[] = [

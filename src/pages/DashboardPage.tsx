@@ -4,10 +4,12 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Brand } from '../components/Brand'
 import { Loading, Notice } from '../components/Status'
+import { SubscriptionBanner } from '../components/SubscriptionBanner'
 import { cleanVariants, createCategory, createItem, deleteCategory, deleteItem, getOwnerMenu, setRestaurantTemplate, updateCategory, updateItem, updateRestaurant, uploadRestaurantAsset } from '../lib/api'
 import { useAuth } from '../lib/auth'
 import { demoMenu } from '../lib/demo'
 import { formatLbp } from '../lib/format'
+import { subscriptionState } from '../lib/subscription'
 import { TEMPLATES, resolveTemplateId } from '../templates/registry'
 import type { Category, MenuItem, RestaurantMenu, Variant } from '../lib/types'
 
@@ -265,7 +267,20 @@ export function DashboardPage() {
 
   if (loading) return <main className="dashboard-loading"><Loading label="Loading your restaurant…" /></main>
   if (!menu) return <main className="dashboard-loading"><div className="dashboard-load-error"><Store /><h1>We couldn’t open your restaurant.</h1><p>{error || 'Please check your connection and try again.'}</p><button className="button button-primary" onClick={() => window.location.reload()}>Try again</button></div></main>
-  const trialDays = menu.restaurant.trial_ends_at ? Math.max(0, Math.ceil((new Date(menu.restaurant.trial_ends_at).getTime() - Date.now()) / 86400000)) : 14
+  // Built from the same rule the database uses, so this card can never claim
+  // "active" while the menu is actually offline.
+  const subscription = subscriptionState(menu.restaurant)
+  const subscriptionLabel = subscription.kind === 'trial' ? 'Free trial' : 'Subscription'
+  const subscriptionValue = !subscription.serving
+    ? 'Offline'
+    : subscription.daysLeft === null
+      ? 'Active'
+      : `${Math.max(0, subscription.daysLeft)} days`
+  const subscriptionNote = !subscription.serving
+    ? 'Your menu is not being served'
+    : subscription.daysLeft === null
+      ? 'Restaurant access'
+      : subscription.kind === 'trial' ? 'remaining in your trial' : 'until renewal'
   // What customers see right now, versus what the owner is trying out.
   const liveTemplate = resolveTemplateId(menu.restaurant.template_id)
   const previewTemplate = templateDraft || liveTemplate
@@ -291,13 +306,14 @@ export function DashboardPage() {
           {error && <Notice tone="error">{error}</Notice>}
           {success && <div className="dashboard-toast" role="status"><Notice tone="success">{success}</Notice></div>}
           {demoMode && <Notice>This preview uses sample data. Connect Supabase to save changes and create owner accounts.</Notice>}
+          <SubscriptionBanner restaurant={menu.restaurant} />
 
           {panel === 'overview' && <>
             <div className="page-heading"><div><span className="eyebrow"><span /> Good to see you</span><h1>Your menu at a glance.</h1></div><button className="button button-primary" onClick={() => { setPanel('menu'); openItem() }}><Plus /> Add menu item</button></div>
             <div className="overview-grid">
               <article className="stat-card"><span>Menu items</span><strong>{menu.items.length}</strong><small>{menu.items.filter((item) => item.available).length} currently visible</small></article>
               <article className="stat-card"><span>Categories</span><strong>{menu.categories.length}</strong><small>Organize your menu</small></article>
-              <article className="stat-card accent"><span>{menu.restaurant.subscription_status === 'trial' ? 'Free trial' : 'Subscription'}</span><strong>{menu.restaurant.subscription_status === 'trial' ? `${trialDays} days` : menu.restaurant.subscription_status}</strong><small>{menu.restaurant.subscription_status === 'trial' ? 'remaining in your trial' : 'Restaurant access'}</small></article>
+              <article className="stat-card accent"><span>{subscriptionLabel}</span><strong>{subscriptionValue}</strong><small>{subscriptionNote}</small></article>
             </div>
             <div className="overview-columns">
               <article className="dashboard-card"><div className="card-heading"><div><h2>Quick actions</h2><p>The most common menu tasks.</p></div></div><div className="quick-actions"><button onClick={() => { setPanel('menu'); openItem() }}><span><Plus /></span><div><b>Add an item</b><small>Name, price and size options</small></div><ChevronRight /></button><button onClick={() => { setPanel('menu'); openCategory() }}><span><Menu /></span><div><b>Add a category</b><small>Group your menu items</small></div><ChevronRight /></button><button onClick={openQr}><span><QrCode /></span><div><b>Download QR code</b><small>Ready to print and share</small></div><ChevronRight /></button></div></article>

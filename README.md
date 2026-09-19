@@ -49,6 +49,8 @@ select id, 'super_admin' from auth.users where email = 'your@email.com'
 on conflict (user_id) do update set role = 'super_admin';
 ```
 
+Because expiry is enforced, both sides are warned rather than finding out from a dead QR code. Owners see a countdown banner in their dashboard from 7 days before a trial ends or 14 days before a renewal, and a plain "your menu is offline" notice once it has lapsed — set `VITE_SUPPORT_WHATSAPP` to put a renewal button on it. Customers who scan a QR code for a menu that is not being served get the restaurant's name and contact details instead of a dead end, and are never shown the billing reason.
+
 Paid subscriptions expire: a menu is served while the status is `active` **and** `subscription_ends_at` is null or in the future, or while an unexpired trial runs. A null end date means no expiry, so activating without a date keeps a restaurant online indefinitely. Activating through the console extends a year from the existing renewal date rather than from today, so renewing early never discards time already paid for.
 
 ## Current MVP scope
