@@ -6,6 +6,7 @@ import { TemplateSwitcher } from '../components/TemplateSwitcher'
 import { getMenuContactCard, getPublicMenu } from '../lib/api'
 import { formatLbp, localText } from '../lib/format'
 import { deriveTheme } from '../lib/theme'
+import { useImagePreload } from '../lib/useImagePreload'
 import type { Language, MenuContactCard, RestaurantMenu } from '../lib/types'
 import { resolveTemplateId, templateComponents } from '../templates/registry'
 
@@ -67,6 +68,40 @@ export function PublicMenuPage() {
 
   const t = useCallback((english: string, arabic: string) => localText(language, english, arabic), [language])
 
+  const coverUrl = menu
+    ? menu.restaurant.cover_image_url || (menu.restaurant.slug === 'demo' ? '/hilal-oven-cover.jpg' : '')
+    : ''
+
+  /**
+   * The images that land on the first screen: branding, the cover, and the
+   * opening items. Taken from the first category rather than the active one, so
+   * that changing category later never drops the customer back to a loader.
+   */
+  const criticalImages = useMemo(() => {
+    if (!menu) return []
+    const firstCategory = menu.categories[0]?.id
+    const opening = menu.items
+      .filter((item) => item.category_id === firstCategory)
+      .slice(0, 4)
+      .map((item) => item.image_url)
+    return [menu.restaurant.logo_url, coverUrl, ...opening]
+  }, [menu, coverUrl])
+
+  const imagesReady = useImagePreload(criticalImages)
+
+  // The owner's saved design, unless a `?template=` override is present — which
+  // is how the dashboard previews a design before it is saved.
+  const templateId = resolveTemplateId(searchParams.get('template') ?? menu?.restaurant.template_id)
+
+  // Each design is a different height and the window keeps its scroll position
+  // across the swap, so switching while scrolled down would drop you into the
+  // middle of the new menu. Instant rather than smooth: the stylesheet sets
+  // `scroll-behavior: smooth` globally, which would otherwise animate the whole
+  // way back up from deep in a long menu.
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'instant' })
+  }, [templateId])
+
   const selectTemplate = useCallback((id: string) => {
     const next = new URLSearchParams(searchParams)
     next.set('template', id)
@@ -75,13 +110,10 @@ export function PublicMenuPage() {
 
   if (loading) return <MenuLoadingState slug={slug} />
   if (error || !menu) return <MenuUnavailable contact={contact} />
+  // Hold the branded loader until the first screen can render complete.
+  if (!imagesReady) return <MenuLoadingState slug={slug} />
 
   const { restaurant, categories, items } = menu
-  const coverUrl = restaurant.cover_image_url || (restaurant.slug === 'demo' ? '/hilal-oven-cover.jpg' : '')
-
-  // The owner's saved design, unless a `?template=` override is present — which
-  // is how the dashboard previews a design before it is saved.
-  const templateId = resolveTemplateId(searchParams.get('template') ?? restaurant.template_id)
   const Template = templateComponents[templateId]
 
   // `?preview=1` is the dashboard's embedded preview, which supplies its own
