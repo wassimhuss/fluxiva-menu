@@ -1,0 +1,452 @@
+/* Story — scrollytelling. The dish photography holds still in a sticky pane and
+   cross-fades while the writing scrolls past it.
+   Mobile keeps the image behind the text via a sticky pane with a negative
+   trailing margin, so it occupies no extra height; desktop splits into columns. */
+
+.root {
+  background: #0c0f0e;
+  color: #ece7de;
+  font-family: 'DM Sans', 'Tajawal', sans-serif;
+  /* `clip`, not `hidden`: `hidden` would make this a scroll container and stop
+     the sticky media pane below from sticking to the viewport. */
+  overflow-x: clip;
+}
+
+/* ---------- Intro ---------- */
+
+.intro {
+  position: relative;
+  z-index: 2;
+  min-block-size: 100dvh;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  padding: 90px 22px 70px;
+  overflow: hidden;
+  background: #0c0f0e;
+}
+
+.introImage {
+  position: absolute;
+  inset: 0;
+  background-image: var(--story-cover);
+  background-size: cover;
+  background-position: center;
+  z-index: -2;
+}
+
+.introScrim {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  /* Darker through the middle band, where the name and tagline sit. */
+  background: linear-gradient(180deg, rgba(12, 15, 14, .6) 0%, rgba(12, 15, 14, .42) 26%, rgba(12, 15, 14, .72) 58%, #0c0f0e 100%);
+}
+
+.toolbar {
+  position: absolute;
+  inset-block-start: 20px;
+  inset-inline: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  z-index: 3;
+}
+
+.powered {
+  font-size: 10px;
+  letter-spacing: 1.6px;
+  text-transform: uppercase;
+  color: rgba(236, 231, 222, .45);
+}
+
+.powered b { color: rgba(236, 231, 222, .78); font-weight: 600; }
+
+.langToggle {
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .1);
+  border: 1px solid rgba(255, 255, 255, .16);
+  backdrop-filter: blur(10px);
+}
+
+.langToggle button {
+  border: 0;
+  background: none;
+  color: rgba(236, 231, 222, .66);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 6px 13px;
+  border-radius: 999px;
+}
+
+.langToggle button.langActive { background: var(--story-accent); color: #0c0f0e; }
+
+.introInner { max-width: 620px; animation: rise .9s cubic-bezier(.22, 1, .36, 1) both; }
+
+.logo {
+  inline-size: 86px;
+  block-size: 86px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid rgba(236, 231, 222, .26);
+  margin-bottom: 24px;
+}
+
+.eyebrow {
+  font-size: 10px;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: var(--story-accent);
+  margin-bottom: 16px;
+}
+
+.venue {
+  font-family: 'Cormorant Garamond', 'Playfair Display', serif;
+  font-weight: 600;
+  font-size: clamp(42px, 8vw, 78px);
+  line-height: 1.03;
+  letter-spacing: -1px;
+  margin: 0 0 16px;
+}
+
+.tagline {
+  font-size: 15px;
+  line-height: 1.7;
+  color: rgba(236, 231, 222, .6);
+  margin: 0 auto;
+  max-width: 440px;
+}
+
+.scrollCue {
+  position: absolute;
+  inset-block-end: 28px;
+  inset-inline: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: rgba(236, 231, 222, .42);
+  animation: nudge 2.2s ease-in-out infinite;
+}
+
+.scrollCue svg { width: 15px; }
+
+/* ---------- Category bar ---------- */
+
+.categoryBar {
+  position: sticky;
+  inset-block-start: 0;
+  z-index: 30;
+  background: rgba(12, 15, 14, .84);
+  backdrop-filter: blur(14px);
+  border-block-end: 1px solid rgba(236, 231, 222, .09);
+}
+
+.chips {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding: 12px 20px;
+  justify-content: flex-start;
+}
+
+@media (min-width: 760px) { .chips { justify-content: center; } }
+
+.chips::-webkit-scrollbar { display: none; }
+
+.chip {
+  border: 1px solid rgba(236, 231, 222, .14);
+  background: transparent;
+  color: rgba(236, 231, 222, .58);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1.6px;
+  text-transform: uppercase;
+  padding: 9px 16px;
+  border-radius: 999px;
+  white-space: nowrap;
+  transition: background .24s ease, color .24s ease, border-color .24s ease;
+}
+
+.chip.chipActive {
+  background: var(--story-accent);
+  border-color: var(--story-accent);
+  color: #0c0f0e;
+}
+
+.closed {
+  margin: 18px 20px 0;
+  border: 1px solid rgba(214, 122, 92, .38);
+  background: rgba(214, 122, 92, .1);
+  color: #e8a992;
+  border-radius: 11px;
+  padding: 13px;
+  text-align: center;
+  font-size: 13px;
+}
+
+/* ---------- Stage ---------- */
+
+.stage { position: relative; }
+
+.mediaPane {
+  position: sticky;
+  inset-block-start: 0;
+  block-size: 100dvh;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.layer {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity .7s ease;
+}
+
+.layer[data-active='true'] { opacity: 1; }
+
+.layerImage {
+  inline-size: 100%;
+  block-size: 100%;
+  object-fit: cover;
+  transform: scale(1.04);
+  transition: transform 1.4s cubic-bezier(.22, 1, .36, 1);
+}
+
+.layer[data-active='true'] .layerImage { transform: scale(1); }
+
+.layerEmpty {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(150deg, var(--story-strong), #0c0f0e);
+  font-family: 'Cormorant Garamond', 'Playfair Display', serif;
+  font-size: 120px;
+  color: rgba(236, 231, 222, .12);
+}
+
+.mediaScrim {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(12, 15, 14, .5) 0%, rgba(12, 15, 14, .2) 34%, rgba(12, 15, 14, .9) 100%);
+}
+
+/* Pulled up over the sticky pane so the photography sits behind the writing.
+   The negative margin lives here rather than on the pane, which would otherwise
+   collapse the range the pane is allowed to stick across. */
+.chapters {
+  position: relative;
+  z-index: 1;
+  margin-block-start: -100dvh;
+}
+
+.chapter {
+  min-block-size: 100dvh;
+  display: flex;
+  align-items: flex-end;
+  padding: 0 22px 13vh;
+}
+
+.chapterInner {
+  max-width: 560px;
+  opacity: 0;
+  transform: translateY(26px);
+  transition: opacity .7s ease, transform .7s cubic-bezier(.22, 1, .36, 1);
+}
+
+.chapter[data-active='true'] .chapterInner { opacity: 1; transform: none; }
+
+.index {
+  font-family: 'Cormorant Garamond', 'Playfair Display', serif;
+  font-size: 46px;
+  line-height: 1;
+  color: var(--story-accent);
+  display: block;
+  margin-bottom: 10px;
+}
+
+.name {
+  font-family: 'Cormorant Garamond', 'Playfair Display', serif;
+  font-size: clamp(34px, 6.4vw, 56px);
+  font-weight: 600;
+  letter-spacing: -.6px;
+  line-height: 1.08;
+  margin: 0 0 14px;
+}
+
+.desc {
+  font-size: 15px;
+  line-height: 1.72;
+  color: rgba(236, 231, 222, .68);
+  margin: 0 0 22px;
+  max-width: 46ch;
+}
+
+.variants {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-bottom: 20px;
+}
+
+.variants button {
+  border: 1px solid rgba(236, 231, 222, .2);
+  background: rgba(12, 15, 14, .4);
+  backdrop-filter: blur(8px);
+  color: rgba(236, 231, 222, .68);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  padding: 8px 14px;
+  border-radius: 999px;
+  transition: background .22s ease, color .22s ease, border-color .22s ease;
+}
+
+.variants button.variantActive {
+  background: var(--story-accent);
+  border-color: var(--story-accent);
+  color: #0c0f0e;
+}
+
+.priceRow {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.price {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: var(--story-accent);
+}
+
+.order {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: rgba(236, 231, 222, .86);
+  border: 1px solid rgba(236, 231, 222, .22);
+  background: rgba(12, 15, 14, .42);
+  backdrop-filter: blur(8px);
+  padding: 10px 16px;
+  border-radius: 999px;
+  transition: background .22s ease, transform .22s ease;
+}
+
+.order:hover { background: rgba(236, 231, 222, .14); transform: translateY(-2px); }
+
+.order svg { width: 15px; }
+
+.soldOut {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1.8px;
+  text-transform: uppercase;
+  color: #e08f76;
+}
+
+/* Two columns once there is room: photography left, writing right. */
+@media (min-width: 900px) {
+  .stage {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    align-items: start;
+  }
+
+  /* Side by side, so the chapters no longer overlap the pane. */
+  .chapters { margin-block-start: 0; background: #0c0f0e; }
+
+  .chapter { align-items: center; padding: 0 clamp(32px, 5vw, 76px); }
+
+  .mediaScrim { background: linear-gradient(90deg, rgba(12, 15, 14, .28) 0%, transparent 42%); }
+
+  .root[dir='rtl'] .mediaScrim { background: linear-gradient(270deg, rgba(12, 15, 14, .28) 0%, transparent 42%); }
+}
+
+/* ---------- Footer ---------- */
+
+.footer {
+  position: relative;
+  z-index: 2;
+  background: #0c0f0e;
+  border-block-start: 1px solid rgba(236, 231, 222, .1);
+  padding: 56px 22px calc(env(safe-area-inset-bottom, 0px) + 40px);
+  text-align: center;
+}
+
+.contacts {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 34px;
+}
+
+.contact {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid rgba(236, 231, 222, .14);
+  border-radius: 999px;
+  padding: 12px 20px;
+  font-size: 12.5px;
+  color: rgba(236, 231, 222, .72);
+  transition: border-color .24s ease, transform .24s ease;
+}
+
+.contact:hover { border-color: var(--story-accent); transform: translateY(-2px); }
+
+.contact svg { width: 16px; color: var(--story-accent); }
+
+.mark {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 11px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: rgba(236, 231, 222, .34);
+}
+
+.mark b { color: rgba(236, 231, 222, .6); font-weight: 600; }
+
+.empty {
+  text-align: center;
+  color: rgba(236, 231, 222, .42);
+  padding: 90px 22px;
+}
+
+/* ---------- Motion ---------- */
+
+@keyframes rise {
+  from { opacity: 0; transform: translateY(22px); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes nudge {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .introInner, .scrollCue { animation: none; }
+  .chapterInner { transition: none; opacity: 1; transform: none; }
+  .layer { transition: none; }
+  .layerImage, .layer[data-active='true'] .layerImage { transition: none; transform: none; }
+  .order:hover, .contact:hover { transform: none; }
+}

@@ -38,6 +38,8 @@ export interface TemplateMeta {
   name: string
   /** Shown to the restaurant owner when choosing a template. */
   description: string
+  /** How the menu moves — templates differ as much in scroll feel as in looks. */
+  scroll?: string
   /** Cuisine or venue types this design suits, for filtering later. */
   tags: string[]
 }
