@@ -1,10 +1,11 @@
 import { ArrowLeft, Eye, EyeOff } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, Navigate, useNavigate } from 'react-router-dom'
 import { Brand } from '../components/Brand'
 import { Notice } from '../components/Status'
 import { useAuth } from '../lib/auth'
 import { isSupabaseConfigured, supabase } from '../lib/supabase'
+import { IDLE_SIGNOUT_KEY } from '../lib/useIdleLogout'
 
 type Mode = 'login' | 'signup' | 'forgot'
 
@@ -40,6 +41,23 @@ export function AuthPage({ mode }: { mode: Mode }) {
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
   const [busy, setBusy] = useState(false)
+
+  const [idleNotice, setIdleNotice] = useState(false)
+
+  /**
+   * Consumed in an effect, not a state initializer. Clearing the flag is a side
+   * effect, and React deliberately runs initializers twice — the first call
+   * cleared it and the second, seeing nothing, produced the value that stuck,
+   * so the message never appeared. An effect that only ever sets true is safe
+   * to run twice.
+   */
+  useEffect(() => {
+    try {
+      if (!sessionStorage.getItem(IDLE_SIGNOUT_KEY)) return
+      sessionStorage.removeItem(IDLE_SIGNOUT_KEY)
+      setIdleNotice(true)
+    } catch { /* storage may be blocked */ }
+  }, [])
 
   if (session) return <Navigate to="/dashboard" replace />
 
@@ -89,6 +107,7 @@ export function AuthPage({ mode }: { mode: Mode }) {
           <span className="eyebrow"><span /> {copy.eyebrow}</span>
           <h2>{copy.title}</h2>
           <p>{copy.blurb}</p>
+          {idleNotice && <Notice>You were signed out after two hours without activity. Sign in again to carry on.</Notice>}
           {demoMode && <Notice>Demo mode is active. Submit this form to preview the dashboard.</Notice>}
           {error && <Notice tone="error">{error}</Notice>}
           {message && <Notice tone="success">{message}</Notice>}

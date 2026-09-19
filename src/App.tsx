@@ -1,7 +1,8 @@
-import { Suspense, lazy, useEffect } from 'react'
+import { Suspense, lazy, useCallback, useEffect } from 'react'
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { Loading } from './components/Status'
 import { AuthProvider, useAuth } from './lib/auth'
+import { IDLE_SIGNOUT_KEY, useIdleLogout } from './lib/useIdleLogout'
 import { PublicMenuPage } from './pages/PublicMenuPage'
 
 /**
@@ -17,8 +18,24 @@ const OnboardingPage = lazy(() => import('./pages/OnboardingPage').then((m) => (
 const DashboardPage = lazy(() => import('./pages/DashboardPage').then((m) => ({ default: m.DashboardPage })))
 const PlatformPage = lazy(() => import('./pages/PlatformPage').then((m) => ({ default: m.PlatformPage })))
 
+/**
+ * Ends an idle session on the signed-in pages. Not applied to the public menu:
+ * diners have no session, and an owner reading their own menu is not the risk.
+ */
+function useIdleSignOut() {
+  const { session, demoMode, signOut } = useAuth()
+  useIdleLogout(Boolean(session) && !demoMode, useCallback(() => {
+    // Recorded before signing out, because signing out re-renders the guard
+    // and redirects immediately — there is no reliable moment afterwards to
+    // pass the reason along.
+    try { sessionStorage.setItem(IDLE_SIGNOUT_KEY, '1') } catch { /* storage may be blocked */ }
+    void signOut()
+  }, [signOut]))
+}
+
 function OwnerRoute({ children }: { children: React.ReactNode }) {
   const { session, loading, demoMode } = useAuth()
+  useIdleSignOut()
   if (loading) return null
   if (!session && !demoMode) return <Navigate to="/login" replace />
   return children
@@ -34,6 +51,7 @@ function OwnerRoute({ children }: { children: React.ReactNode }) {
  */
 function AdminRoute({ children }: { children: React.ReactNode }) {
   const { session, loading, demoMode, adminRole, adminLoading } = useAuth()
+  useIdleSignOut()
   if (loading || adminLoading) return null
   if (!session && !demoMode) return <Navigate to="/login" replace />
   if (!adminRole) return <Navigate to="/dashboard" replace />

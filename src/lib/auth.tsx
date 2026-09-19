@@ -40,10 +40,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!supabase) return
-    supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session)
-      setLoading(false)
-    })
+    supabase.auth.getSession()
+      .then(({ data }) => setSession(data.session))
+      // A rejection here — a network blip, or a browser that throws on blocked
+      // site data — must still end the loading state. Otherwise every guard
+      // that waits on it renders nothing and the dashboard is a blank page
+      // with no error and no way back.
+      .catch(() => setSession(null))
+      .finally(() => setLoading(false))
     const { data } = supabase.auth.onAuthStateChange((_event, nextSession) => setSession(nextSession))
     return () => data.subscription.unsubscribe()
   }, [])

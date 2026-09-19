@@ -43,7 +43,7 @@ function MenuLoadingState() {
  */
 export function PublicMenuPage() {
   const { slug = '' } = useParams()
-  const { session } = useAuth()
+  const { session, loading: authLoading } = useAuth()
   const [searchParams, setSearchParams] = useSearchParams()
   const [menu, setMenu] = useState<RestaurantMenu | null>(null)
   const [contact, setContact] = useState<MenuContactCard | null>(null)
@@ -85,6 +85,11 @@ export function PublicMenuPage() {
   const isPreview = searchParams.has('preview')
 
   useEffect(() => {
+    // Wait for auth to settle first. The menu can arrive before the session
+    // does, and recording then would count the owner's own visit — the exact
+    // thing the isOwner check exists to prevent — with the sessionStorage
+    // guard below making it permanent for the rest of the session.
+    if (authLoading) return
     if (!restaurantId || isOwner || isPreview) return
     const seenKey = `fluxiva-viewed-${restaurantId}`
     try {
@@ -94,7 +99,7 @@ export function PublicMenuPage() {
       // Private browsing can refuse storage; counting twice beats not counting.
     }
     void recordMenuView(restaurantId)
-  }, [restaurantId, isOwner, isPreview])
+  }, [authLoading, restaurantId, isOwner, isPreview])
 
   const coverUrl = menu?.restaurant.cover_image_url ?? ''
 

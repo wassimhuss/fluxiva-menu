@@ -38,7 +38,13 @@ function lifecycleOf(restaurant: PlatformRestaurant): Lifecycle {
   const days = state.daysLeft ?? 0
 
   if (state.kind === 'suspended') {
-    return { bucket: 'suspended', tone: 'Muted', status: 'Suspended', detail: `Since ${formatDate(state.endsAt)}`, rank: 40, serving: false }
+    // The date shown is what they are still owed, not when they were suspended
+    // — that is in the audit trail, and this is what matters when restoring.
+    return {
+      bucket: 'suspended', tone: 'Muted', status: 'Suspended',
+      detail: state.endsAt ? `Paid until ${formatDate(state.endsAt)}` : 'No end date set',
+      rank: 40, serving: false,
+    }
   }
 
   if (state.kind === 'trial') {
@@ -84,12 +90,16 @@ export function PlatformPage() {
       .finally(() => setLoading(false))
   }, [])
 
-  async function changeStatus(restaurant: PlatformRestaurant, status: SubscriptionStatus) {
+  /**
+   * `endsAt` is the renewal date to write, or null to let the database decide:
+   * extending a year when activating, and leaving the existing date untouched
+   * when suspending. Suspending must never overwrite it, or the restaurant
+   * loses the time it has already paid for.
+   */
+  async function changeStatus(restaurant: PlatformRestaurant, status: SubscriptionStatus, endsAt: string | null = null) {
     setBusyId(restaurant.id); setError('')
     try {
-      // Null lets the database extend from the existing renewal date rather
-      // than resetting to a year from today.
-      await setSubscription(restaurant.id, status, status === 'active' ? null : new Date().toISOString())
+      await setSubscription(restaurant.id, status, endsAt)
       const [list, entries] = await Promise.all([listPlatformRestaurants(), getPlatformAudit(20)])
       setRestaurants(list); setAudit(entries)
     } catch (caught) {
@@ -221,7 +231,15 @@ export function PlatformPage() {
 
                 <div className={styles.actions}>
                   {canManage ? <>
-                    <button className={`${styles.action} ${styles.actionPrimary}`} onClick={() => changeStatus(restaurant, 'active')}>
+                    <button
+                      className={`${styles.action} ${styles.actionPrimary}`}
+                      // Reactivating hands back the date it was suspended with,
+                      // so a restored account gets the time it was owed rather
+                      // than a fresh year on top of it.
+                      onClick={() => lifecycle.bucket === 'suspended'
+                        ? changeStatus(restaurant, 'active', restaurant.subscription_ends_at ?? null)
+                        : changeStatus(restaurant, 'active')}
+                    >
                       {lifecycle.bucket === 'suspended' ? <><Play /> Reactivate</> : <><Check /> Extend 1 year</>}
                     </button>
                     {lifecycle.bucket !== 'suspended' && (

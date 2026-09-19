@@ -100,7 +100,15 @@ export async function getMenuViewStats(restaurantId: string): Promise<MenuViewSt
 
   const rows = (data ?? []) as MenuViewDay[]
   const cutoff = isoDate(VIEW_WINDOW_DAYS - 1)
-  const current = rows.filter((row) => row.viewed_on >= cutoff)
+  const byDate = new Map(rows.map((row) => [row.viewed_on, row.views]))
+
+  // Only days with at least one open exist as rows. Charting those alone would
+  // space five scattered days evenly across a month and read as steady daily
+  // traffic, so the quiet days are filled back in as zero.
+  const current: MenuViewDay[] = Array.from({ length: VIEW_WINDOW_DAYS }, (_, offset) => {
+    const viewed_on = isoDate(VIEW_WINDOW_DAYS - 1 - offset)
+    return { viewed_on, views: byDate.get(viewed_on) ?? 0 }
+  })
   const previous = rows.filter((row) => row.viewed_on < cutoff)
 
   return {

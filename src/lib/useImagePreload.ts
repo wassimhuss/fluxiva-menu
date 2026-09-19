@@ -30,18 +30,29 @@ function preload(src: string) {
   })
 }
 
+/** A newline cannot appear in a URL, so it is safe to join and split on. */
+const SEPARATOR = '\n'
+
 export function useImagePreload(urls: (string | undefined)[], timeoutMs = MAX_WAIT_MS) {
-  const [ready, setReady] = useState(false)
   // Join into a primitive so the effect is not re-run by a new array identity.
-  const key = urls.filter(Boolean).join('|')
+  const key = urls.filter(Boolean).join(SEPARATOR)
+  /** The set of images last finished with, compared against the current one. */
+  const [readyKey, setReadyKey] = useState<string | null>(null)
+
+  /**
+   * Derived, not a stored boolean. A boolean set inside the effect stays true
+   * for one committed render after the list changes, and React can paint that
+   * frame — so the menu appeared once with its images still loading before
+   * snapping back to the loader, which is the flash this hook exists to stop.
+   */
+  const ready = key === '' || readyKey === key
 
   useEffect(() => {
-    const list = key ? key.split('|') : []
-    if (!list.length) { setReady(true); return }
+    const list = key ? key.split(SEPARATOR) : []
+    if (!list.length) return
 
-    setReady(false)
     let cancelled = false
-    const finish = () => { if (!cancelled) setReady(true) }
+    const finish = () => { if (!cancelled) setReadyKey(key) }
 
     const timer = window.setTimeout(finish, timeoutMs)
     Promise.all(list.map(preload)).then(finish, finish).finally(() => window.clearTimeout(timer))
