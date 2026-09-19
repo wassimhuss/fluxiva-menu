@@ -20,6 +20,8 @@ export interface Restaurant {
   address_ar?: string
   opening_hours?: string
   temporarily_closed?: boolean
+  /** Id of the public menu design; unknown values fall back to the default. */
+  template_id?: string
   default_language: Language
   subscription_status: SubscriptionStatus
   trial_ends_at?: string

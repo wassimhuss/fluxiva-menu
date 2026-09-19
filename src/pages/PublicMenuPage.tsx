@@ -63,11 +63,6 @@ export function PublicMenuPage() {
 
   const t = useCallback((english: string, arabic: string) => localText(language, english, arabic), [language])
 
-  // Until `template_id` lands on the restaurants table, the template is chosen
-  // by query string so designs can be compared on a real menu.
-  const templateId = resolveTemplateId(searchParams.get('template'))
-  const Template = templateComponents[templateId]
-
   const selectTemplate = useCallback((id: string) => {
     const next = new URLSearchParams(searchParams)
     next.set('template', id)
@@ -87,7 +82,15 @@ export function PublicMenuPage() {
 
   const { restaurant, categories, items } = menu
   const coverUrl = restaurant.cover_image_url || (restaurant.slug === 'demo' ? '/hilal-oven-cover.jpg' : '')
-  const showSwitcher = import.meta.env.DEV || slug === 'demo'
+
+  // The owner's saved design, unless a `?template=` override is present — which
+  // is how the dashboard previews a design before it is saved.
+  const templateId = resolveTemplateId(searchParams.get('template') ?? restaurant.template_id)
+  const Template = templateComponents[templateId]
+
+  // `?preview=1` is the dashboard's embedded preview, which supplies its own
+  // picker and should not show a second one floating over the menu.
+  const showSwitcher = (import.meta.env.DEV || slug === 'demo') && !searchParams.has('preview')
 
   return (
     <>

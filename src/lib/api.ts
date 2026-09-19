@@ -94,6 +94,11 @@ export async function updateRestaurant(id: string, values: Partial<Restaurant>) 
   if (error) throw error
 }
 
+/** Stores the owner's chosen public menu design. */
+export async function setRestaurantTemplate(id: string, templateId: string) {
+  return updateRestaurant(id, { template_id: templateId })
+}
+
 export async function createCategory(input: CategoryInput) {
   if (!supabase) return { ...input, id: crypto.randomUUID() } as Category
   const { data, error } = await supabase.from('menu_categories').insert(input).select().single()

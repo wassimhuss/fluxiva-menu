@@ -1,16 +1,17 @@
-import { ArrowDown, ArrowUp, ChevronRight, ExternalLink, Eye, EyeOff, ImagePlus, LayoutDashboard, LogOut, Menu, Pencil, Plus, QrCode, Settings, Store, Trash2, Upload, X } from 'lucide-react'
+import { ArrowDown, ArrowUp, ChevronRight, ExternalLink, Eye, EyeOff, ImagePlus, LayoutDashboard, LogOut, Menu, Palette, Pencil, Plus, QrCode, Settings, Store, Trash2, Upload, X } from 'lucide-react'
 import QRCode from 'qrcode'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Brand } from '../components/Brand'
 import { Loading, Notice } from '../components/Status'
-import { cleanVariants, createCategory, createItem, deleteCategory, deleteItem, getOwnerMenu, updateCategory, updateItem, updateRestaurant, uploadRestaurantAsset } from '../lib/api'
+import { cleanVariants, createCategory, createItem, deleteCategory, deleteItem, getOwnerMenu, setRestaurantTemplate, updateCategory, updateItem, updateRestaurant, uploadRestaurantAsset } from '../lib/api'
 import { useAuth } from '../lib/auth'
 import { demoMenu } from '../lib/demo'
 import { formatLbp } from '../lib/format'
+import { TEMPLATES, resolveTemplateId } from '../templates/registry'
 import type { Category, MenuItem, RestaurantMenu, Variant } from '../lib/types'
 
-type Panel = 'overview' | 'menu' | 'settings'
+type Panel = 'overview' | 'menu' | 'design' | 'settings'
 type ItemDraft = { category_id: string; name_en: string; name_ar: string; description_en: string; description_ar: string; price_lbp: string; variants: Variant[]; image_file: File | null; image_url?: string }
 const emptyItem = (categoryId = ''): ItemDraft => ({ category_id: categoryId, name_en: '', name_ar: '', description_en: '', description_ar: '', price_lbp: '', variants: [], image_file: null })
 
@@ -49,6 +50,8 @@ export function DashboardPage() {
   const [itemDraft, setItemDraft] = useState<ItemDraft>(emptyItem())
   const [importFile, setImportFile] = useState<File | null>(null)
   const [importStatus, setImportStatus] = useState('')
+  // Empty until the owner picks one, so the saved design stays the source of truth.
+  const [templateDraft, setTemplateDraft] = useState('')
   const [qrData, setQrData] = useState('')
   const [qrSvg, setQrSvg] = useState('')
   const [saving, setSaving] = useState(false)
@@ -154,6 +157,18 @@ export function DashboardPage() {
     finally { setSaving(false) }
   }
 
+  async function saveTemplate(templateId: string) {
+    if (!menu) return
+    setSaving(true); setError('')
+    try {
+      await setRestaurantTemplate(menu.restaurant.id, templateId)
+      setMenu({ ...menu, restaurant: { ...menu.restaurant, template_id: templateId } })
+      setTemplateDraft('')
+      showSuccess('Menu design updated.')
+    } catch (caught) { setError(caught instanceof Error ? caught.message : 'Could not save the design') }
+    finally { setSaving(false) }
+  }
+
   async function uploadLogo(file: File) {
     if (!menu) return
     setSaving(true); setError('')
@@ -251,6 +266,9 @@ export function DashboardPage() {
   if (loading) return <main className="dashboard-loading"><Loading label="Loading your restaurant…" /></main>
   if (!menu) return <main className="dashboard-loading"><div className="dashboard-load-error"><Store /><h1>We couldn’t open your restaurant.</h1><p>{error || 'Please check your connection and try again.'}</p><button className="button button-primary" onClick={() => window.location.reload()}>Try again</button></div></main>
   const trialDays = menu.restaurant.trial_ends_at ? Math.max(0, Math.ceil((new Date(menu.restaurant.trial_ends_at).getTime() - Date.now()) / 86400000)) : 14
+  // What customers see right now, versus what the owner is trying out.
+  const liveTemplate = resolveTemplateId(menu.restaurant.template_id)
+  const previewTemplate = templateDraft || liveTemplate
 
   return (
     <main className="dashboard-layout">
@@ -260,6 +278,7 @@ export function DashboardPage() {
         <nav>
           <button className={panel === 'overview' ? 'selected' : ''} onClick={() => { setPanel('overview'); setMobileNav(false) }}><LayoutDashboard /> Overview</button>
           <button className={panel === 'menu' ? 'selected' : ''} onClick={() => { setPanel('menu'); setMobileNav(false) }}><Menu /> Menu editor</button>
+          <button className={panel === 'design' ? 'selected' : ''} onClick={() => { setPanel('design'); setMobileNav(false) }}><Palette /> Menu design</button>
           <button className={panel === 'settings' ? 'selected' : ''} onClick={() => { setPanel('settings'); setMobileNav(false) }}><Settings /> Restaurant settings</button>
         </nav>
         <div className="sidebar-bottom"><Link to={`/m/${menu.restaurant.slug}`} target="_blank"><ExternalLink /> Open public menu</Link><button onClick={async () => { await signOut(); navigate('/') }}><LogOut /> Sign out</button>{demoMode && <Link className="platform-link" to="/platform">Fluxiva control</Link>}</div>
@@ -289,6 +308,43 @@ export function DashboardPage() {
           {panel === 'menu' && <>
             <div className="page-heading"><div><span className="eyebrow"><span /> Menu editor</span><h1>Categories and items.</h1><p>Changes appear on your public menu immediately.</p></div><div className="button-row"><button className="button button-outline" onClick={() => setImportModal(true)}><Upload /> Import CSV</button><button className="button button-outline" onClick={() => openCategory()}><Plus /> Category</button><button className="button button-primary" onClick={() => openItem()}><Plus /> Item</button></div></div>
             {!menu.categories.length ? <div className="empty-card"><Store /><h2>Create your first category</h2><p>Start with Pizza, Drinks, Desserts or any section that fits your menu.</p><button className="button button-primary" onClick={() => openCategory()}><Plus /> Add category</button></div> : <div className="category-list">{menu.categories.map((category, categoryIndex) => <section className="dashboard-card category-card" key={category.id}><div className="category-heading"><div><h2>{category.name_en}<small>{category.name_ar}</small></h2><span>{menu.items.filter((item) => item.category_id === category.id).length} items</span></div><div className="category-actions"><button className="icon-button" disabled={categoryIndex === 0} onClick={() => moveCategory(category, -1)} title="Move category up"><ArrowUp /></button><button className="icon-button" disabled={categoryIndex === menu.categories.length - 1} onClick={() => moveCategory(category, 1)} title="Move category down"><ArrowDown /></button><button className="icon-button" onClick={() => openCategory(category)} title="Edit category"><Pencil /></button><button className="icon-button danger" onClick={() => removeCategory(category)} title="Delete category"><Trash2 /></button><button className="button button-small button-outline" onClick={() => openItem(category.id)}><Plus /> Add item</button></div></div><div className="dashboard-items">{menu.items.filter((item) => item.category_id === category.id).sort((a, b) => a.sort_order - b.sort_order).map((item, itemIndex, siblings) => <article key={item.id} className={!item.available ? 'unavailable' : ''}><div className="item-icon">{item.image_url ? <img src={item.image_url} alt="" /> : item.name_en.slice(0, 1)}</div><div className="dashboard-item-info"><b>{item.name_en}<small>{item.name_ar}</small></b><span>{item.variants.length ? `${item.variants.length} sizes · from ${formatLbp(Math.min(...item.variants.map((variant) => variant.price_lbp)))}` : formatLbp(item.price_lbp)}</span></div><button className="visibility" onClick={() => toggleAvailability(item)}>{item.available ? <><Eye /> Visible</> : <><EyeOff /> Hidden</>}</button><div className="item-actions"><button className="icon-button" onClick={() => moveItem(item, -1)} disabled={itemIndex === 0} title="Move item up"><ArrowUp /></button><button className="icon-button" onClick={() => moveItem(item, 1)} disabled={itemIndex === siblings.length - 1} title="Move item down"><ArrowDown /></button><button className="icon-button" onClick={() => openItem(category.id, item)} title="Edit item"><Pencil /></button><button className="icon-button danger" onClick={() => removeItem(item)} title="Delete item"><Trash2 /></button></div></article>)}{!menu.items.some((item) => item.category_id === category.id) && <p className="empty-row">No items in this category yet.</p>}</div></section>)}</div>}
+          </>}
+
+          {panel === 'design' && <>
+            <div className="page-heading">
+              <div><span className="eyebrow"><span /> Menu design</span><h1>Choose how your menu looks.</h1><p>Every design shows the same items. Pick the one that suits your restaurant.</p></div>
+              <button className="button button-primary" disabled={saving || previewTemplate === liveTemplate} onClick={() => saveTemplate(previewTemplate)}>
+                {previewTemplate === liveTemplate ? 'Design in use' : saving ? 'Saving…' : 'Use this design'}
+              </button>
+            </div>
+            <div className="design-layout">
+              <div className="template-grid">
+                {TEMPLATES.map((template) => (
+                  <button
+                    key={template.id}
+                    className={`template-card ${previewTemplate === template.id ? 'selected' : ''}`}
+                    onClick={() => setTemplateDraft(template.id)}
+                  >
+                    <span className="template-card-head">
+                      <b>{template.name}</b>
+                      {liveTemplate === template.id && <em>Live</em>}
+                    </span>
+                    <small>{template.description}</small>
+                    {template.scroll && <span className="template-scroll">{template.scroll}</span>}
+                  </button>
+                ))}
+              </div>
+              <aside className="template-preview">
+                <div className="card-heading"><div><h2>Live preview</h2><p>Your real menu, in this design.</p></div></div>
+                <div className="preview-phone">
+                  {/* Keyed so switching design reloads the frame rather than leaving the old one. */}
+                  <iframe key={previewTemplate} title="Menu design preview" src={`/m/${menu.restaurant.slug}?template=${previewTemplate}&preview=1`} />
+                </div>
+                <Link className="button button-small button-outline full" to={`/m/${menu.restaurant.slug}?template=${previewTemplate}`} target="_blank">
+                  Open full size <ExternalLink />
+                </Link>
+              </aside>
+            </div>
           </>}
 
           {panel === 'settings' && <>

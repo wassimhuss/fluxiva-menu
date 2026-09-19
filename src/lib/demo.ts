@@ -30,7 +30,7 @@ export const demoMenu: RestaurantMenu = {
     description_en: 'Traditional Lebanese oven favorites, baked fresh.', description_ar: 'أطيب المخبوزات اللبنانية، طازجة من الفرن.', logo_url: '/hilal-oven-logo.png', primary_color: '#4f5535',
     phone: '+961 71 636 189', whatsapp: '+96171636189', instagram: '@hilaloven', maps_url: 'https://maps.google.com/?q=Tripoli,Lebanon',
     address_en: 'Tripoli - Lebanon', address_ar: 'طرابلس - لبنان', opening_hours: 'Every day · 07:00 – 23:00', temporarily_closed: false,
-    default_language: 'en', subscription_status: 'active',
+    template_id: 'classic', default_language: 'en', subscription_status: 'active',
   },
   categories,
   items: [
