@@ -3,6 +3,7 @@ import { useState } from 'react'
 import type { Category, MenuItem } from '../../lib/types'
 import type { MenuTemplateProps } from '../types'
 import { useActiveSlide } from '../useActiveSlide'
+import { useSnapLock } from '../useSnapLock'
 import styles from './Reel.module.css'
 
 function ReelSlide({ item, index, total, category, active, t, formatPrice, whatsapp }: {
@@ -74,7 +75,10 @@ function ReelSlide({ item, index, total, category, active, t, formatPrice, whats
 export default function ReelTemplate(props: MenuTemplateProps) {
   const { restaurant, categories, visibleItems, activeCategory, setActiveCategory, language, setLanguage, rtl, theme, t, formatPrice } = props
   // +1 for the closing restaurant card at the end of the reel.
-  const [reelRef, active] = useActiveSlide<HTMLDivElement>(visibleItems.length + 1)
+  const slideCount = visibleItems.length + 1
+  const [reelRef, active] = useActiveSlide<HTMLDivElement>(slideCount)
+  // One dish per gesture, however hard the flick.
+  useSnapLock({ containerRef: reelRef, axis: 'y', count: slideCount, activeIndex: active })
 
   const activeCategoryEntry = categories.find((category) => category.id === activeCategory)
   const instagramHandle = restaurant.instagram?.replace(/^@/, '')
