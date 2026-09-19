@@ -1,7 +1,7 @@
 import type { Session } from '@supabase/supabase-js'
-import { demoContactCard, demoMenu, demoPlatformAudit, demoPlatformRestaurants } from './demo'
+import { demoContactCard, demoMenu, demoMenuViewStats, demoPlatformAudit, demoPlatformRestaurants } from './demo'
 import { supabase } from './supabase'
-import type { AdminRole, Category, MenuContactCard, MenuItem, PlatformAuditEntry, PlatformRestaurant, Restaurant, RestaurantMenu, Variant } from './types'
+import type { AdminRole, Category, MenuContactCard, MenuItem, MenuViewDay, MenuViewStats, PlatformAuditEntry, PlatformRestaurant, Restaurant, RestaurantMenu, Variant } from './types'
 
 type RestaurantInput = Pick<Restaurant, 'name_en' | 'name_ar' | 'slug' | 'primary_color' | 'phone' | 'whatsapp' | 'instagram' | 'maps_url' | 'address_en' | 'address_ar' | 'opening_hours' | 'temporarily_closed' | 'default_language'>
 type CategoryInput = Pick<Category, 'restaurant_id' | 'name_en' | 'name_ar' | 'sort_order'>
@@ -70,6 +70,45 @@ export async function getMenuContactCard(slug: string): Promise<MenuContactCard 
   if (error) return null
   const card = (data as MenuContactCard[] | null)?.[0]
   return card ?? null
+}
+
+/** Days of history the owner's analytics card reads. Two periods, for comparison. */
+const VIEW_WINDOW_DAYS = 30
+
+const isoDate = (daysAgo: number) => new Date(Date.now() - daysAgo * 86400000).toISOString().slice(0, 10)
+
+/**
+ * Records one menu open. Fire and forget: analytics must never delay the menu
+ * or surface an error to a customer standing at a table.
+ */
+export async function recordMenuView(restaurantId: string) {
+  if (!supabase) return
+  try { await supabase.rpc('record_menu_view', { restaurant_id_input: restaurantId }) } catch { /* ignore */ }
+}
+
+export async function getMenuViewStats(restaurantId: string): Promise<MenuViewStats> {
+  const empty: MenuViewStats = { days: [], total: 0, previousTotal: 0 }
+  if (!supabase) return demoMenuViewStats
+
+  const { data, error } = await supabase
+    .from('menu_view_daily')
+    .select('viewed_on, views')
+    .eq('restaurant_id', restaurantId)
+    .gte('viewed_on', isoDate(VIEW_WINDOW_DAYS * 2 - 1))
+    .order('viewed_on')
+  if (error) return empty
+
+  const rows = (data ?? []) as MenuViewDay[]
+  const cutoff = isoDate(VIEW_WINDOW_DAYS - 1)
+  const current = rows.filter((row) => row.viewed_on >= cutoff)
+  const previous = rows.filter((row) => row.viewed_on < cutoff)
+
+  return {
+    days: current,
+    total: current.reduce((sum, row) => sum + row.views, 0),
+    previousTotal: previous.reduce((sum, row) => sum + row.views, 0),
+    busiestDay: current.reduce<MenuViewDay | undefined>((best, row) => !best || row.views > best.views ? row : best, undefined),
+  }
 }
 
 export async function getOwnerMenu(session: Session): Promise<RestaurantMenu | null> {

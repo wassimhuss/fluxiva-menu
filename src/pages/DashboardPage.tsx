@@ -4,14 +4,15 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Brand } from '../components/Brand'
 import { Loading, Notice } from '../components/Status'
+import { MenuViews } from '../components/MenuViews'
 import { SubscriptionBanner } from '../components/SubscriptionBanner'
-import { cleanVariants, createCategory, createItem, deleteCategory, deleteItem, getOwnerMenu, setRestaurantTemplate, updateCategory, updateItem, updateRestaurant, uploadRestaurantAsset } from '../lib/api'
+import { cleanVariants, createCategory, createItem, deleteCategory, deleteItem, getMenuViewStats, getOwnerMenu, setRestaurantTemplate, updateCategory, updateItem, updateRestaurant, uploadRestaurantAsset } from '../lib/api'
 import { useAuth } from '../lib/auth'
 import { demoMenu } from '../lib/demo'
 import { formatLbp } from '../lib/format'
 import { subscriptionState } from '../lib/subscription'
 import { TEMPLATES, resolveTemplateId } from '../templates/registry'
-import type { Category, MenuItem, RestaurantMenu, Variant } from '../lib/types'
+import type { Category, MenuItem, MenuViewStats, RestaurantMenu, Variant } from '../lib/types'
 
 type Panel = 'overview' | 'menu' | 'design' | 'settings'
 type ItemDraft = { category_id: string; name_en: string; name_ar: string; description_en: string; description_ar: string; price_lbp: string; variants: Variant[]; image_file: File | null; image_url?: string }
@@ -52,6 +53,7 @@ export function DashboardPage() {
   const [itemDraft, setItemDraft] = useState<ItemDraft>(emptyItem())
   const [importFile, setImportFile] = useState<File | null>(null)
   const [importStatus, setImportStatus] = useState('')
+  const [viewStats, setViewStats] = useState<MenuViewStats | null>(null)
   // Empty until the owner picks one, so the saved design stays the source of truth.
   const [templateDraft, setTemplateDraft] = useState('')
   const [qrData, setQrData] = useState('')
@@ -60,9 +62,20 @@ export function DashboardPage() {
   const successTimer = useRef<number | undefined>(undefined)
 
   useEffect(() => {
-    if (demoMode) { setMenu(structuredClone(demoMenu)); setLoading(false); return }
+    if (demoMode) {
+      setMenu(structuredClone(demoMenu))
+      getMenuViewStats(demoMenu.restaurant.id).then(setViewStats).catch(() => undefined)
+      setLoading(false)
+      return
+    }
     if (!session) return
-    getOwnerMenu(session).then((data) => data ? setMenu(data) : navigate('/onboarding')).catch((caught) => setError(caught instanceof Error ? caught.message : 'Could not load restaurant')).finally(() => setLoading(false))
+    getOwnerMenu(session).then((data) => {
+      if (!data) { navigate('/onboarding'); return }
+      setMenu(data)
+      // Loaded separately so a slow or failed analytics query never delays the
+      // editor, which is what the owner actually came here for.
+      getMenuViewStats(data.restaurant.id).then(setViewStats).catch(() => undefined)
+    }).catch((caught) => setError(caught instanceof Error ? caught.message : 'Could not load restaurant')).finally(() => setLoading(false))
   }, [session, demoMode, navigate])
 
   useEffect(() => () => window.clearTimeout(successTimer.current), [])
@@ -315,6 +328,7 @@ export function DashboardPage() {
               <article className="stat-card"><span>Categories</span><strong>{menu.categories.length}</strong><small>Organize your menu</small></article>
               <article className="stat-card accent"><span>{subscriptionLabel}</span><strong>{subscriptionValue}</strong><small>{subscriptionNote}</small></article>
             </div>
+            {viewStats && <div className="overview-views"><MenuViews stats={viewStats} /></div>}
             <div className="overview-columns">
               <article className="dashboard-card"><div className="card-heading"><div><h2>Quick actions</h2><p>The most common menu tasks.</p></div></div><div className="quick-actions"><button onClick={() => { setPanel('menu'); openItem() }}><span><Plus /></span><div><b>Add an item</b><small>Name, price and size options</small></div><ChevronRight /></button><button onClick={() => { setPanel('menu'); openCategory() }}><span><Menu /></span><div><b>Add a category</b><small>Group your menu items</small></div><ChevronRight /></button><button onClick={openQr}><span><QrCode /></span><div><b>Download QR code</b><small>Ready to print and share</small></div><ChevronRight /></button></div></article>
               <article className="dashboard-card qr-preview"><div className="card-heading"><div><h2>Your menu link</h2><p>Share this link anywhere.</p></div></div><div className="link-preview"><span>{menuUrl.replace(/^https?:\/\//, '')}</span><Link to={`/m/${menu.restaurant.slug}`} target="_blank"><ExternalLink /></Link></div><div className="phone-mini"><div className="phone-mini-cover" style={{ backgroundColor: menu.restaurant.primary_color }}><span>{menu.restaurant.name_en.slice(0, 2).toUpperCase()}</span><b>{menu.restaurant.name_en}</b></div><div><i /><i /><i /></div></div></article>

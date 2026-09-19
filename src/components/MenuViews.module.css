@@ -1,0 +1,111 @@
+/* How often the menu was opened. The number an owner is shown when deciding
+   whether the subscription was worth it. */
+
+.card {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 22px 24px 20px;
+}
+
+.head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+}
+
+.headText h2 { font-size: 17px; font-weight: 600; margin: 0 0 3px; }
+
+.headText p { font-size: 13px; color: var(--muted); margin: 0; }
+
+.total {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.totalValue {
+  font-size: 34px;
+  font-weight: 700;
+  letter-spacing: -1.4px;
+  line-height: 1;
+}
+
+.delta {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 4px 9px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.deltaUp { background: #e8f4ee; color: #1d6a4c; }
+.deltaDown { background: #fdf2e4; color: #97632a; }
+.deltaFlat { background: #f0f1ef; color: var(--muted); }
+
+.delta svg { width: 13px; }
+
+/* ---------- Chart ---------- */
+
+.chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  block-size: 96px;
+  margin-bottom: 10px;
+}
+
+.bar {
+  flex: 1;
+  min-inline-size: 3px;
+  border-radius: 3px 3px 0 0;
+  background: var(--green);
+  opacity: .28;
+  transition: opacity .2s ease;
+  /* Always leave a sliver, so a zero day reads as "nobody" not "no data". */
+  min-block-size: 2px;
+}
+
+.bar:hover { opacity: .85; }
+
+.barBusiest { opacity: .78; }
+
+.axis {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.footnote {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-block-start: 1px solid var(--line);
+  font-size: 12.5px;
+  color: var(--muted);
+}
+
+.footnote b { color: var(--ink); font-weight: 600; }
+
+/* ---------- Empty ---------- */
+
+.empty {
+  text-align: center;
+  padding: 26px 10px 20px;
+}
+
+.empty svg { width: 26px; color: var(--muted); margin-bottom: 10px; }
+
+.empty h3 { font-size: 15px; font-weight: 600; margin: 0 0 6px; }
+
+.empty p { font-size: 13px; line-height: 1.6; color: var(--muted); margin: 0 auto; max-width: 38ch; }
+
+@media (prefers-reduced-motion: reduce) {
+  .bar { transition: none; }
+}

@@ -3,7 +3,8 @@ import { Suspense, useCallback, useEffect, useMemo, useState } from 'react'
 import { useParams, useSearchParams } from 'react-router-dom'
 import { MenuUnavailable } from '../components/MenuUnavailable'
 import { TemplateSwitcher } from '../components/TemplateSwitcher'
-import { getMenuContactCard, getPublicMenu } from '../lib/api'
+import { getMenuContactCard, getPublicMenu, recordMenuView } from '../lib/api'
+import { useAuth } from '../lib/auth'
 import { formatLbp, localText } from '../lib/format'
 import { deriveTheme } from '../lib/theme'
 import { useImagePreload } from '../lib/useImagePreload'
@@ -42,6 +43,7 @@ function MenuLoadingState() {
  */
 export function PublicMenuPage() {
   const { slug = '' } = useParams()
+  const { session } = useAuth()
   const [searchParams, setSearchParams] = useSearchParams()
   const [menu, setMenu] = useState<RestaurantMenu | null>(null)
   const [contact, setContact] = useState<MenuContactCard | null>(null)
@@ -70,6 +72,29 @@ export function PublicMenuPage() {
   )
 
   const t = useCallback((english: string, arabic: string) => localText(language, english, arabic), [language])
+
+  /**
+   * Count this open, once per browser session.
+   *
+   * Excludes the dashboard's embedded preview and the restaurant's own owner —
+   * owners check their menu constantly, and counting that would inflate exactly
+   * the number a renewal conversation leans on.
+   */
+  const restaurantId = menu?.restaurant.id
+  const isOwner = Boolean(session && menu && session.user.id === menu.restaurant.owner_id)
+  const isPreview = searchParams.has('preview')
+
+  useEffect(() => {
+    if (!restaurantId || isOwner || isPreview) return
+    const seenKey = `fluxiva-viewed-${restaurantId}`
+    try {
+      if (sessionStorage.getItem(seenKey)) return
+      sessionStorage.setItem(seenKey, '1')
+    } catch {
+      // Private browsing can refuse storage; counting twice beats not counting.
+    }
+    void recordMenuView(restaurantId)
+  }, [restaurantId, isOwner, isPreview])
 
   const coverUrl = menu?.restaurant.cover_image_url ?? ''
 

@@ -205,7 +205,9 @@ export function PlatformPage() {
                 <div>
                   <span className={styles.cellLabel}>Menu</span>
                   <div className={styles.menuMeta}>
-                    <b>{restaurant.item_count}</b> items<br />{templateName(restaurant.template_id)}
+                    <b>{restaurant.item_count}</b> items<br />
+                    <b>{(restaurant.views_30d ?? 0).toLocaleString()}</b> opens / 30d<br />
+                    {templateName(restaurant.template_id)}
                     {restaurant.temporarily_closed && <span className={styles.closedTag}>Closed</span>}
                   </div>
                 </div>

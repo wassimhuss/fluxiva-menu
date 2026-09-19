@@ -31,6 +31,21 @@ export interface PlatformRestaurant {
   created_at: string
   owner_email?: string
   item_count: number
+  views_30d: number
+}
+
+/** One day's worth of menu opens. */
+export interface MenuViewDay {
+  viewed_on: string
+  views: number
+}
+
+export interface MenuViewStats {
+  days: MenuViewDay[]
+  /** Opens in the last 30 days, and the 30 before that, for comparison. */
+  total: number
+  previousTotal: number
+  busiestDay?: MenuViewDay
 }
 
 export interface PlatformAuditEntry {

@@ -36,6 +36,12 @@ Create a new Static Site from this repository. Render reads `render.yaml`. Add t
 
 The rewrite rule keeps restaurant URLs such as `/m/cedar-oven` working when opened directly or from a QR code.
 
+## Menu analytics
+
+Each menu open is counted once per browser session in `menu_view_daily`, aggregated per day rather than one row per scan. The owner's own visits and the dashboard's embedded preview are excluded, so the number a renewal conversation leans on is not inflated by the owner checking their own menu.
+
+Owners see the last 30 days against the 30 before on their dashboard; the operator console shows a 30-day count per restaurant. Writes go only through `public.record_menu_view`, which adds one and ignores restaurants that are not currently being served — there is no insert policy on the table, so a visitor cannot set counts to anything they choose.
+
 ## Password recovery
 
 Owners who forget their password request a link from `/forgot-password`. The request always reports the same thing whether or not the address has an account, so the form cannot be used to discover who is registered. The emailed link lands on `/reset-password`, where Supabase has already signed the visitor in from the token in the URL fragment, and they choose a new password. Links that have expired or been used show the reason and offer a fresh one.
