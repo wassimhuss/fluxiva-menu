@@ -12,6 +12,7 @@ import { PublicMenuPage } from './pages/PublicMenuPage'
  */
 const LandingPage = lazy(() => import('./pages/LandingPage').then((m) => ({ default: m.LandingPage })))
 const AuthPage = lazy(() => import('./pages/AuthPage').then((m) => ({ default: m.AuthPage })))
+const ResetPasswordPage = lazy(() => import('./pages/ResetPasswordPage').then((m) => ({ default: m.ResetPasswordPage })))
 const OnboardingPage = lazy(() => import('./pages/OnboardingPage').then((m) => ({ default: m.OnboardingPage })))
 const DashboardPage = lazy(() => import('./pages/DashboardPage').then((m) => ({ default: m.DashboardPage })))
 const PlatformPage = lazy(() => import('./pages/PlatformPage').then((m) => ({ default: m.PlatformPage })))
@@ -58,6 +59,9 @@ export function App() {
           <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<AuthPage mode="login" />} />
           <Route path="/signup" element={<AuthPage mode="signup" />} />
+          <Route path="/forgot-password" element={<AuthPage mode="forgot" />} />
+          {/* Public on purpose: the visitor arrives here from an email link. */}
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route path="/onboarding" element={<OwnerRoute><OnboardingPage /></OwnerRoute>} />
           <Route path="/dashboard" element={<OwnerRoute><DashboardPage /></OwnerRoute>} />
           <Route path="/platform" element={<AdminRoute><PlatformPage /></AdminRoute>} />

@@ -6,6 +6,7 @@ A bilingual QR menu SaaS for Lebanese restaurants. Owners can create a restauran
 
 - `/` — marketing site and pricing
 - `/signup` and `/login` — restaurant owner accounts
+- `/forgot-password` and `/reset-password` — password recovery by email
 - `/onboarding` — restaurant setup
 - `/dashboard` — menu, design and QR management
 - `/m/:slug` — public bilingual menu
@@ -34,6 +35,12 @@ Create a new Static Site from this repository. Render reads `render.yaml`. Add t
 - `VITE_APP_URL` — the final public Render URL
 
 The rewrite rule keeps restaurant URLs such as `/m/cedar-oven` working when opened directly or from a QR code.
+
+## Password recovery
+
+Owners who forget their password request a link from `/forgot-password`. The request always reports the same thing whether or not the address has an account, so the form cannot be used to discover who is registered. The emailed link lands on `/reset-password`, where Supabase has already signed the visitor in from the token in the URL fragment, and they choose a new password. Links that have expired or been used show the reason and offer a fresh one.
+
+The reset email returns to whichever origin requested it, so **every origin you use must be listed under Authentication → URL Configuration → Redirect URLs** in Supabase — including `http://localhost:5173/reset-password` for local work. A redirect that is not on that list silently falls back to the project's Site URL.
 
 ## Operator console
 

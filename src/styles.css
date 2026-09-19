@@ -357,3 +357,8 @@
 .preview-phone iframe{width:100%;height:100%;border:0;display:block}
 .template-preview .button{margin-top:16px}
 @media(min-width:1050px){.design-layout{grid-template-columns:minmax(0,1fr) 380px}}
+
+/* Auth: inline "Forgot password?" beside the password label. */
+.auth-card .label-row{display:flex;align-items:baseline;justify-content:space-between;gap:12px}
+.auth-card .label-link{font-size:12.5px;font-weight:600;color:var(--orange)}
+.auth-card .label-link:hover{text-decoration:underline}
