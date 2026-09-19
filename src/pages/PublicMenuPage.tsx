@@ -10,21 +10,24 @@ import { useImagePreload } from '../lib/useImagePreload'
 import type { Language, MenuContactCard, RestaurantMenu } from '../lib/types'
 import { resolveTemplateId, templateComponents } from '../templates/registry'
 
-function MenuLoadingState({ slug }: { slug: string }) {
-  const isDemo = slug === 'demo'
+/**
+ * The loader renders before any data has arrived, so it cannot know the
+ * restaurant's own branding. It used to special-case the demo slug and load a
+ * logo bundled into the app, which meant every real restaurant got a generic
+ * mark while one got a branded one. Now every restaurant gets the same screen.
+ */
+function MenuLoadingState() {
   return (
     <main className="public-menu-loading" aria-busy="true" aria-live="polite">
       <div className="public-menu-loading-orbit public-menu-loading-orbit-one" />
       <div className="public-menu-loading-orbit public-menu-loading-orbit-two" />
       <div className="public-menu-loading-card">
         <div className="public-menu-loading-mark">
-          {isDemo
-            ? <><span className="public-menu-loading-fallback">HILAL</span><img src="/hilal-oven-logo.png" alt="" /></>
-            : <div className="public-menu-loading-monogram"><Utensils size={25} /></div>}
+          <div className="public-menu-loading-monogram"><Utensils size={25} /></div>
         </div>
         <span className="public-menu-loading-kicker">FLUXIVA MENU</span>
-        <h1>{isDemo ? 'Hilal Oven' : 'Preparing your menu'}</h1>
-        <p>{isDemo ? 'Opening today’s menu' : 'Opening menu'}</p>
+        <h1>Preparing your menu</h1>
+        <p>Opening menu</p>
         <div className="public-menu-loading-progress" aria-hidden="true"><span /></div>
         <span className="public-menu-loading-arabic">جاري فتح القائمة</span>
       </div>
@@ -68,9 +71,7 @@ export function PublicMenuPage() {
 
   const t = useCallback((english: string, arabic: string) => localText(language, english, arabic), [language])
 
-  const coverUrl = menu
-    ? menu.restaurant.cover_image_url || (menu.restaurant.slug === 'demo' ? '/hilal-oven-cover.jpg' : '')
-    : ''
+  const coverUrl = menu?.restaurant.cover_image_url ?? ''
 
   /**
    * The images that land on the first screen: branding, the cover, and the
@@ -108,10 +109,10 @@ export function PublicMenuPage() {
     setSearchParams(next, { replace: true })
   }, [searchParams, setSearchParams])
 
-  if (loading) return <MenuLoadingState slug={slug} />
+  if (loading) return <MenuLoadingState />
   if (error || !menu) return <MenuUnavailable contact={contact} />
   // Hold the branded loader until the first screen can render complete.
-  if (!imagesReady) return <MenuLoadingState slug={slug} />
+  if (!imagesReady) return <MenuLoadingState />
 
   const { restaurant, categories, items } = menu
   const Template = templateComponents[templateId]
@@ -122,7 +123,7 @@ export function PublicMenuPage() {
 
   return (
     <>
-      <Suspense fallback={<MenuLoadingState slug={slug} />}>
+      <Suspense fallback={<MenuLoadingState />}>
         <Template
           restaurant={restaurant}
           categories={categories}

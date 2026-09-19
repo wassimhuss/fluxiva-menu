@@ -23,8 +23,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null)
   const [loading, setLoading] = useState(isSupabaseConfigured)
   const [adminRole, setAdminRole] = useState<AdminRole | null>(null)
-  const [adminLoading, setAdminLoading] = useState(true)
+  /** Which auth state the role above was resolved for. */
+  const [resolvedFor, setResolvedFor] = useState<string | null>(null)
   const demoMode = !isSupabaseConfigured
+
+  const authKey = demoMode ? 'demo' : session?.user.id ?? 'anonymous'
+
+  /**
+   * Derived rather than a separate flag, because a flag lags by one render:
+   * it was set false while the session was still loading, so the instant the
+   * session arrived there was a frame where nothing was "loading" and the role
+   * was still null — long enough for the admin guard to bounce a real operator
+   * to the dashboard before the lookup had even started.
+   */
+  const adminLoading = loading || resolvedFor !== authKey
 
   useEffect(() => {
     if (!supabase) return
@@ -39,17 +51,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Resolved per session: signing out must drop the role, and signing in as a
   // different account must not inherit the previous one.
   useEffect(() => {
-    if (demoMode) { setAdminRole('super_admin'); setAdminLoading(false); return }
-    if (!session) { setAdminRole(null); setAdminLoading(false); return }
+    if (demoMode) { setAdminRole('super_admin'); setResolvedFor('demo'); return }
+    // Wait for the session to settle, so "no session yet" is never mistaken
+    // for "signed out".
+    if (loading) return
+    if (!session) { setAdminRole(null); setResolvedFor('anonymous'); return }
 
     let cancelled = false
-    setAdminLoading(true)
-    getAdminRole()
-      .then((role) => { if (!cancelled) setAdminRole(role) })
-      .catch(() => { if (!cancelled) setAdminRole(null) })
-      .finally(() => { if (!cancelled) setAdminLoading(false) })
+    const settle = (role: AdminRole | null) => {
+      if (cancelled) return
+      setAdminRole(role)
+      setResolvedFor(session.user.id)
+    }
+    getAdminRole().then(settle, () => settle(null))
     return () => { cancelled = true }
-  }, [session, demoMode])
+  }, [session, demoMode, loading])
 
   const value = useMemo(() => ({
     session,
