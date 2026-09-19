@@ -80,7 +80,7 @@ export default function ClassicTemplate(props: MenuTemplateProps) {
         {restaurant.temporarily_closed && (
           <div className="closed-banner">{t('The restaurant is temporarily closed', 'المطعم مغلق مؤقتاً')}</div>
         )}
-        <nav className="category-tabs">
+        <nav className="category-tabs" data-menu-bar>
           {categories.map((category) => (
             <button
               key={category.id}

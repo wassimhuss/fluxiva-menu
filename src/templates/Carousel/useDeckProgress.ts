@@ -1,4 +1,4 @@
-import { useEffect, type RefObject } from 'react'
+import { useEffect } from 'react'
 
 /**
  * Writes each card's distance from the centre of the deck onto the element as
@@ -11,9 +11,9 @@ import { useEffect, type RefObject } from 'react'
  * Because the values come from measured positions rather than scroll offsets,
  * this needs no special case for right-to-left.
  */
-export function useDeckProgress<T extends HTMLElement>(ref: RefObject<T>, count: number) {
+export function useDeckProgress<T extends HTMLElement>(container: T | null, count: number) {
   useEffect(() => {
-    const element = ref.current
+    const element = container
     if (!element) return
 
     let frame = 0
@@ -51,5 +51,5 @@ export function useDeckProgress<T extends HTMLElement>(ref: RefObject<T>, count:
       cancelAnimationFrame(settle)
       if (frame) cancelAnimationFrame(frame)
     }
-  }, [ref, count])
+  }, [container, count])
 }

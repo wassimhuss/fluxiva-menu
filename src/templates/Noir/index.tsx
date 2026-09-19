@@ -87,7 +87,7 @@ export default function NoirTemplate(props: MenuTemplateProps) {
         </div>
       </header>
 
-      <nav className={styles.categoryBar}>
+      <nav className={styles.categoryBar} data-menu-bar>
         <div className={styles.categoryScroll}>
           {categories.map((category) => (
             <button

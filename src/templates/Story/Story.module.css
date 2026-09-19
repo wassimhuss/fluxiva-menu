@@ -333,25 +333,6 @@
   color: var(--story-accent);
 }
 
-.order {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 12.5px;
-  font-weight: 600;
-  color: rgba(236, 231, 222, .86);
-  border: 1px solid rgba(236, 231, 222, .22);
-  background: rgba(12, 15, 14, .42);
-  backdrop-filter: blur(8px);
-  padding: 10px 16px;
-  border-radius: 999px;
-  transition: background .22s ease, transform .22s ease;
-}
-
-.order:hover { background: rgba(236, 231, 222, .14); transform: translateY(-2px); }
-
-.order svg { width: 15px; }
-
 .soldOut {
   font-size: 11px;
   font-weight: 600;
@@ -448,5 +429,5 @@
   .chapterInner { transition: none; opacity: 1; transform: none; }
   .layer { transition: none; }
   .layerImage, .layer[data-active='true'] .layerImage { transition: none; transform: none; }
-  .order:hover, .contact:hover { transform: none; }
+  .contact:hover { transform: none; }
 }

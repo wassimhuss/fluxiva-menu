@@ -5,13 +5,12 @@ import type { MenuTemplateProps } from '../types'
 import { useActiveSlide } from '../useActiveSlide'
 import styles from './Story.module.css'
 
-function Chapter({ item, index, active, t, formatPrice, whatsapp }: {
+function Chapter({ item, index, active, t, formatPrice }: {
   item: MenuItem
   index: number
   active: boolean
   t: MenuTemplateProps['t']
   formatPrice: MenuTemplateProps['formatPrice']
-  whatsapp?: string
 }) {
   const [variantIndex, setVariantIndex] = useState(0)
   const variant = item.variants?.[variantIndex]
@@ -42,14 +41,7 @@ function Chapter({ item, index, active, t, formatPrice, whatsapp }: {
 
         <div className={styles.priceRow}>
           {item.available
-            ? <>
-                <span className={styles.price}>{formatPrice(price)}</span>
-                {whatsapp && (
-                  <a className={styles.order} href={`https://wa.me/${whatsapp.replace(/\D/g, '')}?text=${encodeURIComponent(name)}`} target="_blank" rel="noreferrer">
-                    <MessageCircle /> {t('Ask about this', 'اسأل عن هذا')}
-                  </a>
-                )}
-              </>
+            ? <span className={styles.price}>{formatPrice(price)}</span>
             : <span className={styles.soldOut}>{t('Unavailable', 'غير متوفر')}</span>}
         </div>
       </div>
@@ -60,7 +52,7 @@ function Chapter({ item, index, active, t, formatPrice, whatsapp }: {
 export default function StoryTemplate(props: MenuTemplateProps) {
   const { restaurant, categories, visibleItems, activeCategory, setActiveCategory, language, setLanguage, rtl, theme, t, formatPrice, coverUrl } = props
   // The chapters scroll with the page, so the observer watches the viewport.
-  const [chaptersRef, active] = useActiveSlide<HTMLDivElement>(visibleItems.length, { viewportRoot: true })
+  const [setChapters, active] = useActiveSlide<HTMLDivElement>(visibleItems.length, { viewportRoot: true })
 
   const instagramHandle = restaurant.instagram?.replace(/^@/, '')
   const address = t(restaurant.address_en ?? '', restaurant.address_ar ?? '')
@@ -101,7 +93,7 @@ export default function StoryTemplate(props: MenuTemplateProps) {
         </div>
       </header>
 
-      <nav className={styles.categoryBar}>
+      <nav className={styles.categoryBar} data-menu-bar>
         <div className={styles.chips}>
           {categories.map((category) => (
             <button
@@ -133,7 +125,7 @@ export default function StoryTemplate(props: MenuTemplateProps) {
               ))}
             </div>
 
-            <div className={styles.chapters} ref={chaptersRef}>
+            <div className={styles.chapters} ref={setChapters}>
               {visibleItems.map((item, index) => (
                 <Chapter
                   key={item.id}
@@ -142,7 +134,6 @@ export default function StoryTemplate(props: MenuTemplateProps) {
                   active={active === index}
                   t={t}
                   formatPrice={formatPrice}
-                  whatsapp={restaurant.whatsapp}
                 />
               ))}
             </div>

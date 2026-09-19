@@ -1,5 +1,5 @@
 import { Utensils } from 'lucide-react'
-import { Suspense, useCallback, useEffect, useMemo, useState } from 'react'
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useParams, useSearchParams } from 'react-router-dom'
 import { MenuUnavailable } from '../components/MenuUnavailable'
 import { TemplateSwitcher } from '../components/TemplateSwitcher'
@@ -100,6 +100,35 @@ export function PublicMenuPage() {
     }
     void recordMenuView(restaurantId)
   }, [authLoading, restaurantId, isOwner, isPreview])
+
+  /**
+   * Switching category should land on that category's first item, not wherever
+   * the previous one happened to be scrolled to. Templates mark their category
+   * bar with `data-menu-bar`; scrolling to its natural position puts the tabs at
+   * the top of the screen with the first item directly beneath.
+   *
+   * The full-screen templates have no such bar — their scroller remounts with
+   * the category, which resets it already.
+   */
+  const previousCategory = useRef('')
+  useEffect(() => {
+    const previous = previousCategory.current
+    previousCategory.current = activeCategory
+    // Only a genuine category-to-category change, never the initial load.
+    if (!previous || !activeCategory || previous === activeCategory) return
+
+    const bar = document.querySelector<HTMLElement>('[data-menu-bar]')
+    if (!bar) return
+
+    // These bars are sticky, and sticky counts as relative positioning: once
+    // it is pinned, both getBoundingClientRect and offsetTop report the pinned
+    // position rather than where the bar actually sits in the page. Returning
+    // to the top first unsticks it so the measurement is the real one. Both
+    // scrolls happen in the same frame, so nothing is painted in between.
+    window.scrollTo({ top: 0, behavior: 'instant' })
+    const top = bar.getBoundingClientRect().top + window.scrollY
+    window.scrollTo({ top, behavior: 'instant' })
+  }, [activeCategory])
 
   const coverUrl = menu?.restaurant.cover_image_url ?? ''
 

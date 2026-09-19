@@ -37,10 +37,10 @@ function Ambient({ url }: { url?: string }) {
 export default function CarouselTemplate(props: MenuTemplateProps) {
   const { restaurant, categories, visibleItems, activeCategory, setActiveCategory, language, setLanguage, rtl, theme, t, formatPrice } = props
 
-  const [trackRef, active] = useActiveSlide<HTMLDivElement>(visibleItems.length)
+  const [setTrack, active, track] = useActiveSlide<HTMLDivElement>(visibleItems.length)
   // One card per gesture, matching the reel's feel sideways.
-  useSnapLock({ containerRef: trackRef, axis: 'x', count: visibleItems.length, activeIndex: active, rtl })
-  useDeckProgress(trackRef, visibleItems.length)
+  useSnapLock({ container: track, axis: 'x', count: visibleItems.length, activeIndex: active, rtl })
+  useDeckProgress(track, visibleItems.length)
 
   // Variant choice lives here rather than in the card, because the price and
   // the size buttons now sit in the caption below the deck.
@@ -57,9 +57,8 @@ export default function CarouselTemplate(props: MenuTemplateProps) {
   const address = t(restaurant.address_en ?? '', restaurant.address_ar ?? '')
 
   const scrollToIndex = useCallback((index: number) => {
-    const track = trackRef.current
     if (track) scrollToSlide(track, index, 'x', 'smooth')
-  }, [trackRef])
+  }, [track])
 
   const step = useCallback((delta: number) => {
     scrollToIndex(Math.min(Math.max(active + delta, 0), visibleItems.length - 1))
@@ -134,7 +133,7 @@ export default function CarouselTemplate(props: MenuTemplateProps) {
         )}
 
         {/* Remounting on category change returns the deck to the first card. */}
-        <div className={styles.track} ref={trackRef} key={activeCategory}>
+        <div className={styles.track} ref={setTrack} key={activeCategory}>
           {visibleItems.map((item, index) => (
             <article
               key={item.id}
@@ -177,19 +176,7 @@ export default function CarouselTemplate(props: MenuTemplateProps) {
 
           <div className={styles.buy}>
             {activeItem.available
-              ? <>
-                  <span className={styles.price}>{formatPrice(activePrice)}</span>
-                  {restaurant.whatsapp && (
-                    <a
-                      className={styles.order}
-                      href={`https://wa.me/${restaurant.whatsapp.replace(/\D/g, '')}?text=${encodeURIComponent(activeName)}`}
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      <MessageCircle /> {t('Ask about this', 'اسأل عن هذا')}
-                    </a>
-                  )}
-                </>
+              ? <span className={styles.price}>{formatPrice(activePrice)}</span>
               : <span className={styles.unavailable}>{t('Currently unavailable', 'غير متوفر حالياً')}</span>}
           </div>
         </section>

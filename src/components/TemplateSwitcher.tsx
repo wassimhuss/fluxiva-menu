@@ -14,14 +14,13 @@ import styles from './TemplateSwitcher.module.css'
  */
 export function TemplateSwitcher({ active, onSelect }: { active: string; onSelect: (id: string) => void }) {
   const [open, setOpen] = useState(false)
-  const current = TEMPLATES.find((template) => template.id === active)
 
   if (!open) {
     return (
       <div className={styles.bar}>
         <button className={styles.trigger} onClick={() => setOpen(true)}>
           <Layers />
-          <span>{current?.name ?? 'Preview'}</span>
+          <span>Templates</span>
         </button>
       </div>
     )

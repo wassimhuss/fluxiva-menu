@@ -1,4 +1,4 @@
-import { useEffect, useRef, type RefObject } from 'react'
+import { useEffect, useRef } from 'react'
 import { scrollOffset, scrollToSlide, slideScrollOffset } from './scrollToSlide'
 
 /**
@@ -37,7 +37,8 @@ const SWIPE_THRESHOLD = 40
 const SETTLE_MS = 140
 
 interface SnapLockOptions<T extends HTMLElement> {
-  containerRef: RefObject<T>
+  /** The scroller itself, so the listeners re-bind when the template remounts it. */
+  container: T | null
   axis: 'x' | 'y'
   count: number
   /** Latest index observed by `useActiveSlide`. */
@@ -47,7 +48,7 @@ interface SnapLockOptions<T extends HTMLElement> {
 }
 
 export function useSnapLock<T extends HTMLElement>({
-  containerRef,
+  container,
   axis,
   count,
   activeIndex,
@@ -71,7 +72,7 @@ export function useSnapLock<T extends HTMLElement>({
   }, [activeIndex])
 
   useEffect(() => {
-    const element = containerRef.current
+    const element = container
     if (!element || count <= 1) return
 
     const reduced = window.matchMedia(REDUCED_MOTION).matches
@@ -249,5 +250,5 @@ export function useSnapLock<T extends HTMLElement>({
       window.clearTimeout(settleTimer.current)
       window.clearTimeout(alignTimer.current)
     }
-  }, [containerRef, axis, count, rtl])
+  }, [container, axis, count, rtl])
 }

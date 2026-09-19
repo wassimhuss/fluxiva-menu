@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 
 /**
  * Tracks which slide is currently in view inside a scroller.
@@ -10,20 +10,29 @@ import { useEffect, useRef, useState } from 'react'
  * `viewportRoot` observes against the page instead of the container, for
  * templates whose sections scroll with the document (scrollytelling) rather
  * than inside their own snap scroller.
+ *
+ * Returns a callback ref to attach, the active index, and the element itself.
+ * The element is handed back so sibling hooks can depend on it: templates
+ * remount their scroller when the category changes, and anything keyed only on
+ * the slide *count* silently keeps working against the old, detached nodes
+ * whenever two categories happen to hold the same number of items.
  */
 export function useActiveSlide<T extends HTMLElement>(
   count: number,
   { viewportRoot = false }: { viewportRoot?: boolean } = {},
 ) {
-  const containerRef = useRef<T>(null)
+  const [container, setContainer] = useState<T | null>(null)
   const [active, setActive] = useState(0)
 
   useEffect(() => {
-    const container = containerRef.current
     if (!container) return
 
     const slides = Array.from(container.querySelectorAll<HTMLElement>('[data-slide]'))
     if (!slides.length) return
+
+    // A fresh set of slides starts at the first one; the observer corrects this
+    // immediately for whatever is actually on screen.
+    setActive(0)
 
     const observer = new IntersectionObserver((entries) => {
       // Pick the most visible slide rather than the first to cross the line, so
@@ -43,7 +52,7 @@ export function useActiveSlide<T extends HTMLElement>(
 
     slides.forEach((slide) => observer.observe(slide))
     return () => observer.disconnect()
-  }, [count, viewportRoot])
+  }, [container, count, viewportRoot])
 
-  return [containerRef, active, setActive] as const
+  return [setContainer, active, container] as const
 }
