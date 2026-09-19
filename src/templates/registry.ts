@@ -49,6 +49,14 @@ export const TEMPLATES: TemplateMeta[] = [
     tags: ['small-menu', 'specials', 'cocktails'],
   },
   {
+    id: 'book',
+    name: 'Book',
+    description: 'A bound menu on a dark table; each dish is a page that turns on the spine.',
+    scroll: 'Horizontal page turn, one dish per leaf',
+    // One dish per page is the whole idea, so a long list becomes a long flip.
+    tags: ['small-menu', 'tasting-menu', 'specials', 'fine-dining'],
+  },
+  {
     id: 'story',
     name: 'Story',
     description: 'Photography holds still while the writing scrolls past it.',
@@ -66,6 +74,7 @@ export const templateComponents: Record<string, MenuTemplate> = {
   kiosk: lazy(() => import('./Kiosk')),
   reel: lazy(() => import('./Reel')),
   carousel: lazy(() => import('./Carousel')),
+  book: lazy(() => import('./Book')),
   story: lazy(() => import('./Story')),
 }
 
