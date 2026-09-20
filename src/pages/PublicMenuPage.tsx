@@ -153,14 +153,20 @@ export function PublicMenuPage() {
   // is how the dashboard previews a design before it is saved.
   const templateId = resolveTemplateId(searchParams.get('template') ?? menu?.restaurant.template_id)
 
-  // Each design is a different height and the window keeps its scroll position
-  // across the swap, so switching while scrolled down would drop you into the
-  // middle of the new menu. Instant rather than smooth: the stylesheet sets
-  // `scroll-behavior: smooth` globally, which would otherwise animate the whole
-  // way back up from deep in a long menu.
+  /* Switching design returns the menu to where it starts: the first category,
+     scrolled to the top. Each design is a different height and the window keeps
+     its scroll position across the swap, so switching while scrolled down would
+     otherwise drop you into the middle of the new menu — and two designs are
+     far easier to compare when both open on the same thing.
+
+     Instant rather than smooth: the stylesheet sets `scroll-behavior: smooth`
+     globally, which would otherwise animate the whole way back up from deep in
+     a long menu. */
+  const firstCategoryId = menu?.categories[0]?.id ?? ''
   useEffect(() => {
+    setActiveCategory(firstCategoryId)
     window.scrollTo({ top: 0, behavior: 'instant' })
-  }, [templateId])
+  }, [templateId, firstCategoryId])
 
   const selectTemplate = useCallback((id: string) => {
     const next = new URLSearchParams(searchParams)

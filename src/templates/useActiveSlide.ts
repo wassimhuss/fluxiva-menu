@@ -34,20 +34,34 @@ export function useActiveSlide<T extends HTMLElement>(
     // immediately for whatever is actually on screen.
     setActive(0)
 
+    /* Last known visibility of every slide, not just the ones in the current
+       batch. A callback only carries slides whose intersection crossed a
+       threshold, so the slide that is actually centred is frequently absent
+       from it — choosing the best entry within one batch returned the slide
+       you had just left, and the index trailed the deck by exactly one card.
+       Holding the ratios here means the maximum is taken over all of them. */
+    const ratios = new Map<number, number>()
+
     const observer = new IntersectionObserver((entries) => {
-      // Pick the most visible slide rather than the first to cross the line, so
-      // a fast flick does not leave the counter on a slide already scrolled past.
-      let best: { index: number; ratio: number } | null = null
       for (const entry of entries) {
-        if (!entry.isIntersecting) continue
         const index = Number((entry.target as HTMLElement).dataset.slide)
         if (Number.isNaN(index)) continue
-        if (!best || entry.intersectionRatio > best.ratio) best = { index, ratio: entry.intersectionRatio }
+        ratios.set(index, entry.isIntersecting ? entry.intersectionRatio : 0)
       }
-      if (best) setActive(best.index)
+
+      // Most visible slide wins, so a fast flick does not leave the counter on
+      // a slide already scrolled past.
+      let bestIndex = -1
+      let bestRatio = 0
+      for (const [index, ratio] of ratios) {
+        if (ratio > bestRatio) { bestIndex = index; bestRatio = ratio }
+      }
+      if (bestIndex >= 0) setActive(bestIndex)
     }, {
       root: viewportRoot ? null : container,
-      threshold: [0.25, 0.5, 0.75],
+      // 0 and 1 included so a slide reports when it leaves entirely and when it
+      // fills the frame, which keeps the stored ratios honest between batches.
+      threshold: [0, 0.25, 0.5, 0.75, 1],
     })
 
     slides.forEach((slide) => observer.observe(slide))

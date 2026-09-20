@@ -6,6 +6,7 @@ import { useActiveSlide } from '../useActiveSlide'
 import { useSnapLock } from '../useSnapLock'
 import styles from './Carousel.module.css'
 import { useDeckProgress } from './useDeckProgress'
+import { useSettledIndex } from './useSettledIndex'
 
 /**
  * Colour wash behind the deck, taken from the centred dish.
@@ -46,7 +47,13 @@ export default function CarouselTemplate(props: MenuTemplateProps) {
   // the size buttons now sit in the caption below the deck.
   const [variants, setVariants] = useState<Record<string, number>>({})
 
-  const activeItem = visibleItems[active]
+  /* The caption and the backdrop describe the dish you have landed on, not
+     every dish the deck flew past on the way. The counter and rail below stay
+     on the live index. */
+  const settled = useSettledIndex(active, track, activeCategory)
+  const captionIndex = Math.min(settled, Math.max(visibleItems.length - 1, 0))
+
+  const activeItem = visibleItems[captionIndex]
   const activeVariantIndex = activeItem ? variants[activeItem.id] ?? 0 : 0
   const activeVariant = activeItem?.variants?.[activeVariantIndex]
   const activePrice = activeVariant?.price_lbp ?? activeItem?.price_lbp ?? 0
@@ -156,7 +163,7 @@ export default function CarouselTemplate(props: MenuTemplateProps) {
       {activeItem && (
         // Keyed on the dish so the caption re-animates as the deck moves.
         <section className={styles.caption} key={activeItem.id}>
-          <span className={styles.ghostIndex} aria-hidden="true">{String(active + 1).padStart(2, '0')}</span>
+          <span className={styles.ghostIndex} aria-hidden="true">{String(captionIndex + 1).padStart(2, '0')}</span>
           <h2 className={styles.name}>{activeName}</h2>
           {activeDesc && <p className={styles.desc}>{activeDesc}</p>}
 
