@@ -56,6 +56,8 @@ export function DashboardPage() {
   const [viewStats, setViewStats] = useState<MenuViewStats | null>(null)
   // Empty until the owner picks one, so the saved design stays the source of truth.
   const [templateDraft, setTemplateDraft] = useState('')
+  // Same idea for the brand colour, which now lives beside the design.
+  const [colorDraft, setColorDraft] = useState('')
   const [qrData, setQrData] = useState('')
   const [qrSvg, setQrSvg] = useState('')
   const [saving, setSaving] = useState(false)
@@ -165,20 +167,29 @@ export function DashboardPage() {
     event.preventDefault(); if (!menu) return
     setSaving(true); setError('')
     try {
-      const { name_en, name_ar, description_en, description_ar, primary_color, whatsapp, instagram, address_en, address_ar, temporarily_closed, default_language } = menu.restaurant
-      await updateRestaurant(menu.restaurant.id, { name_en, name_ar, description_en, description_ar, primary_color, whatsapp, instagram, address_en, address_ar, temporarily_closed, default_language })
+      // `primary_color` is deliberately absent: it belongs to the design panel,
+      // and saving it from here too would persist a colour the owner is still
+      // only previewing over there.
+      const { name_en, name_ar, description_en, description_ar, whatsapp, instagram, address_en, address_ar, temporarily_closed, default_language } = menu.restaurant
+      await updateRestaurant(menu.restaurant.id, { name_en, name_ar, description_en, description_ar, whatsapp, instagram, address_en, address_ar, temporarily_closed, default_language })
       showSuccess('Restaurant details saved.')
     } catch (caught) { setError(caught instanceof Error ? caught.message : 'Could not save restaurant') }
     finally { setSaving(false) }
   }
 
-  async function saveTemplate(templateId: string) {
+  /**
+   * Saves the design as one thing. The template and the brand colour are stored
+   * on different columns through different calls, but to the owner they are a
+   * single choice, so one button commits whichever of them actually changed.
+   */
+  async function saveDesign(templateId: string, color: string) {
     if (!menu) return
     setSaving(true); setError('')
     try {
-      await setRestaurantTemplate(menu.restaurant.id, templateId)
-      setMenu({ ...menu, restaurant: { ...menu.restaurant, template_id: templateId } })
-      setTemplateDraft('')
+      if (templateId !== menu.restaurant.template_id) await setRestaurantTemplate(menu.restaurant.id, templateId)
+      if (color !== menu.restaurant.primary_color) await updateRestaurant(menu.restaurant.id, { primary_color: color })
+      setMenu({ ...menu, restaurant: { ...menu.restaurant, template_id: templateId, primary_color: color } })
+      setTemplateDraft(''); setColorDraft('')
       showSuccess('Menu design updated.')
     } catch (caught) { setError(caught instanceof Error ? caught.message : 'Could not save the design') }
     finally { setSaving(false) }
@@ -297,6 +308,8 @@ export function DashboardPage() {
   // What customers see right now, versus what the owner is trying out.
   const liveTemplate = resolveTemplateId(menu.restaurant.template_id)
   const previewTemplate = templateDraft || liveTemplate
+  const previewColor = colorDraft || menu.restaurant.primary_color
+  const designDirty = previewTemplate !== liveTemplate || previewColor !== menu.restaurant.primary_color
 
   return (
     <main className="dashboard-layout">
@@ -342,13 +355,36 @@ export function DashboardPage() {
 
           {panel === 'design' && <>
             <div className="page-heading">
-              <div><span className="eyebrow"><span /> Menu design</span><h1>Choose how your menu looks.</h1><p>Every design shows the same items. Pick the one that suits your restaurant.</p></div>
-              <button className="button button-primary" disabled={saving || previewTemplate === liveTemplate} onClick={() => saveTemplate(previewTemplate)}>
-                {previewTemplate === liveTemplate ? 'Design in use' : saving ? 'Saving…' : 'Use this design'}
+              <div><span className="eyebrow"><span /> Menu design</span><h1>Choose how your menu looks.</h1><p>Layout, logo and colour. Every design shows the same items.</p></div>
+              <button className="button button-primary" disabled={saving || !designDirty} onClick={() => saveDesign(previewTemplate, previewColor)}>
+                {!designDirty ? 'Design in use' : saving ? 'Saving…' : 'Save design'}
               </button>
             </div>
             <div className="design-layout">
-              <div className="template-grid">
+              <div className="design-choices">
+                <section className="dashboard-card brand-card">
+                  <div className="card-heading"><div><h2>Brand</h2><p>Your logo, cover photo and colour, across every design.</p></div></div>
+                  <div className="settings-brand">
+                    <label className="logo-uploader" style={{ backgroundColor: previewColor }}>
+                      {menu.restaurant.logo_url ? <img src={menu.restaurant.logo_url} alt="Restaurant logo" /> : menu.restaurant.name_en.slice(0, 2).toUpperCase()}
+                      <input disabled={saving} type="file" accept="image/png,image/jpeg,image/webp" onChange={(e) => e.target.files?.[0] && uploadLogo(e.target.files[0])} />
+                    </label>
+                    <div><h2>{menu.restaurant.name_en}</h2><p>{menu.restaurant.name_ar}</p><small>Tap the logo to upload a new image.</small></div>
+                  </div>
+                  <div className="cover-setting">
+                    <div className="cover-setting-copy"><b>Menu cover photo</b><small>Shown behind your logo and restaurant name. Large images are resized and compressed automatically.</small></div>
+                    <label className={`cover-uploader ${menu.restaurant.cover_image_url ? 'has-image' : ''}`} style={menu.restaurant.cover_image_url ? { backgroundImage: `linear-gradient(rgba(15,35,30,.28),rgba(15,35,30,.48)),url(${menu.restaurant.cover_image_url})` } : { backgroundColor: previewColor }}>
+                      <span><ImagePlus />{saving ? 'Uploading…' : menu.restaurant.cover_image_url ? 'Replace cover' : 'Upload cover'}</span>
+                      <input disabled={saving} type="file" accept="image/png,image/jpeg,image/webp" onChange={(e) => e.target.files?.[0] && uploadCover(e.target.files[0])} />
+                    </label>
+                  </div>
+                  <label className="brand-color-row">Brand color<input className="settings-color" type="color" value={previewColor} onChange={(e) => setColorDraft(e.target.value)} /></label>
+                  {/* Presets, not "themes": each one only sets this colour, and
+                      the design beside it is the thing an owner calls a theme. */}
+                  <div className="theme-presets"><b>Colour presets</b><div>{[['#173f35', 'Cedar'], ['#b84d2f', 'Oven'], ['#7b4f34', 'Earth'], ['#244c70', 'Coast']].map(([color, name]) => <button type="button" key={color} onClick={() => setColorDraft(color)} className={previewColor === color ? 'selected' : ''}><i style={{ backgroundColor: color }} />{name}</button>)}</div></div>
+                </section>
+
+                <div className="template-grid">
                 {TEMPLATES.map((template) => (
                   <button
                     key={template.id}
@@ -363,14 +399,15 @@ export function DashboardPage() {
                     {template.scroll && <span className="template-scroll">{template.scroll}</span>}
                   </button>
                 ))}
+                </div>
               </div>
               <aside className="template-preview">
                 <div className="card-heading"><div><h2>Live preview</h2><p>Your real menu, in this design.</p></div></div>
                 <div className="preview-phone">
                   {/* Keyed so switching design reloads the frame rather than leaving the old one. */}
-                  <iframe key={previewTemplate} title="Menu design preview" src={`/m/${menu.restaurant.slug}?template=${previewTemplate}&preview=1`} />
+                  <iframe key={`${previewTemplate}|${previewColor}`} title="Menu design preview" src={`/m/${menu.restaurant.slug}?template=${previewTemplate}&color=${encodeURIComponent(previewColor)}&preview=1`} />
                 </div>
-                <Link className="button button-small button-outline full" to={`/m/${menu.restaurant.slug}?template=${previewTemplate}`} target="_blank">
+                <Link className="button button-small button-outline full" to={`/m/${menu.restaurant.slug}?template=${previewTemplate}&color=${encodeURIComponent(previewColor)}`} target="_blank">
                   Open full size <ExternalLink />
                 </Link>
               </aside>
@@ -378,22 +415,8 @@ export function DashboardPage() {
           </>}
 
           {panel === 'settings' && <>
-            <div className="page-heading"><div><span className="eyebrow"><span /> Settings</span><h1>Restaurant details.</h1><p>Update the branding and contact details shown to customers.</p></div></div>
+            <div className="page-heading"><div><span className="eyebrow"><span /> Settings</span><h1>Restaurant details.</h1><p>Your name, contact details and menu status. Logo and colour live in Menu design.</p></div></div>
             <form className="dashboard-card restaurant-settings-form" onSubmit={saveRestaurant}>
-              <div className="settings-brand">
-                <label className="logo-uploader" style={{ backgroundColor: menu.restaurant.primary_color }}>
-                  {menu.restaurant.logo_url ? <img src={menu.restaurant.logo_url} alt="Restaurant logo" /> : menu.restaurant.name_en.slice(0, 2).toUpperCase()}
-                  <input disabled={saving} type="file" accept="image/png,image/jpeg,image/webp" onChange={(e) => e.target.files?.[0] && uploadLogo(e.target.files[0])} />
-                </label>
-                <div><h2>{menu.restaurant.name_en}</h2><p>{menu.restaurant.name_ar}</p><code>/m/{menu.restaurant.slug}</code><small>Tap the logo to upload a new image.</small></div>
-              </div>
-              <div className="cover-setting">
-                <div className="cover-setting-copy"><b>Menu cover photo</b><small>Shown behind your logo and restaurant name. Large images are resized and compressed automatically.</small></div>
-                <label className={`cover-uploader ${menu.restaurant.cover_image_url ? 'has-image' : ''}`} style={menu.restaurant.cover_image_url ? { backgroundImage: `linear-gradient(rgba(15,35,30,.28),rgba(15,35,30,.48)),url(${menu.restaurant.cover_image_url})` } : { backgroundColor: menu.restaurant.primary_color }}>
-                  <span><ImagePlus />{saving ? 'Uploading…' : menu.restaurant.cover_image_url ? 'Replace cover' : 'Upload cover'}</span>
-                  <input disabled={saving} type="file" accept="image/png,image/jpeg,image/webp" onChange={(e) => e.target.files?.[0] && uploadCover(e.target.files[0])} />
-                </label>
-              </div>
               <div className="form-grid">
                 <label>English name<input required value={menu.restaurant.name_en} onChange={(e) => restaurantField('name_en', e.target.value)} /></label>
                 <label dir="rtl">الاسم بالعربية<input required value={menu.restaurant.name_ar} onChange={(e) => restaurantField('name_ar', e.target.value)} /></label>
@@ -404,10 +427,8 @@ export function DashboardPage() {
                 <label>English address<textarea value={menu.restaurant.address_en ?? ''} onChange={(e) => restaurantField('address_en', e.target.value)} /></label>
                 <label dir="rtl">العنوان بالعربية<textarea value={menu.restaurant.address_ar ?? ''} onChange={(e) => restaurantField('address_ar', e.target.value)} /></label>
                 <label className="closed-toggle"><span>Menu status</span><button type="button" className={`status-switch ${menu.restaurant.temporarily_closed ? 'on' : ''}`} onClick={() => restaurantField('temporarily_closed', !menu.restaurant.temporarily_closed)}><i />{menu.restaurant.temporarily_closed ? 'Temporarily closed' : 'Open for customers'}</button></label>
-                <label>Brand color<input className="settings-color" type="color" value={menu.restaurant.primary_color} onChange={(e) => restaurantField('primary_color', e.target.value)} /></label>
                 <label>Default language<select value={menu.restaurant.default_language} onChange={(e) => restaurantField('default_language', e.target.value)}><option value="en">English</option><option value="ar">العربية</option></select></label>
               </div>
-              <div className="theme-presets"><b>Quick themes</b><div>{[['#173f35', 'Cedar'], ['#b84d2f', 'Oven'], ['#7b4f34', 'Earth'], ['#244c70', 'Coast']].map(([color, name]) => <button type="button" key={color} onClick={() => restaurantField('primary_color', color)} className={menu.restaurant.primary_color === color ? 'selected' : ''}><i style={{ backgroundColor: color }} />{name}</button>)}</div></div>
               <div className="bilingual-preview"><div><span>English preview</span><b style={{ color: menu.restaurant.primary_color }}>{menu.restaurant.name_en}</b><small>{menu.restaurant.description_en || 'Fresh from our oven.'}</small></div><div dir="rtl"><span>معاينة عربية</span><b style={{ color: menu.restaurant.primary_color }}>{menu.restaurant.name_ar}</b><small>{menu.restaurant.description_ar || 'طازج من فرننا.'}</small></div></div>
               <button className="button button-primary" disabled={saving}>{saving ? 'Saving…' : 'Save restaurant details'}</button>
             </form>

@@ -66,9 +66,16 @@ export function PublicMenuPage() {
     [menu, activeCategory],
   )
 
+  /* The design panel previews an unsaved brand colour the same way it already
+     previews an unsaved template. Validated as a hex literal first: this value
+     reaches inline styles, and a URL is not a trusted source. Anything else is
+     ignored in favour of the saved colour. */
+  const colorParam = searchParams.get('color')
+  const previewColor = colorParam && /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i.test(colorParam) ? colorParam : null
+
   const theme = useMemo(
-    () => deriveTheme(menu?.restaurant.primary_color ?? '#173f35'),
-    [menu?.restaurant.primary_color],
+    () => deriveTheme(previewColor ?? menu?.restaurant.primary_color ?? '#173f35'),
+    [previewColor, menu?.restaurant.primary_color],
   )
 
   const t = useCallback((english: string, arabic: string) => localText(language, english, arabic), [language])
