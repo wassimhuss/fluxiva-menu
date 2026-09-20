@@ -1,754 +1,239 @@
-/* Book — a bound menu laid on a dark table. One dish per leaf; the leaf turns
-   on the spine rather than curling, because a real paper curl needs canvas and
-   reads as noise at phone width, while a rigid turn is a composited rotateY.
-
-   Geometry: the leaves are stacked absolutely and rotate 180° around their
-   spine edge. `backface-visibility` swaps front for back at 90°, so one element
-   is both the page you are reading and the blank verso you have already turned.
-
-   Direction: the spine sits inline-start in English and inline-end in Arabic,
-   so the Arabic book genuinely opens right-to-left. `transform-origin` and
-   `rotateY` are physical, so both have explicit [dir='rtl'] overrides. */
-
+/* StPageFlip owns paper geometry and fold shadows. These styles dress the
+   desk and printed sheets without adding a competing transform animation. */
 .root {
   position: relative;
-  block-size: 100dvh;
   display: flex;
   flex-direction: column;
+  width: 100%;
+  height: 100dvh;
+  min-height: 420px;
   overflow: hidden;
   isolation: isolate;
-  background: #15120e;
-  color: #ece4d6;
-  font-family: 'DM Sans', 'Tajawal', sans-serif;
-  /* Which way the leaves swing. Physical, because rotate is. */
-  --dir: -1;
-  /* The stage owns wheel and swipe, so the page itself must never rubber-band. */
-  overscroll-behavior: none;
-  touch-action: pan-y;
-}
-
-/* The table the book rests on: a pool of warm light, darker at the edges. */
-.table {
-  position: absolute;
-  inset: 0;
-  z-index: -1;
+  color: #f7f1e7;
   background:
-    radial-gradient(120% 78% at 50% 34%, var(--book-glow) 0%, transparent 62%),
-    radial-gradient(90% 60% at 50% 42%, rgba(255, 244, 222, .07) 0%, transparent 70%),
-    #15120e;
+    radial-gradient(ellipse at 50% 42%, rgba(243, 218, 175, .09), transparent 65%),
+    radial-gradient(ellipse at 50% -20%, var(--book-glow), transparent 70%),
+    linear-gradient(150deg, color-mix(in srgb, var(--book-desk) 42%, #161714), #10130f);
+  font-family: 'DM Sans', 'Tajawal', sans-serif;
+  overscroll-behavior: none;
 }
+.root::before {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  pointer-events: none;
+  content: '';
+  opacity: .16;
+  background-image: repeating-linear-gradient(108deg, transparent 0 3px, rgba(255, 255, 255, .035) 3px 4px);
+}
+.root button { font-family: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.root button:disabled { cursor: default; }
+.root button:focus-visible, .root a:focus-visible { outline: 2px solid #f4e1bc; outline-offset: 4px; }
 
-/* ---------- Header ---------- */
-
+/* Quiet chrome leaves most of the screen for the menu. */
 .header {
   position: relative;
-  z-index: 3;
+  z-index: 5;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  padding: calc(env(safe-area-inset-top, 0px) + 14px) 18px 10px;
-}
-
-.brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
-
-.logo, .monogram {
-  inline-size: 34px;
-  block-size: 34px;
-  border-radius: 50%;
   flex-shrink: 0;
+  gap: 18px;
+  width: min(100%, 1120px);
+  margin-inline: auto;
+  padding: calc(env(safe-area-inset-top, 0px) + 20px) 32px 12px;
 }
-
-.logo { object-fit: cover; border: 1px solid rgba(236, 228, 214, .28); }
-
-.monogram {
-  display: grid;
-  place-items: center;
-  background: var(--book-accent);
-  color: var(--book-ink);
-  font-size: 12px;
-  font-weight: 700;
-}
-
-.venue { display: flex; flex-direction: column; min-width: 0; }
-
-.venueName {
-  font-family: 'Cormorant Garamond', 'Playfair Display', serif;
-  font-size: 17px;
-  font-weight: 600;
-  letter-spacing: .2px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.venueSub {
-  font-size: 9px;
-  letter-spacing: 2.4px;
-  text-transform: uppercase;
-  color: rgba(236, 228, 214, .42);
-}
-
-.langToggle {
-  display: flex;
-  gap: 2px;
-  padding: 3px;
-  border-radius: 999px;
-  background: rgba(236, 228, 214, .1);
-  border: 1px solid rgba(236, 228, 214, .16);
-  flex-shrink: 0;
-}
-
-.langToggle button {
-  border: 0;
-  background: none;
-  color: rgba(236, 228, 214, .66);
-  font-size: 11px;
-  font-weight: 700;
-  padding: 5px 12px;
-  border-radius: 999px;
-}
-
-.langToggle button.langActive { background: var(--book-accent); color: var(--book-ink); }
-
-/* ---------- Categories ---------- */
+.brand { display: flex; align-items: center; gap: 11px; min-width: 0; }
+.logo, .monogram { flex-shrink: 0; width: 38px; height: 38px; border-radius: 50%; }
+.logo { object-fit: cover; border: 1px solid rgba(248, 238, 218, .3); }
+.monogram { display: grid; place-items: center; border: 1px solid rgba(248, 238, 218, .3); color: #eedbb7; font-family: 'Cormorant Garamond', serif; font-size: 18px; }
+.venue { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.venueName { overflow: hidden; font-family: 'Cormorant Garamond', 'Tajawal', serif; font-size: 21px; font-weight: 600; line-height: 1.15; white-space: nowrap; text-overflow: ellipsis; }
+.venueSub { color: rgba(247, 241, 231, .49); font-size: 8px; font-weight: 500; letter-spacing: .22em; text-transform: uppercase; }
+.langToggle { display: flex; flex-shrink: 0; gap: 2px; padding: 3px; border: 1px solid rgba(247, 241, 231, .14); border-radius: 6px; background: rgba(255, 255, 255, .025); }
+.langToggle button { width: 34px; height: 29px; border: 0; border-radius: 3px; background: transparent; color: rgba(247, 241, 231, .55); font-size: 10px; font-weight: 600; transition: color .16s, background .16s; }
+.langToggle button.langActive { background: #f1e9da; color: #302b23; }
 
 .chips {
   position: relative;
-  z-index: 3;
+  z-index: 5;
   display: flex;
-  gap: 7px;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 24px;
+  width: fit-content;
+  max-width: 100%;
+  min-height: 43px;
+  margin: 0 auto 10px;
+  padding: 0 28px;
   overflow-x: auto;
   scrollbar-width: none;
-  padding: 4px 18px 12px;
-  flex-shrink: 0;
 }
-
 .chips::-webkit-scrollbar { display: none; }
+.chip { position: relative; flex-shrink: 0; align-self: stretch; padding: 9px 0 12px; border: 0; background: transparent; color: rgba(247, 241, 231, .5); font-size: 10px; font-weight: 500; letter-spacing: .09em; white-space: nowrap; transition: color .18s ease; }
+.chip::after { position: absolute; inset-inline: 0; bottom: 4px; height: 1px; background: #e7d4ac; opacity: 0; content: ''; transition: opacity .18s ease; }
+.chip:hover { color: #f7f1e7; }
+.chip.chipActive { color: #f2e1bf; }
+.chip.chipActive::after { opacity: 1; }
+.closed { flex-shrink: 0; width: min(calc(100% - 36px), 700px); margin: 0 auto 10px; padding: 8px 15px; border: 1px solid rgba(233, 172, 129, .25); border-radius: 4px; background: rgba(233, 172, 129, .06); color: #e9bc99; text-align: center; font-size: 11px; }
 
-.chip {
-  border: 1px solid rgba(236, 228, 214, .16);
-  background: transparent;
-  color: rgba(236, 228, 214, .62);
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 1.4px;
-  text-transform: uppercase;
-  padding: 8px 15px;
-  border-radius: 999px;
-  white-space: nowrap;
-  transition: background .22s ease, color .22s ease, border-color .22s ease;
-}
+/* React measures this stage and passes the resulting book dimensions inline. */
+.stage { position: relative; display: grid; flex: 1; min-width: 0; min-height: 0; place-items: center; width: 100%; }
+.bookFrame { position: relative; flex-shrink: 0; isolation: isolate; }
+.bookFrame::before { position: absolute; z-index: -1; inset: 2px -3px -4px; border-radius: 2px; background: #aa987e; box-shadow: 0 2px 0 #6b6050, 0 5px 0 -1px #c5b9a4, 0 6px 0 #554b3d, 0 14px 22px rgba(0, 0, 0, .22), 0 32px 65px rgba(0, 0, 0, .4); content: ''; pointer-events: none; }
+.engine { width: 100%; height: 100%; }
 
-.chip.chipActive {
-  background: var(--book-accent);
-  border-color: var(--book-accent);
-  color: var(--book-ink);
-}
-
-.closed {
+/* StPageFlip ships its base stylesheet only as a source file, never in its dist
+   build, so without these the book lays out as a plain stack of divs. Scoped
+   under .stage so the module keeps them out of the global sheet; the names
+   themselves must survive hashing, hence :global. */
+.stage :global(.stf__parent) {
   position: relative;
-  z-index: 3;
-  margin: 0 18px 10px;
-  border: 1px solid rgba(214, 122, 92, .4);
-  background: rgba(214, 122, 92, .12);
-  color: #eaa98f;
-  border-radius: 11px;
-  padding: 10px;
-  text-align: center;
-  font-size: 12.5px;
-  font-weight: 600;
+  display: block;
+  box-sizing: border-box;
+  transform: translateZ(0);
+  /* The library claims the horizontal gesture; vertical is left to the page. */
+  touch-action: pan-y;
 }
+.stage :global(.stf__wrapper) { position: relative; box-sizing: border-box; }
+.stage :global(.stf__parent canvas) { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+.stage :global(.stf__block) { position: absolute; width: 100%; height: 100%; box-sizing: border-box; perspective: 2000px; }
+.stage :global(.stf__item) { display: none; position: absolute; transform-style: preserve-3d; }
+.stage :global(.stf__outerShadow),
+.stage :global(.stf__innerShadow),
+.stage :global(.stf__hardShadow),
+.stage :global(.stf__hardInnerShadow) { position: absolute; top: 0; left: 0; }
 
-/* ---------- The book ---------- */
-
-.stage {
-  position: relative;
-  flex: 1;
-  min-block-size: 0;
-  display: grid;
-  place-items: center;
-  padding: 10px 16px 12px;
-  /* Only the sideways swing needs clipping — that is where turned leaves pile
-     up outside the spread. The arc also grows the leaf vertically (the tilt
-     alone adds ~17px at each end of a 343px page), and clipping that gave the
-     turning page a hard sliced edge. `clip` rather than `hidden` because
-     `hidden` on one axis forces the other to scroll, which would have clipped
-     it anyway; `clip` leaves the block axis genuinely visible. */
-  overflow-x: clip;
-  overflow-y: visible;
-}
-
-.spread {
-  position: relative;
-  block-size: min(100%, 560px);
-  aspect-ratio: 3 / 4;
-  /* A grid item's automatic minimum size is the width transferred from the
-     aspect ratio, which outranks max-inline-size and overflowed the stage on a
-     narrow phone. Zeroing it lets the leaf narrow; the page then runs a little
-     taller than 3:4, which is the right way to lose the ratio — books are. */
-  min-inline-size: 0;
-  max-inline-size: 100%;
-  max-block-size: 100%;
-  /* Tighter than it looks like it should be: at 2400px the lift barely reads,
-     because the page is small on a phone and needs the exaggeration. */
-  perspective: 1700px;
-  perspective-origin: 50% 44%;
-}
-
-/* Desktop opens the book properly: a title page on the inside of the cover,
-   and the leaf turning across onto it. */
-@media (min-width: 880px) { .spread { aspect-ratio: 3 / 2; } }
-
-/* The bound edge, under everything. */
-.spine {
-  position: absolute;
-  inset-block: -6px;
-  /* Peeking out past the leaf, or the leaf sits on top of it and the binding
-     never reads. */
-  inset-inline-start: -9px;
-  inline-size: 18px;
-  z-index: 0;
-  border-radius: 4px;
-  background: linear-gradient(90deg, #0d0b08, #2a2117 58%, #0f0c09);
-  box-shadow: 0 22px 46px rgba(0, 0, 0, .6);
-}
-
-.root[dir='rtl'] { --dir: 1; }
-
-.root[dir='rtl'] .spine {
-  background: linear-gradient(270deg, #0d0b08, #2a2117 58%, #0f0c09);
-}
-
-/* Mobile has one leaf, so the spine is a board peeking out past its bound edge.
-   On a two-page spread the pages meet exactly at the centre and would hide a
-   board entirely, so there the spine becomes the shading where paper curves
-   into the binding — painted over the leaves rather than behind them. */
-@media (min-width: 880px) {
-  .spine {
-    inset-block: 0;
-    inset-inline-start: calc(50% - 17px);
-    inline-size: 34px;
-    z-index: 20;
-    pointer-events: none;
-    border-radius: 0;
-    box-shadow: none;
-    background: linear-gradient(90deg,
-      rgba(26, 19, 10, 0) 0%,
-      rgba(26, 19, 10, .26) 38%,
-      rgba(26, 19, 10, .4) 50%,
-      rgba(26, 19, 10, .26) 62%,
-      rgba(26, 19, 10, 0) 100%);
-  }
-
-  .root[dir='rtl'] .spine { background: linear-gradient(270deg,
-      rgba(26, 19, 10, 0) 0%,
-      rgba(26, 19, 10, .26) 38%,
-      rgba(26, 19, 10, .4) 50%,
-      rgba(26, 19, 10, .26) 62%,
-      rgba(26, 19, 10, 0) 100%); }
-}
-
-/* ---------- Title page (the left-hand page of the open book) ---------- */
-
-.titlePage {
-  /* Only exists once the spread is wide enough to hold two pages. */
-  display: none;
-  position: absolute;
-  inset-block: 0;
-  inset-inline-start: 0;
-  inline-size: 50%;
-  z-index: 0;
-  border-start-start-radius: 10px;
-  border-end-start-radius: 10px;
-  border-start-end-radius: 2px;
-  border-end-end-radius: 2px;
-  padding: 34px 30px;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  gap: 12px;
-  background-color: #f4eede;
-  background-image: radial-gradient(circle at 70% 30%, rgba(150, 126, 86, .08), transparent 52%);
-  box-shadow: inset 0 0 40px rgba(58, 44, 26, .08);
-}
-
-/* Gutter shading, mirroring the leaf so the open book reads as one object. */
-.titlePage::after {
-  content: '';
-  position: absolute;
-  inset-block: 0;
-  inset-inline-end: 0;
-  inline-size: 26px;
-  background: linear-gradient(270deg, rgba(58, 44, 26, .22), transparent);
-}
-
-.root[dir='rtl'] .titlePage::after { background: linear-gradient(90deg, rgba(58, 44, 26, .22), transparent); }
-
-@media (min-width: 880px) { .titlePage { display: flex; } }
-
-.titleLogo {
-  inline-size: 64px;
-  block-size: 64px;
-  border-radius: 50%;
-  object-fit: cover;
-  border: 1px solid rgba(60, 46, 30, .22);
-}
-
-.titleRule {
-  inline-size: 46px;
-  block-size: 1px;
-  background: var(--book-accent);
-  opacity: .6;
-}
-
-.titleName {
-  font-family: 'Cormorant Garamond', 'Playfair Display', serif;
-  font-size: clamp(28px, 3vw, 42px);
-  font-weight: 600;
-  line-height: 1.1;
-  color: #2b2419;
-  margin: 0;
-}
-
-.titleMeta {
-  font-size: 10px;
-  letter-spacing: 3px;
-  text-transform: uppercase;
-  color: rgba(43, 36, 25, .5);
-}
-
-.titleTagline {
-  font-size: 13.5px;
-  line-height: 1.7;
-  color: rgba(43, 36, 25, .62);
-  max-width: 30ch;
-  margin: 0;
-}
-
-/* ---------- Leaves ---------- */
-
-.stack {
-  position: absolute;
-  inset-block: 0;
-  inset-inline-end: 0;
-  inline-size: 100%;
-  transform-style: preserve-3d;
-}
-
-@media (min-width: 880px) { .stack { inline-size: 50%; } }
-
-/* The unread block, peeking out past the fore edge. */
-.foreEdge {
-  position: absolute;
-  inset-block: 5px;
-  inset-inline-end: -5px;
-  inline-size: 7px;
-  z-index: 0;
-  border-start-end-radius: 7px;
-  border-end-end-radius: 7px;
-  background: repeating-linear-gradient(180deg, #e8dfcd 0 2px, #cfc3ab 2px 3px);
-  opacity: .85;
-  transition: opacity .4s ease;
-}
-
-/* Turn progress, 0 (closed) to 1 (turned). Registering it is what makes it
-   animatable: an unregistered custom property has no type, so it can only jump.
-   Everything about the turn — angle, lift, tilt, shading — is derived from this
-   one number, which is also why a drag could later drive the turn by writing to
-   it directly instead of waiting out a transition. */
-@property --p {
-  syntax: '<number>';
-  inherits: true;
-  initial-value: 0;
-}
-
-.sheet {
-  position: absolute;
-  inset: 0;
-  --p: 0;
-  transform-origin: left center;
-  transform-style: preserve-3d;
-  transition: --p 800ms cubic-bezier(.56, .04, .3, 1);
-  /* Deliberately no will-change. Because the transform is derived from a custom
-     property it is recomputed in style, not handed to the compositor, so a
-     promoted layer per leaf would cost memory on a long menu and buy nothing.
-     Measured identical at 6 and at 40 leaves. */
-  /* Read right to left: the leaf swings on the spine, then tilts so its top
-     outer corner runs ahead of the bottom one, then lifts off the book.
-     sin() peaks at the halfway point and returns to zero, so the lift and the
-     tilt exist only while the page is in the air — the corner traces an arc
-     instead of the whole sheet pivoting flat. */
-  transform:
-    translateZ(calc(sin(var(--p) * 180deg) * 54px))
-    rotateZ(calc(sin(var(--p) * 180deg) * var(--dir) * 5.5deg))
-    rotateY(calc(var(--p) * var(--dir) * 180deg));
-}
-
-.root[dir='rtl'] .sheet { transform-origin: right center; }
-
-.sheet[data-turned='true'] { --p: 1; }
-
-/* Safari before 16.4 has no sin(), which would invalidate the whole transform
-   and leave the page stuck. Fall back to the plain rigid turn there. */
-@supports not (transform: translateZ(calc(sin(45deg) * 1px))) {
-  .sheet {
-    transition: transform 720ms cubic-bezier(.62, .02, .28, 1);
-    transform: rotateY(calc(var(--p) * var(--dir) * 180deg));
-  }
-}
-
-/* Both faces of the same leaf. `backface-visibility` does the swap at 90°, so
-   the page you are reading and the verso behind it are one element. */
-.face {
-  position: absolute;
-  inset: 0;
+.page {
   overflow: hidden;
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
-  border-start-start-radius: 2px;
-  border-end-start-radius: 2px;
-  border-start-end-radius: 10px;
-  border-end-end-radius: 10px;
-  background-color: #faf5ea;
+  color: var(--book-ink);
+  background-color: #f6f0e4;
   background-image:
-    radial-gradient(circle at 18% 26%, rgba(150, 126, 86, .07), transparent 46%),
-    radial-gradient(circle at 84% 74%, rgba(150, 126, 86, .06), transparent 44%);
-  color: #2b2419;
-  box-shadow: 0 16px 38px rgba(0, 0, 0, .44);
-  display: flex;
-  flex-direction: column;
+    repeating-linear-gradient(0deg, rgba(111, 84, 46, .018) 0 1px, transparent 1px 4px),
+    linear-gradient(110deg, rgba(255, 255, 255, .45), transparent 55%, rgba(137, 109, 67, .025));
 }
+/* The bound gutter belongs to the printed sheet. The library supplies moving
+   fold shadows and must remain free to position and transform every leaf. */
+.page::after { position: absolute; z-index: 2; inset: 0; background: linear-gradient(90deg, rgba(76, 52, 27, .08), transparent 6%, transparent 96%, rgba(76, 52, 27, .035)); content: ''; pointer-events: none; }
+.page:global(.--left)::after { background: linear-gradient(90deg, rgba(76, 52, 27, .025), transparent 6%, transparent 88%, rgba(76, 52, 27, .12)); }
+.page:global(.--right)::after { background: linear-gradient(90deg, rgba(76, 52, 27, .12), transparent 12%, transparent 94%, rgba(76, 52, 27, .025)); }
 
-/* Ink pooling into the gutter. */
-.face::before {
-  content: '';
-  position: absolute;
-  inset-block: 0;
-  inset-inline-start: 0;
-  inline-size: 24px;
-  z-index: 4;
-  pointer-events: none;
-  background: linear-gradient(90deg, rgba(58, 44, 26, .2), transparent);
-}
-
-.root[dir='rtl'] .face::before { background: linear-gradient(270deg, rgba(58, 44, 26, .2), transparent); }
-
-/* A rigid rectangle cannot bend, but light raking across a curved sheet can be
-   drawn. This fades in only while the page is in the air, so at rest the paper
-   is clean. Composited opacity — nothing here repaints per frame. */
-.face::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  z-index: 6;
-  pointer-events: none;
-  opacity: calc(sin(var(--p) * 180deg));
-  background: linear-gradient(90deg,
-    rgba(28, 20, 10, .36) 0%,
-    rgba(28, 20, 10, .10) 17%,
-    rgba(255, 251, 240, .26) 43%,
-    rgba(28, 20, 10, .05) 67%,
-    rgba(28, 20, 10, .32) 100%);
-}
-
-.root[dir='rtl'] .face::after {
-  background: linear-gradient(270deg,
-    rgba(28, 20, 10, .36) 0%,
-    rgba(28, 20, 10, .10) 17%,
-    rgba(255, 251, 240, .26) 43%,
-    rgba(28, 20, 10, .05) 67%,
-    rgba(28, 20, 10, .32) 100%);
-}
-
-@supports not (opacity: calc(sin(45deg))) {
-  .face::after { display: none; }
-}
-
-.back { transform: rotateY(180deg); }
-
-/* The verso is blank paper with a watermark, which is what the back of a menu
-   page looks like and avoids inventing content that does not exist. */
-.backMark {
-  margin: auto;
-  font-family: 'Cormorant Garamond', 'Playfair Display', serif;
-  font-size: 64px;
-  font-weight: 600;
-  color: rgba(43, 36, 25, .07);
-  letter-spacing: 2px;
-}
-
-/* ---------- Page content ---------- */
-
-.plate {
+.pageContent {
   position: relative;
-  flex-shrink: 0;
-  block-size: 42%;
-  overflow: hidden;
-  background: #efe7d7;
-}
-
-.plate img { inline-size: 100%; block-size: 100%; object-fit: cover; }
-
-.plateEmpty {
-  inline-size: 100%;
-  block-size: 100%;
+  z-index: 1;
   display: grid;
-  place-items: center;
-  background: linear-gradient(150deg, var(--book-tint), #e6dcc7);
-  font-family: 'Cormorant Garamond', 'Playfair Display', serif;
-  font-size: 58px;
-  color: rgba(43, 36, 25, .22);
-}
-
-/* Softens the photo into the paper instead of stopping at a hard edge. */
-.plate::after {
-  content: '';
-  position: absolute;
-  inset-inline: 0;
-  inset-block-end: 0;
-  block-size: 26px;
-  background: linear-gradient(180deg, transparent, #faf5ea);
-}
-
-/* The only part of the page allowed to clip. Price and folio live outside it
-   and are anchored to the foot, so no amount of writing can push them off. */
-.copy {
-  flex: 1;
-  min-block-size: 0;
-  display: flex;
-  flex-direction: column;
-  padding: 16px 24px 0;
+  /* Masthead, the list of dishes, then the printed folio. */
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: 2.4%;
+  width: 100%;
+  height: 100%;
+  padding: 6.4%;
+  container-type: inline-size;
   overflow: hidden;
+  text-align: start;
+}
+.pageHeader { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-width: 0; min-height: 12px; border-bottom: 1px solid rgba(105, 83, 53, .2); padding-bottom: 2.2cqw; color: #746954; font-size: clamp(8px, 2.65cqw, 11px); }
+.categoryLabel { min-width: 0; overflow: hidden; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; text-overflow: ellipsis; white-space: nowrap; }
+.pageNumber { flex-shrink: 0; font-size: .9em; font-variant-numeric: tabular-nums; letter-spacing: .06em; opacity: .7; }
+
+/* The dishes on this page. Rows share the height evenly so a page never runs
+   past its own edge, however many dishes it carries. */
+.list { display: grid; grid-auto-rows: 1fr; gap: 1.5cqw; min-height: 0; overflow: hidden; }
+.entry { display: flex; align-items: center; gap: 3.4cqw; min-width: 0; min-height: 0; overflow: hidden; }
+.entry + .entry { border-top: 1px solid rgba(105, 83, 53, .13); padding-top: 1.5cqw; }
+.entryUnavailable { opacity: .48; }
+
+.thumb { position: relative; flex-shrink: 0; width: 17cqw; max-width: 74px; aspect-ratio: 1; overflow: hidden; border-radius: 1px; background: #e8decc; }
+.thumb img { display: block; width: 100%; height: 100%; object-fit: cover; filter: saturate(.92); }
+.thumb::after { position: absolute; inset: 0; border: 1px solid rgba(89, 59, 28, .08); content: ''; pointer-events: none; }
+.thumbEmpty { display: grid; place-items: center; width: 100%; height: 100%; background: radial-gradient(circle at 50% 45%, #f5ecdb 0 34%, #e0d2b8 34.5% 36%, #efe4d0 36.5% 100%); color: #a08e6d; font-family: 'Cormorant Garamond', 'Tajawal', serif; font-size: 7cqw; }
+
+.entryMain { display: flex; flex-direction: column; gap: .7cqw; min-width: 0; flex: 1; }
+/* The classic menu line: name, dot leader, price. */
+.entryTop { display: flex; align-items: baseline; gap: 1.6cqw; min-width: 0; }
+.entryName { flex-shrink: 1; min-width: 0; overflow: hidden; color: var(--book-ink); font-family: 'Cormorant Garamond', 'Tajawal', serif; font-size: clamp(13px, 4.6cqw, 21px); font-weight: 600; line-height: 1.18; letter-spacing: -.012em; white-space: nowrap; text-overflow: ellipsis; }
+.leader { flex: 1; min-width: 12px; align-self: flex-end; height: 0; margin-bottom: .35em; border-bottom: 1px dotted rgba(112, 88, 55, .42); }
+.entryPrice { flex-shrink: 0; color: var(--book-brand); font-size: clamp(10px, 3.5cqw, 15px); font-weight: 600; font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
+.entrySoldOut { flex-shrink: 0; color: #92704f; font-size: clamp(8px, 2.7cqw, 11px); font-weight: 600; letter-spacing: .06em; text-transform: uppercase; }
+.entryDesc { display: -webkit-box; margin: 0; overflow: hidden; color: #857764; font-size: clamp(8.5px, 2.9cqw, 12px); line-height: 1.45; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+/* Sizes are printed, not tapped: a row this size has no room for buttons, and
+   a paper menu lists its options anyway. */
+.entryVariants { display: block; overflow: hidden; color: #9a8b76; font-size: clamp(8px, 2.6cqw, 10.5px); font-weight: 500; letter-spacing: .02em; white-space: nowrap; text-overflow: ellipsis; }
+.entryVariants b { color: #7c6c55; font-weight: 600; }
+
+.folio { display: flex; align-items: center; justify-content: center; gap: 9px; min-height: 10px; color: #998c76; font-size: clamp(7px, 2.15cqw, 9px); font-weight: 500; line-height: 1.2; letter-spacing: .08em; text-transform: uppercase; }
+.folio::before, .folio::after { width: 16px; height: 1px; background: rgba(135, 111, 76, .26); content: ''; }
+
+.endPage > .pageContent { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4cqw; }
+.endPage { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5cqw; background: radial-gradient(ellipse at center, rgba(239, 223, 190, .1), rgba(188, 158, 105, .06)); text-align: center; }
+.endMark { display: grid; place-items: center; width: 24cqw; height: 24cqw; margin-bottom: 4cqw; border: 1px solid #c9b995; border-radius: 50%; color: var(--book-brand); font-family: 'Cormorant Garamond', 'Tajawal', serif; font-size: 11cqw; }
+.endMark img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
+.endMark svg { width: 11cqw; height: 11cqw; stroke-width: 1; }
+.endTitle { max-width: 95%; margin: 0; color: var(--book-ink); font-family: 'Cormorant Garamond', 'Tajawal', serif; font-size: clamp(24px, 11cqw, 42px); font-weight: 500; line-height: 1.1; }
+.endCopy { max-width: 82%; margin: 0; color: #8d7b61; font-size: clamp(11px, 3.8cqw, 14px); line-height: 1.6; }
+
+/* Controls stay outside the paper, with a precise, quiet progress rail. */
+.controls { display: flex; flex-shrink: 0; align-items: center; justify-content: center; gap: 21px; margin: 20px auto 0; }
+.pageProgress { display: flex; flex-direction: column; align-items: center; gap: 9px; width: 135px; }
+.pageRange { color: rgba(247, 241, 231, .74); font-size: 10px; line-height: 1; font-variant-numeric: tabular-nums; letter-spacing: .15em; }
+.rail { width: 100%; height: 1px; overflow: hidden; background: rgba(243, 234, 216, .15); }
+.railFill { display: block; height: 100%; background: #e1c99b; transform-origin: left center; transition: width .35s ease, transform .35s ease; }
+.root[dir='rtl'] .railFill { transform-origin: right center; }
+.hint { flex-shrink: 0; min-height: 12px; margin: 8px 0 0; color: rgba(247, 241, 231, .36); text-align: center; font-size: 8px; line-height: 1.3; letter-spacing: .04em; }
+.footer { display: flex; flex-shrink: 0; align-items: center; justify-content: center; gap: 15px; min-height: 42px; padding: 10px 18px calc(env(safe-area-inset-bottom, 0px) + 12px); color: rgba(247, 241, 231, .37); font-size: 9px; }
+.contact { display: flex; align-items: center; justify-content: center; gap: 13px; min-width: 0; }
+.contact a, .contact span { display: inline-flex; align-items: center; gap: 5px; min-width: 0; max-width: 180px; color: inherit; text-decoration: none; }
+.contact svg { width: 12px; height: 12px; flex-shrink: 0; }
+.contact a:hover { color: #e6d5b4; }
+.mark { display: inline-flex; flex-shrink: 0; align-items: center; gap: 4px; color: inherit; font-size: 8px; text-decoration: none; }
+.mark b, .mark strong { color: rgba(247, 241, 231, .62); font-weight: 500; }
+.empty { display: flex; flex: 1; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 30px; color: #c6b99f; text-align: center; font-family: 'Cormorant Garamond', 'Tajawal', serif; font-size: 24px; }
+.status { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+
+.root[dir='rtl'] .venueName, .pageContent[dir='rtl'] .name, .pageContent[dir='rtl'] .endTitle { font-family: 'Tajawal', sans-serif; }
+.root[dir='rtl'] .venueSub, .root[dir='rtl'] .chip, .pageContent[dir='rtl'] .categoryLabel { letter-spacing: 0; }
+.pageContent[dir='rtl'] .name { font-size: clamp(18px, 7.2cqw, 29px); font-weight: 700; line-height: 1.25; letter-spacing: 0; }
+.pageContent[dir='rtl'] .desc { font-size: clamp(10px, 3.6cqw, 13px); line-height: 1.55; }
+.pageContent[dir='rtl'] .price { letter-spacing: 0; }
+
+@container (min-width: 335px) {
+  .variants button { min-width: 38px; height: 38px; font-size: 11px; }
 }
 
-/* Auto margins centre the writing when a dish is briefly described and
-   collapse to nothing when it is not, so the page is balanced either way. */
-.body { margin-block: auto; }
-
-.kicker {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  font-size: 9.5px;
-  letter-spacing: 2.6px;
-  text-transform: uppercase;
-  color: rgba(43, 36, 25, .46);
-  margin-bottom: 9px;
+@media (max-width: 700px) {
+  .header { gap: 12px; padding: calc(env(safe-area-inset-top, 0px) + 14px) 19px 7px; }
+  .logo, .monogram { width: 32px; height: 32px; }
+  .brand { gap: 9px; }
+  .venueName { font-size: 18px; }
+  .venueSub { font-size: 7px; }
+  .langToggle button { width: 31px; height: 27px; }
+  .chips { gap: 21px; min-height: 40px; margin-bottom: 6px; padding-inline: 19px; }
+  .chip { font-size: 10px; padding-top: 9px; }
+  .controls { gap: 21px; margin-top: 16px; }
+    .pageProgress { width: 113px; }
+  .hint { margin-top: 7px; font-size: 7px; }
+  .footer { gap: 11px; min-height: 37px; padding-top: 9px; padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 11px); font-size: 8px; }
+  .contact { gap: 10px; }
+  .contact a, .contact span { max-width: 145px; }
+  .contact svg { width: 11px; height: 11px; }
+  .mark { font-size: 7px; }
 }
 
-.kicker i {
-  flex: 1;
-  block-size: 1px;
-  background: rgba(43, 36, 25, .16);
+@media (max-height: 680px) {
+  .header { padding-top: calc(env(safe-area-inset-top, 0px) + 8px); padding-bottom: 3px; }
+  .logo, .monogram { width: 29px; height: 29px; }
+  .venueName { font-size: 17px; }
+  .chips { min-height: 35px; margin-bottom: 3px; }
+  .chip { padding-top: 6px; padding-bottom: 9px; font-size: 9px; }
+  .controls { margin-top: 11px; gap: 17px; }
+    .hint { margin-top: 5px; }
+  .footer { min-height: 30px; padding-block: 7px calc(env(safe-area-inset-bottom, 0px) + 7px); }
+  .pageContent { grid-template-rows: auto minmax(0, 35%) minmax(0, 1fr) auto auto; gap: 1.2%; padding: 5.6%; }
+  .name { font-size: clamp(17px, 7.8cqw, 31px); }
+  .desc { -webkit-line-clamp: 2; line-height: 1.4; }
+  .variants button { min-width: 32px; height: 32px; padding-inline: 7px; font-size: 9px; }
+  .pageContent[dir='rtl'] .name { font-size: clamp(17px, 6.9cqw, 27px); }
 }
-
-.name {
-  font-family: 'Cormorant Garamond', 'Playfair Display', serif;
-  font-size: clamp(26px, 5.6vw, 38px);
-  font-weight: 600;
-  line-height: 1.12;
-  letter-spacing: -.3px;
-  margin: 0 0 10px;
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-.desc {
-  font-size: 13.5px;
-  line-height: 1.66;
-  color: rgba(43, 36, 25, .64);
-  margin: 0 0 14px;
-  /* A leaf is a fixed box: clamp long writing rather than let it overflow the
-     page and get clipped mid-word. */
-  display: -webkit-box;
-  -webkit-line-clamp: 7;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-.variants {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-bottom: 14px;
-}
-
-.variants button {
-  border: 1px solid rgba(43, 36, 25, .2);
-  background: transparent;
-  color: rgba(43, 36, 25, .66);
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: .8px;
-  padding: 7px 13px;
-  border-radius: 999px;
-  transition: background .2s ease, color .2s ease, border-color .2s ease;
-}
-
-.variants button.variantActive {
-  background: var(--book-accent);
-  border-color: var(--book-accent);
-  color: var(--book-ink);
-}
-
-.priceRow {
-  flex-shrink: 0;
-  display: flex;
-  align-items: baseline;
-  gap: 10px;
-  margin-inline: 24px;
-  padding-block: 12px;
-  border-block-start: 1px solid rgba(43, 36, 25, .14);
-}
-
-/* Deliberately ink, not the brand colour. The accent is clamped to a mid-to-
-   light lightness, which is fine on the dark chrome and as a hairline rule but
-   cannot be trusted at 26px on cream paper — and a printed menu sets its prices
-   in ink anyway. */
-.price {
-  font-family: 'Cormorant Garamond', 'Playfair Display', serif;
-  font-size: 26px;
-  font-weight: 600;
-  color: #2b2419;
-}
-
-.soldOut {
-  font-size: 10.5px;
-  font-weight: 700;
-  letter-spacing: 1.6px;
-  text-transform: uppercase;
-  color: #a8572f;
-}
-
-.folio {
-  flex-shrink: 0;
-  padding: 0 24px 14px;
-  font-size: 10px;
-  letter-spacing: 2.4px;
-  color: rgba(43, 36, 25, .38);
-  text-align: end;
-}
-
-/* ---------- Turn controls ---------- */
-
-.controls {
-  position: relative;
-  z-index: 3;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 14px;
-  padding: 4px 18px 6px;
-  flex-shrink: 0;
-}
-
-.folioLive {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  font-size: 11px;
-  letter-spacing: 2.6px;
-  color: rgba(236, 228, 214, .5);
-  font-variant-numeric: tabular-nums;
-}
-
-.folioLive b { color: rgba(236, 228, 214, .9); font-weight: 600; }
-
-/* How far through the category you are, since the arrows no longer show it. */
-.rail {
-  /* Both of these are spans, so they need blockifying: an inline box ignores
-     inline-size, which silently collapsed the fill to nothing. */
-  display: block;
-  inline-size: 74px;
-  block-size: 2px;
-  border-radius: 999px;
-  background: rgba(236, 228, 214, .16);
-  overflow: hidden;
-}
-
-.railFill {
-  display: block;
-  block-size: 100%;
-  border-radius: 999px;
-  background: var(--book-accent);
-  transition: inline-size .5s cubic-bezier(.22, 1, .36, 1);
-}
-
-.hint {
-  position: relative;
-  z-index: 3;
-  text-align: center;
-  font-size: 9.5px;
-  letter-spacing: 2px;
-  text-transform: uppercase;
-  color: rgba(236, 228, 214, .3);
-  padding-bottom: 4px;
-  transition: opacity .4s ease;
-}
-
-.hintHidden { opacity: 0; }
-
-.hintPointer { display: none; }
-
-@media (hover: hover) and (pointer: fine) {
-  .hintTouch { display: none; }
-  .hintPointer { display: inline; }
-}
-
-/* ---------- Footer ---------- */
-
-.footer {
-  position: relative;
-  z-index: 3;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 9px;
-  padding: 6px 18px calc(env(safe-area-inset-bottom, 0px) + 12px);
-  flex-shrink: 0;
-}
-
-.contact {
-  inline-size: 36px;
-  block-size: 36px;
-  display: grid;
-  place-items: center;
-  border-radius: 50%;
-  border: 1px solid rgba(236, 228, 214, .16);
-  color: rgba(236, 228, 214, .7);
-  transition: border-color .22s ease, color .22s ease, transform .22s ease;
-}
-
-.contact svg { width: 16px; }
-
-.contact:hover { border-color: var(--book-accent); color: var(--book-accent); transform: translateY(-2px); }
-
-.mark {
-  margin-inline-start: 6px;
-  font-size: 9.5px;
-  letter-spacing: 1.8px;
-  text-transform: uppercase;
-  color: rgba(236, 228, 214, .3);
-}
-
-.mark b { color: rgba(236, 228, 214, .58); font-weight: 600; }
-
-.empty {
-  display: grid;
-  place-items: center;
-  block-size: 100%;
-  color: rgba(236, 228, 214, .45);
-  font-size: 14px;
-}
-
-/* ---------- Motion ---------- */
-
 @media (prefers-reduced-motion: reduce) {
-  .sheet { transition: none; }
-  .face::after { display: none; }
-  .contact:hover { transform: none; }
+  .root *, .root *::before, .root *::after { scroll-behavior: auto !important; transition: none !important; }
 }
