@@ -1,6 +1,6 @@
 # Fluxiva Menu — Project Context
 
-Last verified: 2026-09-18
+Last verified: 2026-09-21
 
 ## Product summary
 
@@ -155,7 +155,7 @@ The owner dashboard supports:
 - CSV import using fields such as `category_en`, `category_ar`, `name_en`, `name_ar`, `description_en`, `description_ar`, `price_lbp`, and `available`.
 - PNG/SVG QR downloads and browser printing.
 
-Image files are validated as JPG, PNG, or WebP, limited to 8 MB, resized in the browser, and encoded to WebP when that reduces size.
+Image files are validated as JPG, PNG, or WebP and limited to 8 MB. Before upload, the browser applies high-quality resizing and adaptive WebP compression: items fit within 1200×1200, covers within 1600×1200, and logos within 512×512. Replaced item, cover, and logo files—and item files removed with an item or category—are deleted from the restaurant's Storage folder on a best-effort basis so unused assets do not consume the quota.
 
 ### Public menu
 
@@ -193,4 +193,3 @@ Supabase migrations are currently expected to be run manually in sequence in the
 - The landing page imports Google Fonts over the network; provide a fallback/self-hosting plan if offline or privacy requirements change.
 - The `/platform` route shares the owner UI route guard. Server-side RPC authorization is the actual security boundary.
 - The Render production build inherits the Node version configured by Render; ensure it remains Node 22+.
-

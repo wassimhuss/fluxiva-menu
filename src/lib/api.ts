@@ -8,6 +8,12 @@ type CategoryInput = Pick<Category, 'restaurant_id' | 'name_en' | 'name_ar' | 's
 type ItemInput = Pick<MenuItem, 'restaurant_id' | 'category_id' | 'name_en' | 'name_ar' | 'description_en' | 'description_ar' | 'price_lbp' | 'image_url' | 'variants' | 'available' | 'sort_order'>
 type AssetPurpose = 'cover' | 'item' | 'logo'
 
+const IMAGE_LIMITS: Record<AssetPurpose, { width: number; height: number; quality: number; maxBytes: number }> = {
+  cover: { width: 1600, height: 1200, quality: 0.8, maxBytes: 420 * 1024 },
+  item: { width: 1200, height: 1200, quality: 0.8, maxBytes: 280 * 1024 },
+  logo: { width: 512, height: 512, quality: 0.88, maxBytes: 160 * 1024 },
+}
+
 function loadImage(file: File) {
   return new Promise<HTMLImageElement>((resolve, reject) => {
     const objectUrl = URL.createObjectURL(file)
@@ -24,15 +30,27 @@ async function optimizeImage(file: File, purpose: AssetPurpose) {
   if (file.size > 8 * 1024 * 1024) throw new Error('Images must be smaller than 8 MB.')
 
   const image = await loadImage(file)
-  const limits = purpose === 'cover' ? { width: 1800, height: 1200, quality: 0.82 } : purpose === 'logo' ? { width: 800, height: 800, quality: 0.9 } : { width: 1200, height: 1200, quality: 0.82 }
+  const limits = IMAGE_LIMITS[purpose]
   const scale = Math.min(1, limits.width / image.naturalWidth, limits.height / image.naturalHeight)
   const canvas = document.createElement('canvas')
   canvas.width = Math.max(1, Math.round(image.naturalWidth * scale))
   canvas.height = Math.max(1, Math.round(image.naturalHeight * scale))
   const context = canvas.getContext('2d')
   if (!context) throw new Error('This browser could not prepare the image.')
+  context.imageSmoothingEnabled = true
+  context.imageSmoothingQuality = 'high'
   context.drawImage(image, 0, 0, canvas.width, canvas.height)
-  const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/webp', limits.quality))
+
+  // Detailed food photos sometimes stay unexpectedly large at one fixed
+  // quality. Step down gently only when needed so storage and diner bandwidth
+  // stay predictable without penalising already-efficient images.
+  let quality = limits.quality
+  let blob: Blob | null = null
+  do {
+    blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/webp', quality))
+    quality -= 0.06
+  } while (blob && blob.size > limits.maxBytes && quality >= 0.62)
+
   if (!blob) throw new Error('This browser could not compress the image.')
   if (scale === 1 && blob.size >= file.size) return file
   const filename = file.name.replace(/\.[^.]+$/, '') || purpose
@@ -204,6 +222,31 @@ export async function uploadRestaurantAsset(restaurantId: string, file: File, pu
   const { error } = await supabase.storage.from('menu-assets').upload(path, optimizedFile, { contentType: optimizedFile.type, cacheControl: '31536000' })
   if (error) throw error
   return supabase.storage.from('menu-assets').getPublicUrl(path).data.publicUrl
+}
+
+/**
+ * Removes only assets generated inside this restaurant's own Storage folder.
+ * External URLs and bundled demo images are deliberately ignored.
+ */
+export async function deleteRestaurantAsset(restaurantId: string, publicUrl?: string) {
+  if (!publicUrl) return
+  if (publicUrl.startsWith('blob:')) { URL.revokeObjectURL(publicUrl); return }
+  if (!supabase) return
+
+  const marker = '/storage/v1/object/public/menu-assets/'
+  let path = ''
+  try {
+    const pathname = new URL(publicUrl).pathname
+    const markerIndex = pathname.indexOf(marker)
+    if (markerIndex < 0) return
+    path = decodeURIComponent(pathname.slice(markerIndex + marker.length))
+  } catch {
+    return
+  }
+
+  if (path.split('/')[0] !== restaurantId || path.includes('..')) return
+  const { error } = await supabase.storage.from('menu-assets').remove([path])
+  if (error) throw error
 }
 
 /**

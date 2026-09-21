@@ -6,7 +6,7 @@ import { Brand } from '../components/Brand'
 import { Loading, Notice } from '../components/Status'
 import { MenuViews } from '../components/MenuViews'
 import { SubscriptionBanner } from '../components/SubscriptionBanner'
-import { cleanVariants, createCategory, createItem, deleteCategory, deleteItem, getMenuViewStats, getOwnerMenu, setRestaurantTemplate, updateCategory, updateItem, updateRestaurant, uploadRestaurantAsset } from '../lib/api'
+import { cleanVariants, createCategory, createItem, deleteCategory, deleteItem, deleteRestaurantAsset, getMenuViewStats, getOwnerMenu, setRestaurantTemplate, updateCategory, updateItem, updateRestaurant, uploadRestaurantAsset } from '../lib/api'
 import { useAuth } from '../lib/auth'
 import { demoMenu } from '../lib/demo'
 import { formatLbp } from '../lib/format'
@@ -17,6 +17,10 @@ import type { Category, MenuItem, MenuViewStats, RestaurantMenu, Variant } from 
 type Panel = 'overview' | 'menu' | 'design' | 'settings'
 type ItemDraft = { category_id: string; name_en: string; name_ar: string; description_en: string; description_ar: string; price_lbp: string; variants: Variant[]; image_file: File | null; image_url?: string }
 const emptyItem = (categoryId = ''): ItemDraft => ({ category_id: categoryId, name_en: '', name_ar: '', description_en: '', description_ar: '', price_lbp: '', variants: [], image_file: null })
+
+async function discardAsset(restaurantId: string, url?: string) {
+  try { await deleteRestaurantAsset(restaurantId, url) } catch { /* Cleanup must not undo a successful menu change. */ }
+}
 
 function csvRows(text: string) {
   const rows: string[][] = []
@@ -132,25 +136,37 @@ export function DashboardPage() {
 
   async function removeCategory(category: Category) {
     if (!menu || !window.confirm(`Delete ${category.name_en} and all items inside it?`)) return
-    try { await deleteCategory(category.id); setMenu({ ...menu, categories: menu.categories.filter((entry) => entry.id !== category.id), items: menu.items.filter((item) => item.category_id !== category.id) }); showSuccess('Category deleted.') }
+    try {
+      const removedItems = menu.items.filter((item) => item.category_id === category.id)
+      await deleteCategory(category.id)
+      await Promise.all(removedItems.map((item) => discardAsset(menu.restaurant.id, item.image_url)))
+      setMenu({ ...menu, categories: menu.categories.filter((entry) => entry.id !== category.id), items: menu.items.filter((item) => item.category_id !== category.id) })
+      showSuccess('Category deleted.')
+    }
     catch (caught) { setError(caught instanceof Error ? caught.message : 'Could not delete category') }
   }
 
   async function saveItem(event: React.FormEvent) {
     event.preventDefault(); if (!menu) return
     setSaving(true); setError('')
+    let uploadedImageUrl: string | undefined
     try {
-      const image_url = itemDraft.image_file ? await uploadRestaurantAsset(menu.restaurant.id, itemDraft.image_file) : itemDraft.image_url
+      uploadedImageUrl = itemDraft.image_file ? await uploadRestaurantAsset(menu.restaurant.id, itemDraft.image_file) : undefined
+      const image_url = uploadedImageUrl ?? itemDraft.image_url
       const input = { restaurant_id: menu.restaurant.id, category_id: itemDraft.category_id, name_en: itemDraft.name_en, name_ar: itemDraft.name_ar, description_en: itemDraft.description_en, description_ar: itemDraft.description_ar, price_lbp: Number(itemDraft.price_lbp) || 0, image_url, variants: cleanVariants(itemDraft.variants), available: editingItem?.available ?? true, sort_order: editingItem?.sort_order ?? menu.items.filter((entry) => entry.category_id === itemDraft.category_id).length + 1 }
       let item: MenuItem
       if (editingItem) {
         item = { ...editingItem, ...input }
         await updateItem(editingItem.id, input)
       } else item = await createItem(input)
+      if (uploadedImageUrl && editingItem?.image_url !== uploadedImageUrl) await discardAsset(menu.restaurant.id, editingItem?.image_url)
       setMenu({ ...menu, items: editingItem ? menu.items.map((entry) => entry.id === item.id ? item : entry) : [...menu.items, item] })
       setItemModal(false); setEditingItem(null); setItemDraft(emptyItem(menu.categories[0]?.id))
       showSuccess(editingItem ? 'Menu item updated.' : 'Menu item added.')
-    } catch (caught) { setError(caught instanceof Error ? caught.message : 'Could not add item') }
+    } catch (caught) {
+      await discardAsset(menu.restaurant.id, uploadedImageUrl)
+      setError(caught instanceof Error ? caught.message : 'Could not add item')
+    }
     finally { setSaving(false) }
   }
 
@@ -198,24 +214,34 @@ export function DashboardPage() {
   async function uploadLogo(file: File) {
     if (!menu) return
     setSaving(true); setError('')
+    let uploadedUrl: string | undefined
     try {
-      const logo_url = await uploadRestaurantAsset(menu.restaurant.id, file, 'logo')
-      await updateRestaurant(menu.restaurant.id, { logo_url })
-      setMenu({ ...menu, restaurant: { ...menu.restaurant, logo_url } })
+      uploadedUrl = await uploadRestaurantAsset(menu.restaurant.id, file, 'logo')
+      await updateRestaurant(menu.restaurant.id, { logo_url: uploadedUrl })
+      await discardAsset(menu.restaurant.id, menu.restaurant.logo_url)
+      setMenu({ ...menu, restaurant: { ...menu.restaurant, logo_url: uploadedUrl } })
       showSuccess('Restaurant logo updated.')
-    } catch (caught) { setError(caught instanceof Error ? caught.message : 'Could not upload logo') }
+    } catch (caught) {
+      await discardAsset(menu.restaurant.id, uploadedUrl)
+      setError(caught instanceof Error ? caught.message : 'Could not upload logo')
+    }
     finally { setSaving(false) }
   }
 
   async function uploadCover(file: File) {
     if (!menu) return
     setSaving(true); setError('')
+    let uploadedUrl: string | undefined
     try {
-      const cover_image_url = await uploadRestaurantAsset(menu.restaurant.id, file, 'cover')
-      await updateRestaurant(menu.restaurant.id, { cover_image_url })
-      setMenu({ ...menu, restaurant: { ...menu.restaurant, cover_image_url } })
+      uploadedUrl = await uploadRestaurantAsset(menu.restaurant.id, file, 'cover')
+      await updateRestaurant(menu.restaurant.id, { cover_image_url: uploadedUrl })
+      await discardAsset(menu.restaurant.id, menu.restaurant.cover_image_url)
+      setMenu({ ...menu, restaurant: { ...menu.restaurant, cover_image_url: uploadedUrl } })
       showSuccess('Menu cover photo updated.')
-    } catch (caught) { setError(caught instanceof Error ? caught.message : 'Could not upload cover photo') }
+    } catch (caught) {
+      await discardAsset(menu.restaurant.id, uploadedUrl)
+      setError(caught instanceof Error ? caught.message : 'Could not upload cover photo')
+    }
     finally { setSaving(false) }
   }
 
@@ -226,7 +252,12 @@ export function DashboardPage() {
 
   async function removeItem(item: MenuItem) {
     if (!menu || !window.confirm(`Delete ${item.name_en}?`)) return
-    try { await deleteItem(item.id); setMenu({ ...menu, items: menu.items.filter((entry) => entry.id !== item.id) }); showSuccess('Menu item deleted.') }
+    try {
+      await deleteItem(item.id)
+      await discardAsset(menu.restaurant.id, item.image_url)
+      setMenu({ ...menu, items: menu.items.filter((entry) => entry.id !== item.id) })
+      showSuccess('Menu item deleted.')
+    }
     catch (caught) { setError(caught instanceof Error ? caught.message : 'Could not delete item') }
   }
 
