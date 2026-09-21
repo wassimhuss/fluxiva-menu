@@ -6,7 +6,9 @@
   background: #0a0c0b;
   color: #e9e5dc;
   font-family: 'DM Sans', 'Tajawal', sans-serif;
-  overflow-x: hidden;
+  /* `overflow-x: hidden` also creates a vertical scroll container, which stops
+     the category bar from sticking to the viewport. */
+  overflow-x: clip;
 }
 
 /* ---------- Cover ---------- */

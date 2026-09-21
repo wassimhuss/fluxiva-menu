@@ -9,7 +9,9 @@
   background: var(--aurora-bg);
   color: #1b2422;
   font-family: 'Outfit', 'DM Sans', 'Tajawal', sans-serif;
-  overflow-x: hidden;
+  /* `hidden` creates a scroll container and traps the sticky category bar.
+     `clip` still contains decorative overflow without changing its scroll root. */
+  overflow-x: clip;
 }
 
 .mesh {

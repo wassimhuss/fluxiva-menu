@@ -7,7 +7,8 @@
   background: #f4f4f2;
   color: #16201e;
   font-family: 'Outfit', 'DM Sans', 'Tajawal', sans-serif;
-  overflow-x: hidden;
+  /* Keep the viewport as the sticky category bar's scroll container. */
+  overflow-x: clip;
 }
 
 /* ---------- Header ---------- */
