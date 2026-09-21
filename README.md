@@ -69,3 +69,9 @@ Paid subscriptions expire: a menu is served while the status is `active` **and**
 ## Current MVP scope
 
 The service has one `$60/year` plan after a 14-day trial. It includes Arabic and English menus, unlimited menu edits, restaurant branding, size variants, item availability and QR download. Subscriptions are activated manually after cash, Whish Money or bank transfer payment.
+
+## Project documentation
+
+- [`AGENTS.md`](AGENTS.md) — repository-wide rules and validation expectations for AI agents and contributors.
+- [`docs/PROJECT_CONTEXT.md`](docs/PROJECT_CONTEXT.md) — product, architecture, routes, data model, security, deployment, design system and current constraints.
+- [`docs/AI_CONTINUATION.md`](docs/AI_CONTINUATION.md) — startup checklist, common change recipes, verification matrix and handoff template.
