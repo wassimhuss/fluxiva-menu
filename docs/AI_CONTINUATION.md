@@ -2,6 +2,8 @@
 
 Use this checklist when starting or handing off work on Fluxiva Menu.
 
+Read the active product backlog in [`../TODO.md`](../TODO.md) before starting a planned feature, and update its status as the work progresses.
+
 ## 1. Start safely
 
 ```bash
@@ -155,4 +157,3 @@ These are opportunities, not committed roadmap items:
 5. Lazy-load owner and platform routes to reduce the production bundle.
 6. Make CSV import transactional or provide a row-level failure report.
 7. Add a documented Supabase migration/deployment pipeline.
-

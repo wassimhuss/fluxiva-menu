@@ -73,5 +73,6 @@ The service has one `$60/year` plan after a 14-day trial. It includes Arabic and
 ## Project documentation
 
 - [`AGENTS.md`](AGENTS.md) — repository-wide rules and validation expectations for AI agents and contributors.
+- [`TODO.md`](TODO.md) — product backlog, including the planned shared Fluxiva image gallery.
 - [`docs/PROJECT_CONTEXT.md`](docs/PROJECT_CONTEXT.md) — product, architecture, routes, data model, security, deployment, design system and current constraints.
 - [`docs/AI_CONTINUATION.md`](docs/AI_CONTINUATION.md) — startup checklist, common change recipes, verification matrix and handoff template.
