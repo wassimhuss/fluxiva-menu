@@ -42,4 +42,6 @@ export interface TemplateMeta {
   scroll?: string
   /** Cuisine or venue types this design suits, for filtering later. */
   tags: string[]
+  /** The layout works without photos, but photography is central to its intended look. */
+  photoLed?: boolean
 }

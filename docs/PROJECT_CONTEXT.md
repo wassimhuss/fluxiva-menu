@@ -1,6 +1,6 @@
 # Fluxiva Menu — Project Context
 
-Last verified: 2026-09-21
+Last verified: 2026-09-23
 
 ## Product summary
 
@@ -100,13 +100,15 @@ supabase/migrations/
   001_fluxiva_menu.sql     Core schema, RLS, storage, and platform RPCs
   002_restaurant_details.sql
   003_restaurant_cover_image.sql
+  ...
+  009_menu_image_visibility.sql
 ```
 
 ## Data model
 
 ### `restaurants`
 
-One restaurant per owner. Important fields include the unique public `slug`, bilingual identity and address fields, logo/cover URLs, contact links, brand color, default language, opening state, subscription status, and trial/subscription expiry timestamps.
+One restaurant per owner. Important fields include the unique public `slug`, bilingual identity and address fields, logo/cover URLs, contact links, brand color, default language, opening state, the `show_item_images` food-photo preference, subscription status, and trial/subscription expiry timestamps.
 
 ### `menu_categories`
 
@@ -152,6 +154,7 @@ The owner dashboard supports:
 - Item availability toggles and sold-out presentation.
 - Item variants and photos.
 - Restaurant logo, cover, theme, contact details, opening state, and default language.
+- A restaurant-wide food-photo visibility switch. Hiding photos preserves the uploaded files and all templates render their text or branded-placeholder fallback.
 - CSV import using fields such as `category_en`, `category_ar`, `name_en`, `name_ar`, `description_en`, `description_ar`, `price_lbp`, and `available`.
 - PNG/SVG QR downloads and browser printing.
 

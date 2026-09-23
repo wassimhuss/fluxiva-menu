@@ -61,11 +61,6 @@ export function PublicMenuPage() {
     }).catch(() => setError('This menu could not be loaded.')).finally(() => setLoading(false))
   }, [slug])
 
-  const visibleItems = useMemo(
-    () => menu?.items.filter((item) => !activeCategory || item.category_id === activeCategory) ?? [],
-    [menu, activeCategory],
-  )
-
   /* The design panel previews an unsaved brand colour the same way it already
      previews an unsaved template. Validated as a hex literal first: this value
      reaches inline styles, and a URL is not a trusted source. Anything else is
@@ -90,6 +85,28 @@ export function PublicMenuPage() {
   const restaurantId = menu?.restaurant.id
   const isOwner = Boolean(session && menu && session.user.id === menu.restaurant.owner_id)
   const isPreview = searchParams.has('preview')
+
+  /* Only the dashboard preview may override this preference through the URL.
+     A customer cannot turn restaurant photos back on by changing a query
+     string. The item data is copied without image URLs rather than changing
+     what is stored, so the owner can restore every photo with one switch. */
+  const canPreviewImages = isPreview && (isOwner || slug === 'demo')
+  const imagePreviewParam = canPreviewImages ? searchParams.get('images') : null
+  const showItemImages = imagePreviewParam === '0'
+    ? false
+    : imagePreviewParam === '1'
+      ? true
+      : menu?.restaurant.show_item_images !== false
+  const displayItems = useMemo(
+    () => showItemImages
+      ? menu?.items ?? []
+      : menu?.items.map((item) => ({ ...item, image_url: undefined })) ?? [],
+    [menu, showItemImages],
+  )
+  const visibleItems = useMemo(
+    () => displayItems.filter((item) => !activeCategory || item.category_id === activeCategory),
+    [displayItems, activeCategory],
+  )
 
   useEffect(() => {
     // Wait for auth to settle first. The menu can arrive before the session
@@ -147,12 +164,12 @@ export function PublicMenuPage() {
   const criticalImages = useMemo(() => {
     if (!menu) return []
     const firstCategory = menu.categories[0]?.id
-    const opening = menu.items
+    const opening = displayItems
       .filter((item) => item.category_id === firstCategory)
       .slice(0, 4)
       .map((item) => item.image_url)
     return [menu.restaurant.logo_url, coverUrl, ...opening]
-  }, [menu, coverUrl])
+  }, [menu, coverUrl, displayItems])
 
   const imagesReady = useImagePreload(criticalImages)
 
@@ -186,7 +203,7 @@ export function PublicMenuPage() {
   // Hold the branded loader until the first screen can render complete.
   if (!imagesReady) return <MenuLoadingState />
 
-  const { restaurant, categories, items } = menu
+  const { restaurant, categories } = menu
   const Template = templateComponents[templateId]
 
   // `?preview=1` is the dashboard's embedded preview, which supplies its own
@@ -199,7 +216,7 @@ export function PublicMenuPage() {
         <Template
           restaurant={restaurant}
           categories={categories}
-          items={items}
+          items={displayItems}
           visibleItems={visibleItems}
           activeCategory={activeCategory}
           setActiveCategory={setActiveCategory}

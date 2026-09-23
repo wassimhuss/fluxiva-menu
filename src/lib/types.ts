@@ -78,6 +78,8 @@ export interface Restaurant {
   temporarily_closed?: boolean
   /** Id of the public menu design; unknown values fall back to the default. */
   template_id?: string
+  /** Whether food-item photos are rendered on the public menu. Defaults to true. */
+  show_item_images?: boolean
   default_language: Language
   subscription_status: SubscriptionStatus
   trial_ends_at?: string

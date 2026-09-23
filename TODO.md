@@ -77,3 +77,6 @@ Build a curated **Fluxiva Gallery** that lets every restaurant owner either sele
 - [ ] Make CSV import transactional or provide a row-level failure report.
 - [ ] Add a documented Supabase migration and deployment pipeline.
 
+## Completed product improvements
+
+- [x] Let owners show or hide all food-item photos without deleting uploaded files (2026-09-23).

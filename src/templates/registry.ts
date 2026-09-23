@@ -40,6 +40,7 @@ export const TEMPLATES: TemplateMeta[] = [
     description: 'One dish per screen, swiped like a short-video feed.',
     scroll: 'Full-screen vertical snap',
     tags: ['photo-led', 'social', 'dessert'],
+    photoLed: true,
   },
   {
     id: 'carousel',
@@ -47,6 +48,7 @@ export const TEMPLATES: TemplateMeta[] = [
     description: 'A deck of dish cards flicked through sideways.',
     scroll: 'Horizontal snap deck',
     tags: ['small-menu', 'specials', 'cocktails'],
+    photoLed: true,
   },
   {
     id: 'story',
@@ -54,6 +56,7 @@ export const TEMPLATES: TemplateMeta[] = [
     description: 'Photography holds still while the writing scrolls past it.',
     scroll: 'Scrollytelling with a sticky image pane',
     tags: ['fine-dining', 'tasting-menu', 'editorial'],
+    photoLed: true,
   },
 ]
 

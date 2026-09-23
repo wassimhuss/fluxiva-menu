@@ -6,7 +6,7 @@ import { Brand } from '../components/Brand'
 import { Loading, Notice } from '../components/Status'
 import { MenuViews } from '../components/MenuViews'
 import { SubscriptionBanner } from '../components/SubscriptionBanner'
-import { cleanVariants, createCategory, createItem, deleteCategory, deleteItem, deleteRestaurantAsset, getMenuViewStats, getOwnerMenu, setRestaurantTemplate, updateCategory, updateItem, updateRestaurant, uploadRestaurantAsset } from '../lib/api'
+import { cleanVariants, createCategory, createItem, deleteCategory, deleteItem, deleteRestaurantAsset, getMenuViewStats, getOwnerMenu, updateCategory, updateItem, updateRestaurant, uploadRestaurantAsset } from '../lib/api'
 import { useAuth } from '../lib/auth'
 import { demoMenu } from '../lib/demo'
 import { formatLbp } from '../lib/format'
@@ -62,6 +62,8 @@ export function DashboardPage() {
   const [templateDraft, setTemplateDraft] = useState('')
   // Same idea for the brand colour, which now lives beside the design.
   const [colorDraft, setColorDraft] = useState('')
+  // Null means the saved preference is still the source of truth.
+  const [imageVisibilityDraft, setImageVisibilityDraft] = useState<boolean | null>(null)
   const [qrData, setQrData] = useState('')
   const [qrSvg, setQrSvg] = useState('')
   const [saving, setSaving] = useState(false)
@@ -194,18 +196,16 @@ export function DashboardPage() {
   }
 
   /**
-   * Saves the design as one thing. The template and the brand colour are stored
-   * on different columns through different calls, but to the owner they are a
-   * single choice, so one button commits whichever of them actually changed.
+   * Saves the layout, brand colour and photo preference atomically because the
+   * owner experiences them as one menu-design choice.
    */
-  async function saveDesign(templateId: string, color: string) {
+  async function saveDesign(templateId: string, color: string, showItemImages: boolean) {
     if (!menu) return
     setSaving(true); setError('')
     try {
-      if (templateId !== menu.restaurant.template_id) await setRestaurantTemplate(menu.restaurant.id, templateId)
-      if (color !== menu.restaurant.primary_color) await updateRestaurant(menu.restaurant.id, { primary_color: color })
-      setMenu({ ...menu, restaurant: { ...menu.restaurant, template_id: templateId, primary_color: color } })
-      setTemplateDraft(''); setColorDraft('')
+      await updateRestaurant(menu.restaurant.id, { template_id: templateId, primary_color: color, show_item_images: showItemImages })
+      setMenu({ ...menu, restaurant: { ...menu.restaurant, template_id: templateId, primary_color: color, show_item_images: showItemImages } })
+      setTemplateDraft(''); setColorDraft(''); setImageVisibilityDraft(null)
       showSuccess('Menu design updated.')
     } catch (caught) { setError(caught instanceof Error ? caught.message : 'Could not save the design') }
     finally { setSaving(false) }
@@ -340,7 +340,10 @@ export function DashboardPage() {
   const liveTemplate = resolveTemplateId(menu.restaurant.template_id)
   const previewTemplate = templateDraft || liveTemplate
   const previewColor = colorDraft || menu.restaurant.primary_color
-  const designDirty = previewTemplate !== liveTemplate || previewColor !== menu.restaurant.primary_color
+  const liveShowItemImages = menu.restaurant.show_item_images !== false
+  const previewShowItemImages = imageVisibilityDraft ?? liveShowItemImages
+  const designDirty = previewTemplate !== liveTemplate || previewColor !== menu.restaurant.primary_color || previewShowItemImages !== liveShowItemImages
+  const selectedTemplate = TEMPLATES.find((template) => template.id === previewTemplate)
 
   return (
     <main className="dashboard-layout">
@@ -386,8 +389,8 @@ export function DashboardPage() {
 
           {panel === 'design' && <>
             <div className="page-heading">
-              <div><span className="eyebrow"><span /> Menu design</span><h1>Choose how your menu looks.</h1><p>Layout, logo and colour. Every design shows the same items.</p></div>
-              <button className="button button-primary" disabled={saving || !designDirty} onClick={() => saveDesign(previewTemplate, previewColor)}>
+              <div><span className="eyebrow"><span /> Menu design</span><h1>Choose how your menu looks.</h1><p>Layout, photos, logo and colour. Every design shows the same items.</p></div>
+              <button className="button button-primary" disabled={saving || !designDirty} onClick={() => saveDesign(previewTemplate, previewColor, previewShowItemImages)}>
                 {!designDirty ? 'Design in use' : saving ? 'Saving…' : 'Save design'}
               </button>
             </div>
@@ -415,6 +418,28 @@ export function DashboardPage() {
                   <div className="theme-presets"><b>Colour presets</b><div>{[['#173f35', 'Cedar'], ['#b84d2f', 'Oven'], ['#7b4f34', 'Earth'], ['#244c70', 'Coast']].map(([color, name]) => <button type="button" key={color} onClick={() => setColorDraft(color)} className={previewColor === color ? 'selected' : ''}><i style={{ backgroundColor: color }} />{name}</button>)}</div></div>
                 </section>
 
+                <section className="dashboard-card menu-photo-setting">
+                  <div className="menu-photo-setting-copy">
+                    <span className="menu-photo-setting-icon">{previewShowItemImages ? <Eye /> : <EyeOff />}</span>
+                    <div>
+                      <h2>Food photos</h2>
+                      <p>Choose whether item photos appear on your public menu. Uploaded photos stay saved when hidden.</p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    className={`menu-photo-toggle ${previewShowItemImages ? 'on' : ''}`}
+                    aria-pressed={previewShowItemImages}
+                    onClick={() => setImageVisibilityDraft(!previewShowItemImages)}
+                  >
+                    <span aria-hidden="true"><i /></span>
+                    {previewShowItemImages ? 'Photos shown' : 'Photos hidden'}
+                  </button>
+                  {!previewShowItemImages && selectedTemplate?.photoLed && (
+                    <p className="menu-photo-advice"><b>{selectedTemplate.name}</b> is designed around photography, so it will use branded placeholders while food photos are hidden.</p>
+                  )}
+                </section>
+
                 <div className="template-grid">
                 {TEMPLATES.map((template) => (
                   <button
@@ -427,6 +452,7 @@ export function DashboardPage() {
                       {liveTemplate === template.id && <em>Live</em>}
                     </span>
                     <small>{template.description}</small>
+                    {template.photoLed && <span className="template-photo-note">Best with photos</span>}
                     {template.scroll && <span className="template-scroll">{template.scroll}</span>}
                   </button>
                 ))}
@@ -436,9 +462,9 @@ export function DashboardPage() {
                 <div className="card-heading"><div><h2>Live preview</h2><p>Your real menu, in this design.</p></div></div>
                 <div className="preview-phone">
                   {/* Keyed so switching design reloads the frame rather than leaving the old one. */}
-                  <iframe key={`${previewTemplate}|${previewColor}`} title="Menu design preview" src={`/m/${menu.restaurant.slug}?template=${previewTemplate}&color=${encodeURIComponent(previewColor)}&preview=1`} />
+                  <iframe key={`${previewTemplate}|${previewColor}|${previewShowItemImages}`} title="Menu design preview" src={`/m/${menu.restaurant.slug}?template=${previewTemplate}&color=${encodeURIComponent(previewColor)}&images=${previewShowItemImages ? '1' : '0'}&preview=1`} />
                 </div>
-                <Link className="button button-small button-outline full" to={`/m/${menu.restaurant.slug}?template=${previewTemplate}&color=${encodeURIComponent(previewColor)}`} target="_blank">
+                <Link className="button button-small button-outline full" to={`/m/${menu.restaurant.slug}?template=${previewTemplate}&color=${encodeURIComponent(previewColor)}&images=${previewShowItemImages ? '1' : '0'}&preview=1`} target="_blank">
                   Open full size <ExternalLink />
                 </Link>
               </aside>
