@@ -21,6 +21,13 @@ export const TEMPLATES: TemplateMeta[] = [
     tags: ['fine-dining', 'steakhouse', 'evening'],
   },
   {
+    id: 'bistro',
+    name: 'Bistro',
+    description: 'A clean, image-free menu with elegant price columns.',
+    scroll: 'Standard page scroll with a compact category rail',
+    tags: ['cafe', 'bistro', 'all-purpose'],
+  },
+  {
     id: 'aurora',
     name: 'Aurora',
     description: 'Frosted glass cards over a slow-drifting colour wash.',
@@ -67,6 +74,7 @@ export const DEFAULT_TEMPLATE = 'classic'
 export const templateComponents: Record<string, MenuTemplate> = {
   classic: lazy(() => import('./Classic')),
   noir: lazy(() => import('./Noir')),
+  bistro: lazy(() => import('./Bistro')),
   aurora: lazy(() => import('./Aurora')),
   kiosk: lazy(() => import('./Kiosk')),
   reel: lazy(() => import('./Reel')),
