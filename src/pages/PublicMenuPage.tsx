@@ -86,6 +86,19 @@ export function PublicMenuPage() {
   const isOwner = Boolean(session && menu && session.user.id === menu.restaurant.owner_id)
   const isPreview = searchParams.has('preview')
 
+  // The dashboard embeds this page in a phone frame. Keep the menu scrollable
+  // there, but remove the browser's outer document scrollbars so they do not
+  // look like a second phone edge inside the preview.
+  useEffect(() => {
+    if (!isPreview) return
+    document.documentElement.classList.add('menu-preview-document')
+    document.body.classList.add('menu-preview-document')
+    return () => {
+      document.documentElement.classList.remove('menu-preview-document')
+      document.body.classList.remove('menu-preview-document')
+    }
+  }, [isPreview])
+
   /* Only the dashboard preview may override this preference through the URL.
      A customer cannot turn restaurant photos back on by changing a query
      string. The item data is copied without image URLs rather than changing
