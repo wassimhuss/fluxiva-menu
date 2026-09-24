@@ -26,6 +26,7 @@ export const TEMPLATES: TemplateMeta[] = [
     description: 'Frosted glass cards over a slow-drifting colour wash.',
     scroll: 'Standard page scroll with a card grid',
     tags: ['cafe', 'juice-bar', 'modern'],
+    requiresItemImages: true,
   },
   {
     id: 'kiosk',
@@ -33,6 +34,7 @@ export const TEMPLATES: TemplateMeta[] = [
     description: 'Big photography and bold prices, built for fast service.',
     scroll: 'Standard page scroll with a card grid',
     tags: ['fast-food', 'pizza', 'street-food'],
+    requiresItemImages: true,
   },
   {
     id: 'reel',
@@ -40,7 +42,7 @@ export const TEMPLATES: TemplateMeta[] = [
     description: 'One dish per screen, swiped like a short-video feed.',
     scroll: 'Full-screen vertical snap',
     tags: ['photo-led', 'social', 'dessert'],
-    photoLed: true,
+    requiresItemImages: true,
   },
   {
     id: 'carousel',
@@ -48,7 +50,7 @@ export const TEMPLATES: TemplateMeta[] = [
     description: 'A deck of dish cards flicked through sideways.',
     scroll: 'Horizontal snap deck',
     tags: ['small-menu', 'specials', 'cocktails'],
-    photoLed: true,
+    requiresItemImages: true,
   },
   {
     id: 'story',
@@ -56,7 +58,7 @@ export const TEMPLATES: TemplateMeta[] = [
     description: 'Photography holds still while the writing scrolls past it.',
     scroll: 'Scrollytelling with a sticky image pane',
     tags: ['fine-dining', 'tasting-menu', 'editorial'],
-    photoLed: true,
+    requiresItemImages: true,
   },
 ]
 

@@ -9,7 +9,7 @@ import { formatLbp, localText } from '../lib/format'
 import { deriveTheme } from '../lib/theme'
 import { useImagePreload } from '../lib/useImagePreload'
 import type { Language, MenuContactCard, RestaurantMenu } from '../lib/types'
-import { resolveTemplateId, templateComponents } from '../templates/registry'
+import { DEFAULT_TEMPLATE, resolveTemplateId, TEMPLATES, templateComponents } from '../templates/registry'
 
 /**
  * The loader renders before any data has arrived, so it cannot know the
@@ -175,7 +175,11 @@ export function PublicMenuPage() {
 
   // The owner's saved design, unless a `?template=` override is present — which
   // is how the dashboard previews a design before it is saved.
-  const templateId = resolveTemplateId(searchParams.get('template') ?? menu?.restaurant.template_id)
+  const requestedTemplateId = resolveTemplateId(searchParams.get('template') ?? menu?.restaurant.template_id)
+  const templateId = !showItemImages && TEMPLATES.find((template) => template.id === requestedTemplateId)?.requiresItemImages
+    ? DEFAULT_TEMPLATE
+    : requestedTemplateId
+  const availableTemplates = showItemImages ? TEMPLATES : TEMPLATES.filter((template) => !template.requiresItemImages)
 
   /* Switching design returns the menu to where it starts: the first category,
      scrolled to the top. Each design is a different height and the window keeps
@@ -229,7 +233,7 @@ export function PublicMenuPage() {
           coverUrl={coverUrl}
         />
       </Suspense>
-      {showSwitcher && <TemplateSwitcher active={templateId} onSelect={selectTemplate} />}
+      {showSwitcher && <TemplateSwitcher active={templateId} onSelect={selectTemplate} templates={availableTemplates} />}
     </>
   )
 }

@@ -12,7 +12,7 @@ A bilingual QR menu SaaS for Lebanese restaurants. Owners can create a restauran
 - `/m/:slug` — public bilingual menu
 - `/platform` — private operator console for the Fluxiva team
 
-The menu editor supports item/category editing and ordering, item photos, a restaurant-wide show/hide photo preference, sold-out labels, quick theme presets, WhatsApp and Google Maps links, opening hours, and a bilingual preview. Hiding food photos keeps the uploaded files saved so the owner can restore them at any time.
+The menu editor supports item/category editing and ordering, item photos, a restaurant-wide show/hide photo preference, sold-out labels, quick theme presets, WhatsApp and Google Maps links, opening hours, and a bilingual preview. Hiding food photos keeps the uploaded files saved so the owner can restore them at any time, and limits the design picker to templates that work well without photography.
 
 Owners choose a public menu design under **Menu design** in the dashboard, previewing each one against their own items before saving. The choice is stored as `restaurants.template_id`; unknown or missing values fall back to `classic`, so the column can be added without touching existing rows. Designs differ in scroll behaviour as much as in looks — a full-screen vertical feed, a horizontal deck, scrollytelling with a sticky image pane, and four page-scroll layouts. Appending `?template=<id>` to a menu URL previews a design without saving it. CSV imports use columns such as `category_en`, `category_ar`, `name_en`, `name_ar`, `description_en`, `description_ar`, `price_lbp`, and `available`.
 

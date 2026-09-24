@@ -1,6 +1,7 @@
 import { Layers, X } from 'lucide-react'
 import { useState } from 'react'
 import { TEMPLATES } from '../templates/registry'
+import type { TemplateMeta } from '../templates/types'
 import styles from './TemplateSwitcher.module.css'
 
 /**
@@ -12,7 +13,7 @@ import styles from './TemplateSwitcher.module.css'
  * call to action at the bottom of the viewport, exactly where an always-open
  * bar would sit.
  */
-export function TemplateSwitcher({ active, onSelect }: { active: string; onSelect: (id: string) => void }) {
+export function TemplateSwitcher({ active, onSelect, templates = TEMPLATES }: { active: string; onSelect: (id: string) => void; templates?: TemplateMeta[] }) {
   const [open, setOpen] = useState(false)
 
   if (!open) {
@@ -36,7 +37,7 @@ export function TemplateSwitcher({ active, onSelect }: { active: string; onSelec
           </button>
         </div>
         <div className={styles.options}>
-          {TEMPLATES.map((template) => (
+          {templates.map((template) => (
             <button
               key={template.id}
               className={`${styles.option} ${active === template.id ? styles.active : ''}`}

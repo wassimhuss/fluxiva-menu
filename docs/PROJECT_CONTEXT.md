@@ -154,7 +154,7 @@ The owner dashboard supports:
 - Item availability toggles and sold-out presentation.
 - Item variants and photos.
 - Restaurant logo, cover, theme, contact details, opening state, and default language.
-- A restaurant-wide food-photo visibility switch. Hiding photos preserves the uploaded files and all templates render their text or branded-placeholder fallback.
+- A restaurant-wide food-photo visibility switch. Hiding photos preserves the uploaded files, limits the design picker to the text-friendly Classic and Noir templates, and safely falls back to Classic when a photo-based design had been selected.
 - CSV import using fields such as `category_en`, `category_ar`, `name_en`, `name_ar`, `description_en`, `description_ar`, `price_lbp`, and `available`.
 - PNG/SVG QR downloads and browser printing.
 

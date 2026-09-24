@@ -11,7 +11,7 @@ import { useAuth } from '../lib/auth'
 import { demoMenu } from '../lib/demo'
 import { formatLbp } from '../lib/format'
 import { subscriptionState } from '../lib/subscription'
-import { TEMPLATES, resolveTemplateId } from '../templates/registry'
+import { DEFAULT_TEMPLATE, TEMPLATES, resolveTemplateId } from '../templates/registry'
 import type { Category, MenuItem, MenuViewStats, RestaurantMenu, Variant } from '../lib/types'
 
 type Panel = 'overview' | 'menu' | 'design' | 'settings'
@@ -343,7 +343,15 @@ export function DashboardPage() {
   const liveShowItemImages = menu.restaurant.show_item_images !== false
   const previewShowItemImages = imageVisibilityDraft ?? liveShowItemImages
   const designDirty = previewTemplate !== liveTemplate || previewColor !== menu.restaurant.primary_color || previewShowItemImages !== liveShowItemImages
-  const selectedTemplate = TEMPLATES.find((template) => template.id === previewTemplate)
+  const availableTemplates = previewShowItemImages ? TEMPLATES : TEMPLATES.filter((template) => !template.requiresItemImages)
+
+  function toggleItemImages() {
+    const next = !previewShowItemImages
+    setImageVisibilityDraft(next)
+    if (!next && TEMPLATES.find((template) => template.id === previewTemplate)?.requiresItemImages) {
+      setTemplateDraft(DEFAULT_TEMPLATE)
+    }
+  }
 
   return (
     <main className="dashboard-layout">
@@ -430,18 +438,18 @@ export function DashboardPage() {
                     type="button"
                     className={`menu-photo-toggle ${previewShowItemImages ? 'on' : ''}`}
                     aria-pressed={previewShowItemImages}
-                    onClick={() => setImageVisibilityDraft(!previewShowItemImages)}
+                    onClick={toggleItemImages}
                   >
                     <span aria-hidden="true"><i /></span>
                     {previewShowItemImages ? 'Photos shown' : 'Photos hidden'}
                   </button>
-                  {!previewShowItemImages && selectedTemplate?.photoLed && (
-                    <p className="menu-photo-advice"><b>{selectedTemplate.name}</b> is designed around photography, so it will use branded placeholders while food photos are hidden.</p>
+                  {!previewShowItemImages && (
+                    <p className="menu-photo-advice">Photo-based designs are hidden. If one was selected, the menu switches to <b>Classic</b> before you save.</p>
                   )}
                 </section>
 
                 <div className="template-grid">
-                {TEMPLATES.map((template) => (
+                {availableTemplates.map((template) => (
                   <button
                     key={template.id}
                     className={`template-card ${previewTemplate === template.id ? 'selected' : ''}`}
@@ -452,7 +460,7 @@ export function DashboardPage() {
                       {liveTemplate === template.id && <em>Live</em>}
                     </span>
                     <small>{template.description}</small>
-                    {template.photoLed && <span className="template-photo-note">Best with photos</span>}
+                    {template.requiresItemImages && <span className="template-photo-note">Photos required</span>}
                     {template.scroll && <span className="template-scroll">{template.scroll}</span>}
                   </button>
                 ))}
