@@ -27,7 +27,7 @@ function item(category: string, name_en: string, name_ar: string, description_en
 export const demoMenu: RestaurantMenu = {
   restaurant: {
     id: 'demo-restaurant', slug: 'demo', name_en: 'Hilal Oven', name_ar: 'فرن الهلال',
-    description_en: 'Traditional Lebanese oven favorites, baked fresh.', description_ar: 'أطيب المخبوزات اللبنانية، طازجة من الفرن.', logo_url: '/hilal-oven-logo.png', primary_color: '#4f5535',
+    description_en: 'Traditional Lebanese oven favorites, baked fresh.', description_ar: 'أطيب المخبوزات اللبنانية، طازجة من الفرن.', logo_url: '/hilal-oven-logo.png', cover_image_url: '/hilal-oven-cover.jpg', primary_color: '#4f5535',
     phone: '+961 71 636 189', whatsapp: '+96171636189', instagram: '@hilaloven', maps_url: 'https://maps.google.com/?q=Tripoli,Lebanon',
     address_en: 'Tripoli - Lebanon', address_ar: 'طرابلس - لبنان', opening_hours: 'Every day · 07:00 – 23:00', temporarily_closed: false,
     template_id: 'classic', show_item_images: true, default_language: 'en', subscription_status: 'active',

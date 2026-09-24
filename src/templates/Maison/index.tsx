@@ -50,7 +50,7 @@ function MaisonItem({ item, index, t, formatPrice }: {
 }
 
 export default function MaisonTemplate(props: MenuTemplateProps) {
-  const { restaurant, categories, visibleItems, activeCategory, setActiveCategory, language, setLanguage, rtl, theme, t, formatPrice } = props
+  const { restaurant, categories, visibleItems, activeCategory, setActiveCategory, language, setLanguage, rtl, theme, t, formatPrice, coverUrl } = props
   const [listRef, listShown] = useReveal<HTMLDivElement>()
   const activeCategoryIndex = Math.max(0, categories.findIndex((category) => category.id === activeCategory))
   const activeCategoryEntry = categories[activeCategoryIndex]
@@ -96,6 +96,16 @@ export default function MaisonTemplate(props: MenuTemplateProps) {
             <span>{t('sections', 'أقسام')}</span>
           </div>
         </div>
+
+        {coverUrl && (
+          <figure className={styles.coverFigure}>
+            <img src={coverUrl} alt={`${t(restaurant.name_en, restaurant.name_ar)} cover`} />
+            <figcaption>
+              <span>{t('From the house', 'من مطبخنا')}</span>
+              <strong>{t('Freshly prepared', 'محضّر طازجاً')}</strong>
+            </figcaption>
+          </figure>
+        )}
       </header>
 
       <nav className={styles.categoryBar} data-menu-bar>
