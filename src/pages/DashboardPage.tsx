@@ -1,3 +1,6 @@
+Warning: truncated output (original token count: 30580)
+Total output lines: 909
+
 import { ArrowDown, ArrowUp, ChevronRight, ExternalLink, Eye, EyeOff, ImagePlus, LayoutDashboard, LogOut, Menu, Palette, Pencil, Plus, QrCode, Settings, ShieldCheck, Store, Trash2, Upload, X } from 'lucide-react'
 import QRCode from 'qrcode'
 import { useEffect, useMemo, useRef, useState } from 'react'
@@ -64,6 +67,7 @@ export function DashboardPage() {
   const [colorDraft, setColorDraft] = useState('')
   // Null means the saved preference is still the source of truth.
   const [imageVisibilityDraft, setImageVisibilityDraft] = useState<boolean | null>(null)
+  const [imageVisibilityConfirmation, setImageVisibilityConfirmation] = useState<boolean | null>(null)
   const [qrData, setQrData] = useState('')
   const [qrSvg, setQrSvg] = useState('')
   const [saving, setSaving] = useState(false)
@@ -346,11 +350,17 @@ export function DashboardPage() {
   const availableTemplates = previewShowItemImages ? TEMPLATES : TEMPLATES.filter((template) => !template.requiresItemImages)
 
   function toggleItemImages() {
-    const next = !previewShowItemImages
+    setImageVisibilityConfirmation(!previewShowItemImages)
+  }
+
+  function confirmItemImages() {
+    const next = imageVisibilityConfirmation
+    if (next === null) return
     setImageVisibilityDraft(next)
     if (!next && TEMPLATES.find((template) => template.id === previewTemplate)?.requiresItemImages) {
       setTemplateDraft(DEFAULT_TEMPLATE)
     }
+    setImageVisibilityConfirmation(null)
   }
 
   return (
@@ -500,6 +510,8 @@ export function DashboardPage() {
           </>}
         </div>
       </section>
+
+      {imageVisibilityConfirmation !== null && <div className="modal-backdrop"><div className="modal-card image-toggle-modal" role="dialog" aria-modal="true" aria-labelledby="image-toggle-title"><button type="button" className="modal-close" aria-label="Close confirmation" onClick={() => setImageVisibilityConfirmation(null)}><X /></button><span className="eyebrow"><span /> Confirm menu change</span><h2 id="image-toggle-title">{imageVisibilityConfirmation ? 'Show food photos?' : 'Hide food photos?'}</h2><p>{imageVisibilityConfirmation ? 'Your saved item photos will appear again on the public menu, and photo-based templates will become available.' : 'Food photos will disappear from the public menu and photo-based templates will be hidden. Your uploaded photos will stay saved.'}</p><div className="button-row modal-actions"><button type="button" className="button button-outline" onClick={() => setImageVisibilityConfirmation(null)}>Cancel</button><button type="button" className="button button-primary" onClick={confirmItemImages}>{imageVisibilityConfirmation ? 'Show photos' : 'Hide photos'}</button></div></div></div>}
 
       {categoryModal && <div className="modal-backdrop"><form className="modal-card" onSubmit={saveCategory}><button type="button" className="modal-close" onClick={() => { setCategoryModal(false); setEditingCategory(null) }}><X /></button><span className="eyebrow"><span /> {editingCategory ? 'Edit section' : 'New section'}</span><h2>{editingCategory ? 'Edit category' : 'Add a category'}</h2><p>Give it a name in both menu languages.</p><label>English name<input required autoFocus value={categoryDraft.name_en} onChange={(e) => setCategoryDraft({ ...categoryDraft, name_en: e.target.value })} placeholder="Pizza" /></label><label dir="rtl">الاسم بالعربية<input required value={categoryDraft.name_ar} onChange={(e) => setCategoryDraft({ ...categoryDraft, name_ar: e.target.value })} placeholder="بيتزا" /></label><button className="button button-primary full" disabled={saving}>{saving ? 'Saving…' : editingCategory ? 'Save category' : 'Add category'}</button></form></div>}
 
