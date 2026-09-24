@@ -506,7 +506,7 @@ export function DashboardPage() {
                 <div className="card-heading"><div><h2>{t('Live preview')}</h2><p>{t('Your real menu, in this design.')}</p></div></div>
                 <div className="preview-phone">
                   {/* Keyed so switching design reloads the frame rather than leaving the old one. */}
-                  <iframe key={`${previewTemplate}|${previewColor}|${previewShowItemImages}`} title={t('Menu design preview')} src={`/m/${menu.restaurant.slug}?template=${previewTemplate}&color=${encodeURIComponent(previewColor)}&images=${previewShowItemImages ? '1' : '0'}&preview=1`} />
+                  <iframe key={`${previewTemplate}|${previewColor}|${previewShowItemImages}`} title={t('Menu design preview')} scrolling="no" src={`/m/${menu.restaurant.slug}?template=${previewTemplate}&color=${encodeURIComponent(previewColor)}&images=${previewShowItemImages ? '1' : '0'}&preview=1`} />
                 </div>
                 <Link className="button button-small button-outline full" to={`/m/${menu.restaurant.slug}?template=${previewTemplate}&color=${encodeURIComponent(previewColor)}&images=${previewShowItemImages ? '1' : '0'}&preview=1`} target="_blank">
                   {t('Open full size')} <ExternalLink />
