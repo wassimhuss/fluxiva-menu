@@ -9,7 +9,7 @@ import { SubscriptionBanner } from '../components/SubscriptionBanner'
 import { cleanVariants, createCategory, createItem, deleteCategory, deleteItem, deleteRestaurantAsset, getMenuViewStats, getOwnerMenu, updateCategory, updateItem, updateRestaurant, uploadRestaurantAsset } from '../lib/api'
 import { useAuth } from '../lib/auth'
 import { demoMenu } from '../lib/demo'
-import { formatLbp } from '../lib/format'
+import { formatLbp, localText } from '../lib/format'
 import { subscriptionState } from '../lib/subscription'
 import { DEFAULT_TEMPLATE, TEMPLATES, resolveTemplateId } from '../templates/registry'
 import type { Category, MenuItem, MenuViewStats, RestaurantMenu, Variant } from '../lib/types'
@@ -345,6 +345,18 @@ export function DashboardPage() {
   const previewShowItemImages = imageVisibilityDraft ?? liveShowItemImages
   const designDirty = previewTemplate !== liveTemplate || previewColor !== menu.restaurant.primary_color || previewShowItemImages !== liveShowItemImages
   const availableTemplates = previewShowItemImages ? TEMPLATES : TEMPLATES.filter((template) => !template.requiresItemImages)
+  const dashboardLanguage = menu.restaurant.default_language === 'ar' ? 'ar' : 'en'
+  const imageConfirmationCopy = {
+    eyebrow: localText(dashboardLanguage, 'Confirm menu change', 'تأكيد تغيير القائمة'),
+    showTitle: localText(dashboardLanguage, 'Show food photos?', 'إظهار صور الأطباق؟'),
+    hideTitle: localText(dashboardLanguage, 'Hide food photos?', 'إخفاء صور الأطباق؟'),
+    showDescription: localText(dashboardLanguage, 'Your saved item photos will appear again on the public menu, and photo-based templates will become available.', 'ستظهر صور الأطباق المحفوظة مجددًا في القائمة العامة، وستصبح القوالب المعتمدة على الصور متاحة.'),
+    hideDescription: localText(dashboardLanguage, 'Food photos will disappear from the public menu and photo-based templates will be hidden. Your uploaded photos will stay saved.', 'ستختفي صور الأطباق من القائمة العامة، كما ستُخفى القوالب المعتمدة على الصور. ستبقى الصور التي رفعتها محفوظة.'),
+    cancel: localText(dashboardLanguage, 'Cancel', 'إلغاء'),
+    showAction: localText(dashboardLanguage, 'Show photos', 'إظهار الصور'),
+    hideAction: localText(dashboardLanguage, 'Hide photos', 'إخفاء الصور'),
+    close: localText(dashboardLanguage, 'Close confirmation', 'إغلاق التأكيد'),
+  }
 
   function toggleItemImages() {
     setImageVisibilityConfirmation(!previewShowItemImages)
@@ -508,7 +520,7 @@ export function DashboardPage() {
         </div>
       </section>
 
-      {imageVisibilityConfirmation !== null && <div className="modal-backdrop"><div className="modal-card image-toggle-modal" role="dialog" aria-modal="true" aria-labelledby="image-toggle-title"><button type="button" className="modal-close" aria-label="Close confirmation" onClick={() => setImageVisibilityConfirmation(null)}><X /></button><span className="eyebrow"><span /> Confirm menu change</span><h2 id="image-toggle-title">{imageVisibilityConfirmation ? 'Show food photos?' : 'Hide food photos?'}</h2><p>{imageVisibilityConfirmation ? 'Your saved item photos will appear again on the public menu, and photo-based templates will become available.' : 'Food photos will disappear from the public menu and photo-based templates will be hidden. Your uploaded photos will stay saved.'}</p><div className="button-row modal-actions"><button type="button" className="button button-outline" onClick={() => setImageVisibilityConfirmation(null)}>Cancel</button><button type="button" className="button button-primary" onClick={confirmItemImages}>{imageVisibilityConfirmation ? 'Show photos' : 'Hide photos'}</button></div></div></div>}
+      {imageVisibilityConfirmation !== null && <div className="modal-backdrop"><div className="modal-card image-toggle-modal" role="dialog" aria-modal="true" aria-labelledby="image-toggle-title" dir={dashboardLanguage === 'ar' ? 'rtl' : 'ltr'}><button type="button" className="modal-close" aria-label={imageConfirmationCopy.close} onClick={() => setImageVisibilityConfirmation(null)}><X /></button><span className="eyebrow"><span /> {imageConfirmationCopy.eyebrow}</span><h2 id="image-toggle-title">{imageVisibilityConfirmation ? imageConfirmationCopy.showTitle : imageConfirmationCopy.hideTitle}</h2><p>{imageVisibilityConfirmation ? imageConfirmationCopy.showDescription : imageConfirmationCopy.hideDescription}</p><div className="button-row modal-actions"><button type="button" className="button button-outline" onClick={() => setImageVisibilityConfirmation(null)}>{imageConfirmationCopy.cancel}</button><button type="button" className="button button-primary" onClick={confirmItemImages}>{imageVisibilityConfirmation ? imageConfirmationCopy.showAction : imageConfirmationCopy.hideAction}</button></div></div></div>}
 
       {categoryModal && <div className="modal-backdrop"><form className="modal-card" onSubmit={saveCategory}><button type="button" className="modal-close" onClick={() => { setCategoryModal(false); setEditingCategory(null) }}><X /></button><span className="eyebrow"><span /> {editingCategory ? 'Edit section' : 'New section'}</span><h2>{editingCategory ? 'Edit category' : 'Add a category'}</h2><p>Give it a name in both menu languages.</p><label>English name<input required autoFocus value={categoryDraft.name_en} onChange={(e) => setCategoryDraft({ ...categoryDraft, name_en: e.target.value })} placeholder="Pizza" /></label><label dir="rtl">الاسم بالعربية<input required value={categoryDraft.name_ar} onChange={(e) => setCategoryDraft({ ...categoryDraft, name_ar: e.target.value })} placeholder="بيتزا" /></label><button className="button button-primary full" disabled={saving}>{saving ? 'Saving…' : editingCategory ? 'Save category' : 'Add category'}</button></form></div>}
 
