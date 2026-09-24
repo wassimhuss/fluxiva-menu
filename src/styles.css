@@ -368,6 +368,7 @@
 .menu-photo-setting:has(.menu-photo-advice){flex-wrap:wrap}
 .image-toggle-modal p{line-height:1.65}
 .modal-actions{justify-content:flex-end;margin-top:24px}
+.language-switch{border:1px solid #d8dedb;background:#fff;color:var(--green);border-radius:9px;min-width:45px;height:39px;padding:0 10px;font-size:12px;font-weight:700;cursor:pointer}.language-switch:hover{background:#eef4f1}.dashboard-layout[dir="rtl"] .dashboard-sidebar nav button,.dashboard-layout[dir="rtl"] .sidebar-bottom>a,.dashboard-layout[dir="rtl"] .sidebar-bottom>button{text-align:right}.dashboard-layout[dir="rtl"] .header-actions{margin-left:0;margin-right:auto}.dashboard-layout[dir="rtl"] .modal-close{right:auto;left:17px}.dashboard-layout[dir="rtl"] .quick-actions>button,.dashboard-layout[dir="rtl"] .dashboard-items article{text-align:right}
 .template-preview{background:#fff;border:1px solid var(--line);border-radius:18px;padding:20px}
 .template-preview .card-heading{margin-bottom:14px}
 .preview-phone{position:relative;width:min(100%,320px);margin-inline:auto;aspect-ratio:9/19;border-radius:26px;overflow:hidden;background:#0c0f0e;border:7px solid #1d2725;box-shadow:0 18px 44px rgba(23,63,53,.2)}
@@ -383,3 +384,5 @@
 
 /* Overview: menu opens sits full width above the two-column row. */
 .overview-views{margin-bottom:18px}
+
+@media(max-width:900px){.dashboard-layout[dir="rtl"] .dashboard-sidebar{left:auto;right:-270px}.dashboard-layout[dir="rtl"] .dashboard-sidebar.open{left:auto;right:0}.dashboard-layout[dir="rtl"] .mobile-menu{margin-left:12px;margin-right:0}}

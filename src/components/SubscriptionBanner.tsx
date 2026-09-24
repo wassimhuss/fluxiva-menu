@@ -1,6 +1,7 @@
 import { AlertTriangle, Clock, MessageCircle } from 'lucide-react'
 import { needsWarning, subscriptionState } from '../lib/subscription'
-import type { Restaurant } from '../lib/types'
+import { dashboardText } from '../lib/dashboardI18n'
+import type { Language, Restaurant } from '../lib/types'
 import styles from './SubscriptionBanner.module.css'
 
 /**
@@ -9,7 +10,8 @@ import styles from './SubscriptionBanner.module.css'
  */
 const SUPPORT_WHATSAPP = import.meta.env.VITE_SUPPORT_WHATSAPP as string | undefined
 
-function plural(days: number) {
+function plural(days: number, language: Language) {
+  if (language === 'ar') return days === 1 ? 'يوم واحد' : `${days} أيام`
   return days === 1 ? '1 day' : `${days} days`
 }
 
@@ -19,7 +21,8 @@ function plural(days: number) {
  * Expiry is enforced in the database, so without this the first sign an owner
  * gets is a customer telling them the QR code is dead.
  */
-export function SubscriptionBanner({ restaurant }: { restaurant: Restaurant }) {
+export function SubscriptionBanner({ restaurant, language = 'en' }: { restaurant: Restaurant; language?: Language }) {
+  const t = (english: string) => dashboardText(language, english)
   const state = subscriptionState(restaurant)
   if (!needsWarning(state)) return null
 
@@ -30,20 +33,20 @@ export function SubscriptionBanner({ restaurant }: { restaurant: Restaurant }) {
   let text: string
 
   if (state.kind === 'suspended') {
-    title = 'Your menu is offline'
-    text = 'This restaurant has been suspended, so its public menu and QR code are not serving customers. Contact Fluxiva to restore it.'
+    title = t('Your menu is offline')
+    text = t('This restaurant has been suspended, so its public menu and QR code are not serving customers. Contact Fluxiva to restore it.')
   } else if (offline && state.kind === 'trial') {
-    title = 'Your free trial has ended'
-    text = 'Your menu is no longer showing to customers, and your QR code now leads to an unavailable page. Your items are all still saved — subscribing brings the menu straight back.'
+    title = t('Your free trial has ended')
+    text = t('Your menu is no longer showing to customers, and your QR code now leads to an unavailable page. Your items are all still saved — subscribing brings the menu straight back.')
   } else if (offline) {
-    title = 'Your subscription has ended'
-    text = 'Your menu is no longer showing to customers, and your QR code now leads to an unavailable page. Your items are all still saved — renewing brings the menu straight back.'
+    title = t('Your subscription has ended')
+    text = t('Your menu is no longer showing to customers, and your QR code now leads to an unavailable page. Your items are all still saved — renewing brings the menu straight back.')
   } else if (state.kind === 'trial') {
-    title = `${plural(days)} left in your free trial`
-    text = 'When the trial ends your menu stops showing to customers and your QR code will stop working. Subscribe before then to keep it live.'
+    title = `${plural(days, language)} ${t('left in your free trial')}`
+    text = t('When the trial ends your menu stops showing to customers and your QR code will stop working. Subscribe before then to keep it live.')
   } else {
-    title = `Your subscription renews in ${plural(days)}`
-    text = 'Renew before then to keep your menu and QR code working without interruption.'
+    title = `${t('Your subscription renews in')} ${plural(days, language)}`
+    text = t('Renew before then to keep your menu and QR code working without interruption.')
   }
 
   return (
@@ -60,7 +63,7 @@ export function SubscriptionBanner({ restaurant }: { restaurant: Restaurant }) {
               target="_blank"
               rel="noreferrer"
             >
-              <MessageCircle /> {offline ? 'Contact Fluxiva' : 'Renew now'}
+              <MessageCircle /> {offline ? t('Contact Fluxiva') : t('Renew now')}
             </a>
           </div>
         )}
