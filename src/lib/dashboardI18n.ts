@@ -172,7 +172,7 @@ const arabic: Record<string, string> = {
   'Story': 'قصة',
   'Warm, calm and photo-led. The original Fluxiva menu.': 'دافئ وهادئ، مع تركيز على الصور. تصميم Fluxiva الأصلي.',
   'Dark, elegant typography with dotted price leaders.': 'خطوط داكنة وأنيقة مع فواصل منقطة للأسعار.',
-  'A refined image-free menu inspired by modern print design.': 'قائمة راقية بلا صور مستوحاة من تصميم المطبوعات الحديثة.',
+  'A refined editorial menu that adapts beautifully with or without photos.': 'قائمة راقية بتصميم تحريري تتكيّف بشكل جميل مع الصور أو بدونها.',
   'Frosted glass cards over a slow-drifting colour wash.': 'بطاقات زجاجية فوق تدرج ألوان متحرك ببطء.',
   'Big photography and bold prices, built for fast service.': 'صور كبيرة وأسعار واضحة، مصمم للخدمة السريعة.',
   'One dish per screen, swiped like a short-video feed.': 'صنف واحد في كل شاشة، مثل موجز الفيديوهات القصيرة.',

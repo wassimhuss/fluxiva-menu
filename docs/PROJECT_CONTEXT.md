@@ -154,7 +154,7 @@ The owner dashboard supports:
 - Item availability toggles and sold-out presentation.
 - Item variants and photos.
 - Restaurant logo, cover, theme, contact details, opening state, and default language.
-  - A restaurant-wide food-photo visibility switch. Hiding photos preserves the uploaded files, limits the design picker to the image-free Classic, Noir, and Maison templates, and safely falls back to Classic when a photo-based design had been selected.
+  - A restaurant-wide food-photo visibility switch. Hiding photos preserves the uploaded files, limits the design picker to the photo-optional Classic, Noir, and Maison templates, and safely falls back to Classic when a photo-based design had been selected. Maison adds editorial thumbnails when photos are enabled and collapses cleanly to a text-only layout when they are hidden.
 - The owner dashboard has an English/Arabic UI switch in the header. It persists in local storage, applies RTL layout, and translates the dashboard panels, analytics card, subscription warning, forms, dialogs, and action feedback without changing the restaurant's public-menu language setting.
 - CSV import using fields such as `category_en`, `category_ar`, `name_en`, `name_ar`, `description_en`, `description_ar`, `price_lbp`, and `available`.
 - PNG/SVG QR downloads and browser printing.

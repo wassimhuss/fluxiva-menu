@@ -18,10 +18,11 @@ function MaisonItem({ item, index, t, formatPrice }: {
 
   return (
     <article
-      className={`${styles.item} ${item.available ? '' : styles.itemSoldOut}`}
+      className={`${styles.item} ${item.image_url ? styles.itemWithImage : ''} ${item.available ? '' : styles.itemSoldOut}`}
       style={{ '--i': index } as React.CSSProperties}
     >
       <div className={styles.itemCode}>M{String(index + 1).padStart(2, '0')}</div>
+      {item.image_url && <img className={styles.itemImage} src={item.image_url} alt="" loading="lazy" />}
       <div className={styles.itemContent}>
         <div className={styles.itemHeading}>
           <h3>{t(item.name_en, item.name_ar)}</h3>

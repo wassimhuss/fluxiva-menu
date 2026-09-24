@@ -329,6 +329,21 @@
   opacity: 0;
 }
 
+.itemWithImage {
+  grid-template-columns: 34px 88px minmax(0, 1fr);
+  align-items: start;
+}
+
+.itemImage {
+  display: block;
+  inline-size: 88px;
+  block-size: 96px;
+  border-radius: 2px;
+  object-fit: cover;
+  object-position: center;
+  box-shadow: 8px 8px 0 var(--maison-tint);
+}
+
 .list[data-shown='true'] .item {
   animation: maisonReveal .58s cubic-bezier(.22, 1, .36, 1) both;
   animation-delay: calc(var(--i) * 46ms);
@@ -550,6 +565,8 @@
   .categoryNumber { font-size: 48px; }
   .sectionIntro h2 { font-size: 33px; }
   .item { grid-template-columns: 28px minmax(0, 1fr); gap: 8px; }
+  .itemWithImage { grid-template-columns: 28px 72px minmax(0, 1fr); }
+  .itemImage { inline-size: 72px; block-size: 82px; box-shadow: 5px 5px 0 var(--maison-tint); }
   .itemHeading h3 { font-size: 19px; }
   .itemHeading strong { font-size: 10px; }
   .footer { padding-inline: 15px; }

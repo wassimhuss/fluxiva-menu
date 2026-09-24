@@ -23,7 +23,7 @@ export const TEMPLATES: TemplateMeta[] = [
   {
     id: 'maison',
     name: 'Maison',
-    description: 'A refined image-free menu inspired by modern print design.',
+    description: 'A refined editorial menu that adapts beautifully with or without photos.',
     scroll: 'Standard page scroll with an editorial category bar',
     tags: ['restaurant', 'bakery', 'editorial'],
   },
