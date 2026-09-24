@@ -69,7 +69,13 @@ export default function MaisonTemplate(props: MenuTemplateProps) {
         '--maison-alpha': theme.alpha(0.16),
       } as React.CSSProperties}
     >
-      <header className={styles.masthead}>
+      <header className={`${styles.masthead} ${coverUrl ? styles.mastheadWithCover : ''}`}>
+        {coverUrl && (
+          <>
+            <img className={styles.coverBackdrop} src={coverUrl} alt={`${t(restaurant.name_en, restaurant.name_ar)} cover`} />
+            <div className={styles.coverShade} aria-hidden="true" />
+          </>
+        )}
         <div className={styles.decorCircle} aria-hidden="true" />
         <div className={styles.topbar}>
           <span className={styles.edition}>FLUXIVA MENU <i /> EDITION 01</span>
@@ -97,15 +103,6 @@ export default function MaisonTemplate(props: MenuTemplateProps) {
           </div>
         </div>
 
-        {coverUrl && (
-          <figure className={styles.coverFigure}>
-            <img src={coverUrl} alt={`${t(restaurant.name_en, restaurant.name_ar)} cover`} />
-            <figcaption>
-              <span>{t('From the house', 'من مطبخنا')}</span>
-              <strong>{t('Freshly prepared', 'محضّر طازجاً')}</strong>
-            </figcaption>
-          </figure>
-        )}
       </header>
 
       <nav className={styles.categoryBar} data-menu-bar>
