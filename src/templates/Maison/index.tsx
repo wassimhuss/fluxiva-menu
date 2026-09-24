@@ -81,7 +81,9 @@ export default function MaisonTemplate(props: MenuTemplateProps) {
 
         <div className={styles.identity}>
           <div className={styles.identityMark}>
-            <span>{restaurant.name_en.slice(0, 2).toUpperCase()}</span>
+            {restaurant.logo_url
+              ? <img src={restaurant.logo_url} alt={`${t(restaurant.name_en, restaurant.name_ar)} logo`} />
+              : <span>{restaurant.name_en.slice(0, 2).toUpperCase()}</span>}
           </div>
           <div className={styles.identityCopy}>
             <span className={styles.kicker}>{t('The house menu', 'قائمة المطعم')}</span>
@@ -136,7 +138,9 @@ export default function MaisonTemplate(props: MenuTemplateProps) {
       <footer className={styles.footer}>
         <div className={styles.footerInner}>
           <div className={styles.footerBrand}>
-            <span>{restaurant.name_en.slice(0, 2).toUpperCase()}</span>
+            {restaurant.logo_url
+              ? <img src={restaurant.logo_url} alt="" loading="lazy" />
+              : <span>{restaurant.name_en.slice(0, 2).toUpperCase()}</span>}
             <div>
               <strong>{t(restaurant.name_en, restaurant.name_ar)}</strong>
               <small>{t('Made for good food.', 'صحة وهنا')}</small>

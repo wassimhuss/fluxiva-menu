@@ -125,7 +125,8 @@
   inset-inline-end: -14px;
 }
 
-.identityMark span {
+.identityMark span,
+.identityMark img {
   display: grid;
   inline-size: 66px;
   block-size: 66px;
@@ -137,6 +138,10 @@
   font-size: 24px;
   letter-spacing: 1px;
   box-shadow: 0 12px 28px var(--maison-alpha);
+}
+
+.identityMark img {
+  object-fit: cover;
 }
 
 .identityCopy {
@@ -470,7 +475,8 @@
   gap: 12px;
 }
 
-.footerBrand > span {
+.footerBrand > span,
+.footerBrand > img {
   display: grid;
   inline-size: 43px;
   block-size: 43px;
@@ -478,6 +484,11 @@
   border: 1px solid rgba(255, 255, 255, .25);
   font-family: 'Playfair Display', serif;
   font-size: 14px;
+}
+
+.footerBrand > img {
+  border-radius: 50%;
+  object-fit: cover;
 }
 
 .footerBrand > div {
@@ -535,7 +546,8 @@
     min-height: 290px;
   }
   .identityMark { inline-size: 76px; block-size: 105px; }
-  .identityMark span { inline-size: 52px; block-size: 52px; font-size: 19px; }
+  .identityMark span,
+  .identityMark img { inline-size: 52px; block-size: 52px; font-size: 19px; }
   .identityCopy h1 { font-size: clamp(42px, 10vw, 68px); letter-spacing: -2px; }
   .menuStamp { display: none; }
   .body { width: min(100% - 30px, 620px); padding-block: 45px 70px; }
