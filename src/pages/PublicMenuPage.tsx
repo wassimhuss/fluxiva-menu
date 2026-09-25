@@ -1,5 +1,5 @@
-import { Utensils } from 'lucide-react'
-import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { LoaderCircle, Utensils } from 'lucide-react'
+import { startTransition, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useParams, useSearchParams } from 'react-router-dom'
 import { MenuUnavailable } from '../components/MenuUnavailable'
 import { TemplateSwitcher } from '../components/TemplateSwitcher'
@@ -36,6 +36,28 @@ function MenuLoadingState() {
   )
 }
 
+function TemplateSwitchLoading({ language }: { language: Language }) {
+  const message = language === 'ar' ? 'جارٍ تغيير التصميم' : 'Switching template'
+
+  return (
+    <div className="template-switch-loading" role="status" aria-live="polite" aria-busy="true">
+      <div className="template-switch-loading-card">
+        <LoaderCircle aria-hidden="true" />
+        <span>{message}</span>
+      </div>
+    </div>
+  )
+}
+
+/**
+ * Lives inside the Suspense boundary, so its effect only runs after the lazy
+ * template has loaded and the replacement design has committed.
+ */
+function TemplateReady({ templateId, onReady }: { templateId: string; onReady: () => void }) {
+  useEffect(() => onReady(), [templateId, onReady])
+  return null
+}
+
 /**
  * Owns menu data, language and category state, then hands a finished view model
  * to whichever template is selected. Templates stay pure presentation so this
@@ -51,6 +73,7 @@ export function PublicMenuPage() {
   const [error, setError] = useState('')
   const [language, setLanguage] = useState<Language>('en')
   const [activeCategory, setActiveCategory] = useState('')
+  const [switchingTemplate, setSwitchingTemplate] = useState<string | null>(null)
 
   useEffect(() => {
     getPublicMenu(slug).then(async (data) => {
@@ -209,11 +232,17 @@ export function PublicMenuPage() {
     window.scrollTo({ top: 0, behavior: 'instant' })
   }, [templateId, firstCategoryId])
 
+  const finishTemplateSwitch = useCallback(() => setSwitchingTemplate(null), [])
+
   const selectTemplate = useCallback((id: string) => {
+    if (id === templateId) return
+    setSwitchingTemplate(id)
     const next = new URLSearchParams(searchParams)
     next.set('template', id)
-    setSearchParams(next, { replace: true })
-  }, [searchParams, setSearchParams])
+    // Keep the current design painted while the newly selected lazy chunk is
+    // loading. The overlay below provides immediate feedback in the meantime.
+    startTransition(() => setSearchParams(next, { replace: true }))
+  }, [searchParams, setSearchParams, templateId])
 
   if (loading) return <MenuLoadingState />
   if (error || !menu) return <MenuUnavailable contact={contact} />
@@ -245,7 +274,9 @@ export function PublicMenuPage() {
           formatPrice={formatLbp}
           coverUrl={coverUrl}
         />
+        <TemplateReady templateId={templateId} onReady={finishTemplateSwitch} />
       </Suspense>
+      {switchingTemplate && <TemplateSwitchLoading language={language} />}
       {showSwitcher && <TemplateSwitcher active={templateId} onSelect={selectTemplate} templates={availableTemplates} />}
     </>
   )
