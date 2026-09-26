@@ -57,6 +57,9 @@ export interface PlatformAuditEntry {
   created_at: string
 }
 
+/** How the diner intends to eat, chosen before the menu opens. */
+export type ServiceMode = 'dine-in' | 'takeaway'
+
 export interface Restaurant {
   id: string
   owner_id?: string

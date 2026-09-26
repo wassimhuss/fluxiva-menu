@@ -1,6 +1,5 @@
 import { ShoppingBag, Utensils } from 'lucide-react'
-import type { Language, Restaurant } from '../lib/types'
-import type { ServiceMode } from '../lib/useServiceMode'
+import type { Language, Restaurant, ServiceMode } from '../lib/types'
 import styles from './ServiceChoice.module.css'
 
 interface Props {

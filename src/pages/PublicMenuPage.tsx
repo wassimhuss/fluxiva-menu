@@ -11,8 +11,7 @@ import { formatLbp, localText } from '../lib/format'
 import { deriveTheme } from '../lib/theme'
 import { useImagePreload } from '../lib/useImagePreload'
 import { useOrder } from '../lib/useOrder'
-import { useServiceMode } from '../lib/useServiceMode'
-import type { Language, MenuContactCard, RestaurantMenu } from '../lib/types'
+import type { Language, MenuContactCard, RestaurantMenu, ServiceMode } from '../lib/types'
 import { DEFAULT_TEMPLATE, resolveTemplateId, TEMPLATES, templateComponents } from '../templates/registry'
 
 /**
@@ -227,9 +226,14 @@ export function PublicMenuPage() {
   /* The scan opens on a choice: eating here, or taking it away. Only asked
      when takeaway is genuinely on offer — otherwise a diner would be made to
      pick between the menu and nothing. The dashboard preview skips it too, so
-     the owner sees their design rather than this screen in the iframe. */
+     the owner sees their design rather than this screen in the iframe.
+
+     Held in state alone, so every fresh open of the link asks again. Nothing is
+     remembered between loads on purpose: a diner who chose to eat in would
+     otherwise have no route to a takeaway order for the rest of the session,
+     since that side of the menu is deliberately free of ordering controls. */
   const askService = canOrder && !isPreview
-  const { mode: serviceMode, choose: chooseService, ready: serviceReady } = useServiceMode(slug ?? '', askService)
+  const [serviceMode, setServiceMode] = useState<ServiceMode | null>(null)
   const orderingAllowed = canOrder && (!askService || serviceMode === 'takeaway')
   const { quantityOf, add, setQuantity } = order
   const templateOrdering = useMemo(
@@ -280,10 +284,8 @@ export function PublicMenuPage() {
   const { restaurant, categories } = menu
   const Template = templateComponents[templateId]
 
-  /* The choice comes before the menu. `serviceReady` covers the moment between
-     the menu arriving and the stored choice being read back, so a diner who
-     already picked is not flashed the question a second time. */
-  if (askService && serviceReady && serviceMode === null) {
+  // The choice comes before the menu.
+  if (askService && serviceMode === null) {
     return (
       <ServiceChoice
         restaurant={restaurant}
@@ -295,7 +297,7 @@ export function PublicMenuPage() {
         brand={theme.brand}
         brandInk={theme.brandInk}
         glow={theme.alpha(0.3)}
-        onChoose={chooseService}
+        onChoose={setServiceMode}
       />
     )
   }
