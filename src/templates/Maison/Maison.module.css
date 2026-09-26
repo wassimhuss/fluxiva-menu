@@ -470,6 +470,18 @@
   white-space: nowrap;
 }
 
+/* Its own row at the end of the dish: in the heading row it competed with the
+   name and pushed it onto a second line on a phone. */
+.itemOrder {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 10px;
+  --add-active-bg: var(--maison-brand);
+  --add-active-fg: var(--maison-brand-ink);
+  --add-border: rgba(24, 35, 31, .22);
+  --add-fg: #2c3a34;
+}
+
 .itemContent > p {
   display: -webkit-box;
   margin: 8px 0 0;

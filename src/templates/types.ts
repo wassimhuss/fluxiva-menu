@@ -29,6 +29,23 @@ export interface MenuTemplateProps {
   formatPrice: (value: number) => string
   /** Resolved cover photo URL, or an empty string when none is set. */
   coverUrl: string
+  /** Present only when this restaurant takes takeaway orders. */
+  ordering?: MenuOrdering
+}
+
+/**
+ * Takeaway ordering, handed to templates that want an add control on a dish.
+ *
+ * Optional on purpose: the order button, the sheet and the WhatsApp message
+ * all live in PublicMenuPage, so a template that ignores this still gives the
+ * diner a complete way to order. A template opts in only to make adding a dish
+ * feel native to its own design.
+ */
+export interface MenuOrdering {
+  /** Units of this dish and size already in the order. */
+  quantityOf: (itemId: string, variantIndex: number) => number
+  add: (itemId: string, variantIndex: number) => void
+  setQuantity: (itemId: string, variantIndex: number, quantity: number) => void
 }
 
 export type MenuTemplate = ComponentType<MenuTemplateProps>

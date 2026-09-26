@@ -412,3 +412,14 @@
   .card:hover, .contact:hover, .categoryButton:hover { transform: none; }
   .card:hover .image { transform: none; }
 }
+
+/* Ordering control. */
+.cardOrder {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 10px;
+  --add-active-bg: var(--aurora-brand);
+  --add-active-fg: var(--aurora-ink);
+  --add-border: rgba(25, 32, 38, .2);
+  --add-fg: #223037;
+}

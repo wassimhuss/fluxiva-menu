@@ -207,8 +207,8 @@ export function DashboardPage() {
       // `primary_color` is deliberately absent: it belongs to the design panel,
       // and saving it from here too would persist a colour the owner is still
       // only previewing over there.
-      const { name_en, name_ar, description_en, description_ar, whatsapp, instagram, address_en, address_ar, temporarily_closed, default_language } = menu.restaurant
-      await updateRestaurant(menu.restaurant.id, { name_en, name_ar, description_en, description_ar, whatsapp, instagram, address_en, address_ar, temporarily_closed, default_language })
+      const { name_en, name_ar, description_en, description_ar, whatsapp, instagram, address_en, address_ar, temporarily_closed, takeaway_enabled, default_language } = menu.restaurant
+      await updateRestaurant(menu.restaurant.id, { name_en, name_ar, description_en, description_ar, whatsapp, instagram, address_en, address_ar, temporarily_closed, takeaway_enabled, default_language })
       showSuccess(dashboardText(dashboardLanguage, 'Restaurant details saved.'))
     } catch (caught) { setError(caught instanceof Error ? caught.message : dashboardText(dashboardLanguage, 'Could not save restaurant')) }
     finally { setSaving(false) }
@@ -528,6 +528,25 @@ export function DashboardPage() {
                 <label>{t('English address')}<textarea value={menu.restaurant.address_en ?? ''} onChange={(e) => restaurantField('address_en', e.target.value)} /></label>
                 <label dir="rtl">{t('Arabic address')}<textarea value={menu.restaurant.address_ar ?? ''} onChange={(e) => restaurantField('address_ar', e.target.value)} /></label>
                 <label className="closed-toggle"><span>{t('Menu status')}</span><button type="button" className={`status-switch ${menu.restaurant.temporarily_closed ? 'on' : ''}`} onClick={() => restaurantField('temporarily_closed', !menu.restaurant.temporarily_closed)}><i />{menu.restaurant.temporarily_closed ? t('Temporarily closed') : t('Open for customers')}</button></label>
+                {/* Ordering needs somewhere for the order to arrive, so the
+                    switch is unavailable until a WhatsApp number exists. The
+                    public menu applies the same rule independently. */}
+                <label className="closed-toggle">
+                  <span>{t('Takeaway orders')}</span>
+                  <button
+                    type="button"
+                    className={`status-switch ${menu.restaurant.takeaway_enabled ? 'on' : ''}`}
+                    disabled={!menu.restaurant.whatsapp}
+                    onClick={() => restaurantField('takeaway_enabled', !menu.restaurant.takeaway_enabled)}
+                  >
+                    <i />{menu.restaurant.takeaway_enabled ? t('Diners can send an order') : t('Menu only, no ordering')}
+                  </button>
+                  <small className="field-hint">
+                    {menu.restaurant.whatsapp
+                      ? t('Adds an order button to your menu. Orders arrive as a WhatsApp message you confirm yourself.')
+                      : t('Add a WhatsApp number above to take takeaway orders.')}
+                  </small>
+                </label>
                 <label>{t('Default language')}<select value={menu.restaurant.default_language} onChange={(e) => restaurantField('default_language', e.target.value)}><option value="en">{t('English')}</option><option value="ar">{t('Arabic')}</option></select></label>
               </div>
               <div className="bilingual-preview"><div><span>{t('English preview')}</span><b style={{ color: menu.restaurant.primary_color }}>{menu.restaurant.name_en}</b><small>{menu.restaurant.description_en || 'Fresh from our oven.'}</small></div><div dir="rtl"><span>{t('Arabic preview')}</span><b style={{ color: menu.restaurant.primary_color }}>{menu.restaurant.name_ar}</b><small>{menu.restaurant.description_ar || 'طازج من فرننا.'}</small></div></div>

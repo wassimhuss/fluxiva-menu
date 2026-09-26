@@ -1,17 +1,19 @@
 import { Instagram, MapPin, MessageCircle } from 'lucide-react'
 import { useState } from 'react'
+import { AddToOrder } from '../../components/AddToOrder'
 import type { MenuItem } from '../../lib/types'
 import type { MenuTemplateProps } from '../types'
 
 // Classic keeps using the shared global stylesheet it was originally written
 // against. New templates are scoped with CSS Modules instead.
 
-function MenuCard({ item, t, formatPrice, color, unavailableLabel }: {
+function MenuCard({ item, t, formatPrice, color, unavailableLabel, ordering }: {
   item: MenuItem
   t: MenuTemplateProps['t']
   formatPrice: MenuTemplateProps['formatPrice']
   color: string
   unavailableLabel: string
+  ordering?: MenuTemplateProps['ordering']
 }) {
   const [variantIndex, setVariantIndex] = useState(0)
   const variant = item.variants?.[variantIndex]
@@ -26,6 +28,11 @@ function MenuCard({ item, t, formatPrice, color, unavailableLabel }: {
         </div>
         {(item.description_en || item.description_ar) && <p>{t(item.description_en ?? '', item.description_ar ?? '')}</p>}
         {!item.available && <span className="sold-out-label">{unavailableLabel}</span>}
+        {ordering && (
+          <div className="menu-card-order" style={{ '--add-active-bg': color } as React.CSSProperties}>
+            <AddToOrder item={item} variantIndex={variantIndex} ordering={ordering} t={t} />
+          </div>
+        )}
         {item.available && item.variants?.length > 0 && (
           <div className="variant-buttons">
             {item.variants.map((choice, index) => (
@@ -46,7 +53,7 @@ function MenuCard({ item, t, formatPrice, color, unavailableLabel }: {
 }
 
 export default function ClassicTemplate(props: MenuTemplateProps) {
-  const { restaurant, categories, visibleItems, activeCategory, setActiveCategory, language, setLanguage, rtl, theme, t, formatPrice, coverUrl } = props
+  const { restaurant, categories, visibleItems, activeCategory, setActiveCategory, language, setLanguage, rtl, theme, t, formatPrice, coverUrl, ordering } = props
 
   const activeCategoryEntry = categories.find((category) => category.id === activeCategory)
   const footerContactCount = [restaurant.whatsapp, restaurant.address_en || restaurant.address_ar, restaurant.instagram].filter(Boolean).length
@@ -106,6 +113,7 @@ export default function ClassicTemplate(props: MenuTemplateProps) {
                 formatPrice={formatPrice}
                 color={restaurant.primary_color}
                 unavailableLabel={t('Currently unavailable', 'غير متوفر حالياً')}
+                ordering={ordering}
               />
             ))}
           </div>

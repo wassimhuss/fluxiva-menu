@@ -231,6 +231,11 @@ const arabic: Record<string, string> = {
   'Menu design preview': 'معاينة تصميم القائمة',
   'English': 'الإنجليزية',
   'Arabic': 'العربية',
+  'Takeaway orders': 'طلبات السفري',
+  'Diners can send an order': 'يمكن للزبائن إرسال طلب',
+  'Menu only, no ordering': 'القائمة فقط، بدون طلبات',
+  'Adds an order button to your menu. Orders arrive as a WhatsApp message you confirm yourself.': 'يضيف زر طلب إلى قائمتك. تصلك الطلبات كرسالة واتساب تؤكدها بنفسك.',
+  'Add a WhatsApp number above to take takeaway orders.': 'أضف رقم واتساب في الأعلى لاستقبال طلبات السفري.',
 }
 
 export function dashboardText(language: Language, english: string) {

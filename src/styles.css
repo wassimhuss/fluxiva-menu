@@ -388,3 +388,6 @@ html.menu-preview-document::-webkit-scrollbar,body.menu-preview-document::-webki
 .overview-views{margin-bottom:18px}
 
 @media(max-width:900px){.dashboard-layout[dir="rtl"] .dashboard-sidebar{left:auto;right:-270px}.dashboard-layout[dir="rtl"] .dashboard-sidebar.open{left:auto;right:0}.dashboard-layout[dir="rtl"] .mobile-menu{margin-left:12px;margin-right:0}}
+.menu-card-order{display:flex;justify-content:flex-end;margin-top:10px;--add-active-fg:#fff;--add-border:rgba(20,28,24,.2);--add-fg:#22302b}
+.field-hint{display:block;margin-top:7px;color:#8d968f;font-size:10px;line-height:1.5}
+.status-switch:disabled{opacity:.55;cursor:not-allowed}

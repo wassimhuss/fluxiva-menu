@@ -1,15 +1,17 @@
 import { Instagram, MapPin, MessageCircle } from 'lucide-react'
 import { useState } from 'react'
+import { AddToOrder } from '../../components/AddToOrder'
 import type { MenuItem } from '../../lib/types'
 import type { MenuTemplateProps } from '../types'
 import { useReveal } from '../useReveal'
 import styles from './Maison.module.css'
 
-function MaisonItem({ item, index, t, formatPrice }: {
+function MaisonItem({ item, index, t, formatPrice, ordering }: {
   item: MenuItem
   index: number
   t: MenuTemplateProps['t']
   formatPrice: MenuTemplateProps['formatPrice']
+  ordering?: MenuTemplateProps['ordering']
 }) {
   const [variantIndex, setVariantIndex] = useState(0)
   const variant = item.variants?.[variantIndex]
@@ -31,6 +33,11 @@ function MaisonItem({ item, index, t, formatPrice }: {
         </div>
         {description && <p>{description}</p>}
         {!item.available && <span className={styles.soldOut}>{t('Currently unavailable', 'غير متوفر حالياً')}</span>}
+        {ordering && (
+          <div className={styles.itemOrder}>
+            <AddToOrder item={item} variantIndex={variantIndex} ordering={ordering} t={t} />
+          </div>
+        )}
         {item.available && item.variants?.length > 0 && (
           <div className={styles.variants}>
             {item.variants.map((choice, position) => (
@@ -50,7 +57,7 @@ function MaisonItem({ item, index, t, formatPrice }: {
 }
 
 export default function MaisonTemplate(props: MenuTemplateProps) {
-  const { restaurant, categories, visibleItems, activeCategory, setActiveCategory, language, setLanguage, rtl, theme, t, formatPrice, coverUrl } = props
+  const { restaurant, categories, visibleItems, activeCategory, setActiveCategory, language, setLanguage, rtl, theme, t, formatPrice, coverUrl, ordering } = props
   const [listRef, listShown] = useReveal<HTMLDivElement>()
   const activeCategoryIndex = Math.max(0, categories.findIndex((category) => category.id === activeCategory))
   const activeCategoryEntry = categories[activeCategoryIndex]
@@ -136,7 +143,7 @@ export default function MaisonTemplate(props: MenuTemplateProps) {
 
         <div className={styles.list} ref={listRef} data-shown={listShown} key={activeCategory}>
           {visibleItems.map((item, index) => (
-            <MaisonItem key={item.id} item={item} index={index} t={t} formatPrice={formatPrice} />
+            <MaisonItem key={item.id} item={item} index={index} t={t} formatPrice={formatPrice} ordering={ordering} />
           ))}
         </div>
         {!visibleItems.length && <p className={styles.empty}>{t('No items found here.', 'لا توجد أصناف هنا.')}</p>}

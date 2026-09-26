@@ -2,12 +2,14 @@ import { LoaderCircle, Utensils } from 'lucide-react'
 import { startTransition, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useParams, useSearchParams } from 'react-router-dom'
 import { MenuUnavailable } from '../components/MenuUnavailable'
+import { OrderBar } from '../components/OrderBar'
 import { TemplateSwitcher } from '../components/TemplateSwitcher'
 import { getMenuContactCard, getPublicMenu, recordMenuView } from '../lib/api'
 import { useAuth } from '../lib/auth'
 import { formatLbp, localText } from '../lib/format'
 import { deriveTheme } from '../lib/theme'
 import { useImagePreload } from '../lib/useImagePreload'
+import { useOrder } from '../lib/useOrder'
 import type { Language, MenuContactCard, RestaurantMenu } from '../lib/types'
 import { DEFAULT_TEMPLATE, resolveTemplateId, TEMPLATES, templateComponents } from '../templates/registry'
 
@@ -209,6 +211,22 @@ export function PublicMenuPage() {
 
   const imagesReady = useImagePreload(criticalImages)
 
+  /* Takeaway ordering is only offered when the owner asked for it, there is a
+     number for the order to reach, and the kitchen is actually open. Any one
+     of those missing and the diner never sees the button — an order button
+     that leads nowhere is worse than none. */
+  const canOrder = Boolean(
+    menu?.restaurant.takeaway_enabled
+    && menu.restaurant.whatsapp
+    && !menu.restaurant.temporarily_closed,
+  )
+  const order = useOrder(slug ?? '', canOrder)
+  const { quantityOf, add, setQuantity } = order
+  const templateOrdering = useMemo(
+    () => ({ quantityOf, add, setQuantity }),
+    [quantityOf, add, setQuantity],
+  )
+
   // The owner's saved design, unless a `?template=` override is present — which
   // is how the dashboard previews a design before it is saved.
   const requestedTemplateId = resolveTemplateId(searchParams.get('template') ?? menu?.restaurant.template_id)
@@ -273,10 +291,24 @@ export function PublicMenuPage() {
           t={t}
           formatPrice={formatLbp}
           coverUrl={coverUrl}
+          ordering={canOrder ? templateOrdering : undefined}
         />
         <TemplateReady templateId={templateId} onReady={finishTemplateSwitch} />
       </Suspense>
       {switchingTemplate && <TemplateSwitchLoading language={language} />}
+      {canOrder && (
+        <OrderBar
+          restaurant={restaurant}
+          items={displayItems}
+          order={order}
+          language={language}
+          rtl={language === 'ar'}
+          t={t}
+          formatPrice={formatLbp}
+          brand={theme.brand}
+          brandInk={theme.brandInk}
+        />
+      )}
       {showSwitcher && <TemplateSwitcher active={templateId} onSelect={selectTemplate} templates={availableTemplates} />}
     </>
   )

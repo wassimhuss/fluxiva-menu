@@ -80,6 +80,8 @@ export interface Restaurant {
   template_id?: string
   /** Whether food-item photos are rendered on the public menu. Defaults to true. */
   show_item_images?: boolean
+  /** Whether diners may build a takeaway order and send it over WhatsApp. */
+  takeaway_enabled?: boolean
   default_language: Language
   subscription_status: SubscriptionStatus
   trial_ends_at?: string

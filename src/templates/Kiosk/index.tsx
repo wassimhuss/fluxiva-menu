@@ -1,15 +1,17 @@
 import { Instagram, MapPin, MessageCircle } from 'lucide-react'
 import { useState } from 'react'
+import { AddToOrder } from '../../components/AddToOrder'
 import type { MenuItem } from '../../lib/types'
 import type { MenuTemplateProps } from '../types'
 import { useReveal } from '../useReveal'
 import styles from './Kiosk.module.css'
 
-function KioskCard({ item, index, t, formatPrice }: {
+function KioskCard({ item, index, t, formatPrice, ordering }: {
   item: MenuItem
   index: number
   t: MenuTemplateProps['t']
   formatPrice: MenuTemplateProps['formatPrice']
+  ordering?: MenuTemplateProps['ordering']
 }) {
   const [variantIndex, setVariantIndex] = useState(0)
   const variant = item.variants?.[variantIndex]
@@ -29,6 +31,11 @@ function KioskCard({ item, index, t, formatPrice }: {
         {item.image_url && <div className={styles.scrim} />}
         <span className={styles.price}>{formatPrice(price)}</span>
         {!item.available && <span className={styles.soldOutTag}>{t('Sold out', 'نفد')}</span>}
+        {ordering && (
+          <div className={styles.cardOrder}>
+            <AddToOrder item={item} variantIndex={variantIndex} ordering={ordering} t={t} />
+          </div>
+        )}
         {item.image_url && (
           <div className={styles.overlay}>
             <h3 className={styles.itemName}>{name}</h3>
@@ -60,7 +67,7 @@ function KioskCard({ item, index, t, formatPrice }: {
 }
 
 export default function KioskTemplate(props: MenuTemplateProps) {
-  const { restaurant, categories, visibleItems, activeCategory, setActiveCategory, language, setLanguage, rtl, theme, t, formatPrice } = props
+  const { restaurant, categories, visibleItems, activeCategory, setActiveCategory, language, setLanguage, rtl, theme, t, formatPrice, ordering } = props
   const [gridRef, gridShown] = useReveal<HTMLDivElement>()
 
   const activeCategoryEntry = categories.find((category) => category.id === activeCategory)
@@ -130,7 +137,7 @@ export default function KioskTemplate(props: MenuTemplateProps) {
 
         <div className={styles.grid} ref={gridRef} data-shown={gridShown} key={activeCategory}>
           {visibleItems.map((item, index) => (
-            <KioskCard key={item.id} item={item} index={index} t={t} formatPrice={formatPrice} />
+            <KioskCard key={item.id} item={item} index={index} t={t} formatPrice={formatPrice} ordering={ordering} />
           ))}
         </div>
         {!visibleItems.length && <p className={styles.empty}>{t('No items found here.', 'لا توجد أصناف هنا.')}</p>}

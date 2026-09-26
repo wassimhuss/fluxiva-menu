@@ -438,3 +438,25 @@
   .card:hover, .card:active, .contact:hover, .categoryButton:active, .variants button:active { transform: none; }
   .card:hover .image { transform: none; }
 }
+
+/* Ordering control. Kiosk is a photo grid with the name written over the
+   picture, so the control floats on the opposite corner to the price rather
+   than taking a row of its own — in normal flow it sat underneath .overlay,
+   which covers the whole bottom of the photo, and was invisible. */
+.cardOrder {
+  position: absolute;
+  z-index: 3;
+  inset-block-end: 12px;
+  inset-inline-end: 12px;
+  --add-active-bg: var(--kiosk-brand);
+  --add-active-fg: var(--kiosk-ink);
+  /* On top of a photograph, so it carries its own surface. */
+  --add-bg: rgba(12, 18, 16, .55);
+  --add-border: rgba(255, 255, 255, .42);
+  --add-fg: #fff;
+  backdrop-filter: blur(6px);
+  border-radius: 999px;
+}
+
+/* The written name shares the bottom edge; keep it clear of the control. */
+.overlay { padding-inline-end: 58px; }

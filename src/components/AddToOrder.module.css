@@ -1,0 +1,57 @@
+/* One add control shared by every template that wants dishes added in place.
+   Colour comes from the template through these variables so it can sit on a
+   cream page or a black one without a per-template copy. */
+
+/* Defaults live in the var() fallbacks, not as declarations here: a custom
+   property set on this element wins over one inherited from the template, so
+   declaring them would make every template override silently do nothing.
+   The filled state is a real colour rather than currentColor, which resolved
+   to near-white beside light price text and drew white on white. */
+.root {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  border: 1px solid var(--add-border, rgba(20, 28, 24, .22));
+  border-radius: 999px;
+  background: var(--add-bg, transparent);
+  color: var(--add-fg, currentColor);
+  vertical-align: middle;
+}
+
+.rootActive {
+  border-color: transparent;
+  background: var(--add-active-bg, #1d2b24);
+  color: var(--add-active-fg, #ffffff);
+}
+
+.button {
+  inline-size: 30px;
+  block-size: 30px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  transition: transform .15s ease;
+}
+
+.button:active { transform: scale(.9); }
+.button:disabled { opacity: .4; cursor: default; }
+.button svg { width: 15px; height: 15px; }
+
+.count {
+  min-inline-size: 20px;
+  text-align: center;
+  font-size: 12.5px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Sold-out dishes keep the space so rows do not jump, but cannot be ordered. */
+.placeholder { inline-size: 32px; block-size: 32px; display: inline-block; }
+
+@media (prefers-reduced-motion: reduce) { .button:active { transform: none; } }

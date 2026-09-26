@@ -429,3 +429,15 @@
   .itemSoldOut { opacity: .42; }
   .contact:hover, .item:hover .thumb { transform: none; }
 }
+
+/* Ordering control. Noir is a dark page, so the resting outline has to be
+   drawn in light ink rather than the default dark one. */
+.itemOrder {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 10px;
+  --add-active-bg: var(--noir-accent);
+  --add-active-fg: #0a0c0b;
+  --add-border: rgba(236, 232, 224, .28);
+  --add-fg: rgba(236, 232, 224, .86);
+}
