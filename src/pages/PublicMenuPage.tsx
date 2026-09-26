@@ -3,6 +3,7 @@ import { startTransition, Suspense, useCallback, useEffect, useMemo, useRef, use
 import { useParams, useSearchParams } from 'react-router-dom'
 import { MenuUnavailable } from '../components/MenuUnavailable'
 import { OrderBar } from '../components/OrderBar'
+import { ServiceChoice } from '../components/ServiceChoice'
 import { TemplateSwitcher } from '../components/TemplateSwitcher'
 import { getMenuContactCard, getPublicMenu, recordMenuView } from '../lib/api'
 import { useAuth } from '../lib/auth'
@@ -10,6 +11,7 @@ import { formatLbp, localText } from '../lib/format'
 import { deriveTheme } from '../lib/theme'
 import { useImagePreload } from '../lib/useImagePreload'
 import { useOrder } from '../lib/useOrder'
+import { useServiceMode } from '../lib/useServiceMode'
 import type { Language, MenuContactCard, RestaurantMenu } from '../lib/types'
 import { DEFAULT_TEMPLATE, resolveTemplateId, TEMPLATES, templateComponents } from '../templates/registry'
 
@@ -221,6 +223,14 @@ export function PublicMenuPage() {
     && !menu.restaurant.temporarily_closed,
   )
   const order = useOrder(slug ?? '', canOrder)
+
+  /* The scan opens on a choice: eating here, or taking it away. Only asked
+     when takeaway is genuinely on offer — otherwise a diner would be made to
+     pick between the menu and nothing. The dashboard preview skips it too, so
+     the owner sees their design rather than this screen in the iframe. */
+  const askService = canOrder && !isPreview
+  const { mode: serviceMode, choose: chooseService, ready: serviceReady } = useServiceMode(slug ?? '', askService)
+  const orderingAllowed = canOrder && (!askService || serviceMode === 'takeaway')
   const { quantityOf, add, setQuantity } = order
   const templateOrdering = useMemo(
     () => ({ quantityOf, add, setQuantity }),
@@ -270,6 +280,26 @@ export function PublicMenuPage() {
   const { restaurant, categories } = menu
   const Template = templateComponents[templateId]
 
+  /* The choice comes before the menu. `serviceReady` covers the moment between
+     the menu arriving and the stored choice being read back, so a diner who
+     already picked is not flashed the question a second time. */
+  if (askService && serviceReady && serviceMode === null) {
+    return (
+      <ServiceChoice
+        restaurant={restaurant}
+        coverUrl={coverUrl}
+        language={language}
+        setLanguage={setLanguage}
+        rtl={language === 'ar'}
+        t={t}
+        brand={theme.brand}
+        brandInk={theme.brandInk}
+        glow={theme.alpha(0.3)}
+        onChoose={chooseService}
+      />
+    )
+  }
+
   // `?preview=1` is the dashboard's embedded preview, which supplies its own
   // picker and should not show a second one floating over the menu.
   const showSwitcher = (import.meta.env.DEV || slug === 'demo') && !searchParams.has('preview')
@@ -291,12 +321,12 @@ export function PublicMenuPage() {
           t={t}
           formatPrice={formatLbp}
           coverUrl={coverUrl}
-          ordering={canOrder ? templateOrdering : undefined}
+          ordering={orderingAllowed ? templateOrdering : undefined}
         />
         <TemplateReady templateId={templateId} onReady={finishTemplateSwitch} />
       </Suspense>
       {switchingTemplate && <TemplateSwitchLoading language={language} />}
-      {canOrder && (
+      {orderingAllowed && (
         <OrderBar
           restaurant={restaurant}
           items={displayItems}

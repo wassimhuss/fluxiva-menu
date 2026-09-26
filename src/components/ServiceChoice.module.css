@@ -1,0 +1,160 @@
+/* The choice shown before the menu: eating here, or taking it away. */
+
+.root {
+  position: relative;
+  min-block-size: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 26px;
+  padding: calc(env(safe-area-inset-top, 0px) + 28px) 22px calc(env(safe-area-inset-bottom, 0px) + 28px);
+  overflow: hidden;
+  background: #11140f;
+  color: #f4efe4;
+  font-family: 'DM Sans', 'Tajawal', sans-serif;
+  text-align: center;
+}
+
+/* The restaurant's own cover, pushed back far enough to read type over. */
+.backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background-image: var(--choice-cover);
+  background-size: cover;
+  background-position: center;
+  transform: scale(1.06);
+  filter: blur(3px);
+}
+
+.scrim {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background:
+    radial-gradient(120% 80% at 50% 30%, var(--choice-glow), transparent 68%),
+    linear-gradient(180deg, rgba(10, 13, 10, .74), rgba(10, 13, 10, .9));
+}
+
+.lang {
+  position: absolute;
+  z-index: 3;
+  inset-block-start: calc(env(safe-area-inset-top, 0px) + 18px);
+  inset-inline-end: 18px;
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid rgba(244, 239, 228, .2);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .08);
+  backdrop-filter: blur(10px);
+}
+
+.lang button {
+  min-inline-size: 38px;
+  padding: 6px 12px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: rgba(244, 239, 228, .68);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.lang button.langActive { background: #f4efe4; color: #16190f; }
+
+.head { position: relative; z-index: 2; display: flex; flex-direction: column; align-items: center; gap: 12px; }
+
+.logo {
+  inline-size: 74px;
+  block-size: 74px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid rgba(244, 239, 228, .3);
+}
+
+.monogram {
+  inline-size: 74px;
+  block-size: 74px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(244, 239, 228, .3);
+  background: rgba(255, 255, 255, .06);
+  font-family: 'Cormorant Garamond', 'Tajawal', serif;
+  font-size: 26px;
+}
+
+.venue {
+  margin: 0;
+  font-family: 'Cormorant Garamond', 'Tajawal', serif;
+  font-size: clamp(30px, 8vw, 44px);
+  font-weight: 600;
+  line-height: 1.1;
+}
+
+.prompt { margin: 0; color: rgba(244, 239, 228, .62); font-size: 13.5px; line-height: 1.6; max-inline-size: 30ch; }
+
+.cards {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 13px;
+  inline-size: min(100%, 420px);
+}
+
+@media (min-width: 620px) { .cards { grid-template-columns: 1fr 1fr; inline-size: min(100%, 620px); } }
+
+.card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 11px;
+  padding: 26px 20px;
+  border: 1px solid rgba(244, 239, 228, .2);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, .07);
+  backdrop-filter: blur(12px);
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  transition: transform .18s ease, border-color .18s ease, background .18s ease;
+}
+
+.card:hover { transform: translateY(-3px); border-color: rgba(244, 239, 228, .45); background: rgba(255, 255, 255, .12); }
+.card:active { transform: translateY(0); }
+.card:focus-visible { outline: 2px solid #f4efe4; outline-offset: 3px; }
+
+.icon {
+  inline-size: 52px;
+  block-size: 52px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--choice-brand);
+  color: var(--choice-ink);
+}
+
+.icon svg { width: 23px; height: 23px; }
+
+.cardTitle { font-size: 16px; font-weight: 600; }
+.cardNote { color: rgba(244, 239, 228, .55); font-size: 11.5px; line-height: 1.5; max-inline-size: 24ch; }
+
+.mark {
+  position: relative;
+  z-index: 2;
+  color: rgba(244, 239, 228, .3);
+  font-size: 10px;
+  letter-spacing: 1.6px;
+  text-transform: uppercase;
+}
+
+.mark b { color: rgba(244, 239, 228, .55); font-weight: 600; }
+
+@media (prefers-reduced-motion: reduce) {
+  .card, .card:hover, .card:active { transform: none; transition: none; }
+}
