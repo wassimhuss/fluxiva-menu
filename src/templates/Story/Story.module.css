@@ -431,3 +431,16 @@
   .layerImage, .layer[data-active='true'] .layerImage { transition: none; transform: none; }
   .contact:hover { transform: none; }
 }
+
+/* Ordering control. Dark page, so the resting outline is drawn in light ink. */
+.addToOrder {
+  --add-active-bg: var(--story-accent);
+  --add-active-fg: #0c0f0e;
+  --add-bg: rgba(12, 15, 14, .42);
+  --add-border: rgba(236, 231, 222, .34);
+  --add-fg: rgba(236, 231, 222, .9);
+  backdrop-filter: blur(8px);
+}
+
+.addToOrder button { inline-size: 40px; block-size: 40px; }
+.addToOrder button svg { width: 17px; height: 17px; }

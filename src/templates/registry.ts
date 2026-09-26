@@ -12,6 +12,7 @@ export const TEMPLATES: TemplateMeta[] = [
     description: 'Warm, calm and photo-led. The original Fluxiva menu.',
     scroll: 'Standard page scroll with category tabs',
     tags: ['bakery', 'cafe', 'all-purpose'],
+    supportsOrdering: true,
   },
   {
     id: 'noir',
@@ -19,6 +20,7 @@ export const TEMPLATES: TemplateMeta[] = [
     description: 'Dark, elegant typography with dotted price leaders.',
     scroll: 'Standard page scroll, two columns on desktop',
     tags: ['fine-dining', 'steakhouse', 'evening'],
+    supportsOrdering: true,
   },
   {
     id: 'maison',
@@ -26,6 +28,7 @@ export const TEMPLATES: TemplateMeta[] = [
     description: 'A refined editorial menu that adapts beautifully with or without photos.',
     scroll: 'Standard page scroll with an editorial category bar',
     tags: ['restaurant', 'bakery', 'editorial'],
+    supportsOrdering: true,
   },
   {
     id: 'aurora',
@@ -33,6 +36,7 @@ export const TEMPLATES: TemplateMeta[] = [
     description: 'Frosted glass cards over a slow-drifting colour wash.',
     scroll: 'Standard page scroll with a card grid',
     tags: ['cafe', 'juice-bar', 'modern'],
+    supportsOrdering: true,
     requiresItemImages: true,
   },
   {
@@ -41,6 +45,7 @@ export const TEMPLATES: TemplateMeta[] = [
     description: 'Big photography and bold prices, built for fast service.',
     scroll: 'Standard page scroll with a card grid',
     tags: ['fast-food', 'pizza', 'street-food'],
+    supportsOrdering: true,
     requiresItemImages: true,
   },
   {
@@ -49,6 +54,7 @@ export const TEMPLATES: TemplateMeta[] = [
     description: 'One dish per screen, swiped like a short-video feed.',
     scroll: 'Full-screen vertical snap',
     tags: ['photo-led', 'social', 'dessert'],
+    supportsOrdering: true,
     requiresItemImages: true,
   },
   {
@@ -57,6 +63,7 @@ export const TEMPLATES: TemplateMeta[] = [
     description: 'A deck of dish cards flicked through sideways.',
     scroll: 'Horizontal snap deck',
     tags: ['small-menu', 'specials', 'cocktails'],
+    supportsOrdering: true,
     requiresItemImages: true,
   },
   {
@@ -65,6 +72,7 @@ export const TEMPLATES: TemplateMeta[] = [
     description: 'Photography holds still while the writing scrolls past it.',
     scroll: 'Scrollytelling with a sticky image pane',
     tags: ['fine-dining', 'tasting-menu', 'editorial'],
+    supportsOrdering: true,
     requiresItemImages: true,
   },
 ]

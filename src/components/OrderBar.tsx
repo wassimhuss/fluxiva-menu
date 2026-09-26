@@ -31,6 +31,17 @@ export function OrderBar({ restaurant, items, order, language, rtl, t, formatPri
   const lines = resolveLines(order.lines, items, t)
   const total = orderTotal(lines)
 
+  /* The button floats over whichever design is running, and two of them anchor
+     their own content to the bottom edge — on Reel it sat squarely on top of
+     the price and the add control, so the dish could not be added at all.
+     Rather than have the button dodge each design, it publishes the room it
+     occupies and those designs reserve it. */
+  useEffect(() => {
+    const root = document.documentElement
+    root.style.setProperty('--fluxiva-order-space', '78px')
+    return () => { root.style.removeProperty('--fluxiva-order-space') }
+  }, [])
+
   // Closing on Escape, because the sheet covers the whole menu on a phone.
   useEffect(() => {
     if (!open) return

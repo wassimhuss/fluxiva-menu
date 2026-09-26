@@ -1,16 +1,18 @@
 import { ChevronDown, Instagram, MapPin, MessageCircle } from 'lucide-react'
 import { useState } from 'react'
+import { AddToOrder } from '../../components/AddToOrder'
 import type { MenuItem } from '../../lib/types'
 import type { MenuTemplateProps } from '../types'
 import { useActiveSlide } from '../useActiveSlide'
 import styles from './Story.module.css'
 
-function Chapter({ item, index, active, t, formatPrice }: {
+function Chapter({ item, index, active, t, formatPrice, ordering }: {
   item: MenuItem
   index: number
   active: boolean
   t: MenuTemplateProps['t']
   formatPrice: MenuTemplateProps['formatPrice']
+  ordering?: MenuTemplateProps['ordering']
 }) {
   const [variantIndex, setVariantIndex] = useState(0)
   const variant = item.variants?.[variantIndex]
@@ -43,6 +45,7 @@ function Chapter({ item, index, active, t, formatPrice }: {
           {item.available
             ? <span className={styles.price}>{formatPrice(price)}</span>
             : <span className={styles.soldOut}>{t('Unavailable', 'غير متوفر')}</span>}
+          {ordering && <AddToOrder item={item} variantIndex={variantIndex} ordering={ordering} t={t} className={styles.addToOrder} />}
         </div>
       </div>
     </section>
@@ -50,7 +53,7 @@ function Chapter({ item, index, active, t, formatPrice }: {
 }
 
 export default function StoryTemplate(props: MenuTemplateProps) {
-  const { restaurant, categories, visibleItems, activeCategory, setActiveCategory, language, setLanguage, rtl, theme, t, formatPrice, coverUrl } = props
+  const { restaurant, categories, visibleItems, activeCategory, setActiveCategory, language, setLanguage, rtl, theme, t, formatPrice, coverUrl, ordering } = props
   // The chapters scroll with the page, so the observer watches the viewport.
   const [setChapters, active] = useActiveSlide<HTMLDivElement>(visibleItems.length, { viewportRoot: true })
 
@@ -134,6 +137,7 @@ export default function StoryTemplate(props: MenuTemplateProps) {
                   active={active === index}
                   t={t}
                   formatPrice={formatPrice}
+                  ordering={ordering}
                 />
               ))}
             </div>

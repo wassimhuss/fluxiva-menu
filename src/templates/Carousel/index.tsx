@@ -1,5 +1,6 @@
 import { ChevronLeft, ChevronRight, Instagram, MapPin, MessageCircle } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { AddToOrder } from '../../components/AddToOrder'
 import { scrollToSlide } from '../scrollToSlide'
 import type { MenuTemplateProps } from '../types'
 import { useActiveSlide } from '../useActiveSlide'
@@ -36,7 +37,7 @@ function Ambient({ url }: { url?: string }) {
 }
 
 export default function CarouselTemplate(props: MenuTemplateProps) {
-  const { restaurant, categories, visibleItems, activeCategory, setActiveCategory, language, setLanguage, rtl, theme, t, formatPrice } = props
+  const { restaurant, categories, visibleItems, activeCategory, setActiveCategory, language, setLanguage, rtl, theme, t, formatPrice, ordering } = props
 
   const [setTrack, active, track] = useActiveSlide<HTMLDivElement>(visibleItems.length)
   // One card per gesture, matching the reel's feel sideways.
@@ -185,6 +186,7 @@ export default function CarouselTemplate(props: MenuTemplateProps) {
             {activeItem.available
               ? <span className={styles.price}>{formatPrice(activePrice)}</span>
               : <span className={styles.unavailable}>{t('Currently unavailable', 'غير متوفر حالياً')}</span>}
+            {ordering && <AddToOrder item={activeItem} variantIndex={activeVariantIndex} ordering={ordering} t={t} className={styles.addToOrder} />}
           </div>
         </section>
       )}

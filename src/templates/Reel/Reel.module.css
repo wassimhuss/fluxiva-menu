@@ -78,7 +78,8 @@
 .info {
   position: relative;
   z-index: 2;
-  padding: 0 22px calc(env(safe-area-inset-bottom, 0px) + 34px);
+  /* The last term is zero unless the takeaway bar is on screen. */
+  padding: 0 22px calc(env(safe-area-inset-bottom, 0px) + 34px + var(--fluxiva-order-space, 0px));
   max-width: 640px;
   opacity: 0;
   transform: translateY(26px);
@@ -453,3 +454,21 @@
   .hint { animation: none; }
   .endContact:hover, .variants button:active { transform: none; }
 }
+
+/* Ordering control. One dish fills the screen here, so it sits beside the
+   price as a single large target rather than a row of small ones, and carries
+   its own surface because it lands on photography. */
+.addToOrder {
+  --add-active-bg: var(--reel-brand);
+  --add-active-fg: var(--reel-ink);
+  --add-bg: rgba(7, 9, 8, .48);
+  --add-border: rgba(255, 255, 255, .42);
+  --add-fg: #fff;
+  backdrop-filter: blur(10px);
+}
+
+/* Matching the price pill next to it; a small circle would read as an
+   afterthought on a full-screen slide. */
+.addToOrder button { inline-size: 44px; block-size: 44px; }
+.addToOrder button svg { width: 19px; height: 19px; }
+.addToOrder span { min-inline-size: 26px; font-size: 15px; }

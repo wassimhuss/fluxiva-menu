@@ -61,4 +61,14 @@ export interface TemplateMeta {
   tags: string[]
   /** Hidden from the owner when food photos are disabled. */
   requiresItemImages?: boolean
+  /**
+   * Whether this design offers a way to add a dish from inside the menu.
+   *
+   * A design without one still gets the order button and the basket, since
+   * those live outside the templates — which means a diner could open an empty
+   * basket with no way to fill it. Rather than trust that every future design
+   * remembers to wire this up, the ones that have are marked here, and the
+   * public menu refuses to offer takeaway on any design that is not.
+   */
+  supportsOrdering?: boolean
 }

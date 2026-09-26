@@ -463,7 +463,8 @@
   display: flex;
   align-items: center;
   gap: 14px;
-  padding: 0 24px calc(env(safe-area-inset-bottom, 0px) + 16px);
+  /* The last term is zero unless the takeaway bar is on screen. */
+  padding: 0 24px calc(env(safe-area-inset-bottom, 0px) + 16px + var(--fluxiva-order-space, 0px));
 }
 
 .rail {
@@ -543,3 +544,17 @@
   .card[data-active='true'] .image, .image { transform: none; }
   .arrow:hover, .contact:hover { transform: none; }
 }
+
+/* Ordering control. The caption describes whichever card is centred, so one
+   control here serves the whole deck. */
+.addToOrder {
+  --add-active-bg: var(--deck-brand);
+  --add-active-fg: var(--deck-ink);
+  --add-bg: rgba(255, 255, 255, .08);
+  --add-border: rgba(242, 239, 233, .34);
+  --add-fg: #f2efe9;
+  backdrop-filter: blur(8px);
+}
+
+.addToOrder button { inline-size: 42px; block-size: 42px; }
+.addToOrder button svg { width: 18px; height: 18px; }

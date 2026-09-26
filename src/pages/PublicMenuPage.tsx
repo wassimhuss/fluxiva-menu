@@ -212,6 +212,14 @@ export function PublicMenuPage() {
 
   const imagesReady = useImagePreload(criticalImages)
 
+  // The owner's saved design, unless a `?template=` override is present — which
+  // is how the dashboard previews a design before it is saved.
+  const requestedTemplateId = resolveTemplateId(searchParams.get('template') ?? menu?.restaurant.template_id)
+  const templateId = !showItemImages && TEMPLATES.find((template) => template.id === requestedTemplateId)?.requiresItemImages
+    ? DEFAULT_TEMPLATE
+    : requestedTemplateId
+  const availableTemplates = showItemImages ? TEMPLATES : TEMPLATES.filter((template) => !template.requiresItemImages)
+
   /* Takeaway ordering is only offered when the owner asked for it, there is a
      number for the order to reach, and the kitchen is actually open. Any one
      of those missing and the diner never sees the button — an order button
@@ -219,7 +227,10 @@ export function PublicMenuPage() {
   const canOrder = Boolean(
     menu?.restaurant.takeaway_enabled
     && menu.restaurant.whatsapp
-    && !menu.restaurant.temporarily_closed,
+    && !menu.restaurant.temporarily_closed
+    // A design with no way to add a dish would hand the diner an empty basket
+    // and no means of filling it, so it is not offered takeaway at all.
+    && TEMPLATES.find((template) => template.id === templateId)?.supportsOrdering,
   )
   const order = useOrder(slug ?? '', canOrder)
 
@@ -241,13 +252,6 @@ export function PublicMenuPage() {
     [quantityOf, add, setQuantity],
   )
 
-  // The owner's saved design, unless a `?template=` override is present — which
-  // is how the dashboard previews a design before it is saved.
-  const requestedTemplateId = resolveTemplateId(searchParams.get('template') ?? menu?.restaurant.template_id)
-  const templateId = !showItemImages && TEMPLATES.find((template) => template.id === requestedTemplateId)?.requiresItemImages
-    ? DEFAULT_TEMPLATE
-    : requestedTemplateId
-  const availableTemplates = showItemImages ? TEMPLATES : TEMPLATES.filter((template) => !template.requiresItemImages)
 
   /* Switching design returns the menu to where it starts: the first category,
      scrolled to the top. Each design is a different height and the window keeps

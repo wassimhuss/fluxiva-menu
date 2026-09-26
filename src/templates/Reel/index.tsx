@@ -1,12 +1,13 @@
 import { ChevronUp, Instagram, MapPin, MessageCircle } from 'lucide-react'
 import { useState } from 'react'
+import { AddToOrder } from '../../components/AddToOrder'
 import type { Category, MenuItem } from '../../lib/types'
 import type { MenuTemplateProps } from '../types'
 import { useActiveSlide } from '../useActiveSlide'
 import { useSnapLock } from '../useSnapLock'
 import styles from './Reel.module.css'
 
-function ReelSlide({ item, index, total, category, active, t, formatPrice }: {
+function ReelSlide({ item, index, total, category, active, t, formatPrice, ordering }: {
   item: MenuItem
   index: number
   total: number
@@ -14,6 +15,7 @@ function ReelSlide({ item, index, total, category, active, t, formatPrice }: {
   active: boolean
   t: MenuTemplateProps['t']
   formatPrice: MenuTemplateProps['formatPrice']
+  ordering?: MenuTemplateProps['ordering']
 }) {
   const [variantIndex, setVariantIndex] = useState(0)
   const variant = item.variants?.[variantIndex]
@@ -58,6 +60,7 @@ function ReelSlide({ item, index, total, category, active, t, formatPrice }: {
           {item.available
             ? <span className={styles.price}>{formatPrice(price)}</span>
             : <span className={styles.soldOut}>{t('Sold out', 'نفد')}</span>}
+          {ordering && <AddToOrder item={item} variantIndex={variantIndex} ordering={ordering} t={t} className={styles.addToOrder} />}
         </div>
       </div>
     </section>
@@ -65,7 +68,7 @@ function ReelSlide({ item, index, total, category, active, t, formatPrice }: {
 }
 
 export default function ReelTemplate(props: MenuTemplateProps) {
-  const { restaurant, categories, visibleItems, activeCategory, setActiveCategory, language, setLanguage, rtl, theme, t, formatPrice } = props
+  const { restaurant, categories, visibleItems, activeCategory, setActiveCategory, language, setLanguage, rtl, theme, t, formatPrice, ordering } = props
   // +1 for the closing restaurant card at the end of the reel.
   const slideCount = visibleItems.length + 1
   const [setReel, active, reel] = useActiveSlide<HTMLDivElement>(slideCount)
@@ -130,6 +133,7 @@ export default function ReelTemplate(props: MenuTemplateProps) {
             active={active === index}
             t={t}
             formatPrice={formatPrice}
+            ordering={ordering}
           />
         ))}
 
