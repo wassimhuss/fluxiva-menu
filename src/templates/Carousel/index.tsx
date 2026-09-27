@@ -63,6 +63,7 @@ export default function CarouselTemplate(props: MenuTemplateProps) {
 
   const instagramHandle = restaurant.instagram?.replace(/^@/, '')
   const address = t(restaurant.address_en ?? '', restaurant.address_ar ?? '')
+  const hours = t(restaurant.opening_hours ?? '', restaurant.opening_hours_ar ?? '')
 
   const scrollToIndex = useCallback((index: number) => {
     if (track) scrollToSlide(track, index, 'x', 'smooth')
@@ -93,7 +94,9 @@ export default function CarouselTemplate(props: MenuTemplateProps) {
             : <div className={styles.monogram}>{restaurant.name_en.slice(0, 2).toUpperCase()}</div>}
           <span className={styles.venue}>
             {t(restaurant.name_en, restaurant.name_ar)}
-            <span className={styles.venueSub}>{t('The menu', 'القائمة')}</span>
+            {hours
+              ? <span className={`${styles.venueSub} ${styles.venueHours}`}>{hours}</span>
+              : <span className={styles.venueSub}>{t('The menu', 'القائمة')}</span>}
           </span>
         </div>
         <div className={styles.langToggle}>
