@@ -196,12 +196,12 @@
   min-block-size: 0;
   display: flex;
   align-items: center;
-  padding-block: clamp(14px, 3vh, 30px);
+  padding-block: clamp(10px, 2vh, 20px);
 }
 
 .track {
   /* Tied to height as well as width, so the deck still fits a short screen. */
-  --card-w: clamp(210px, min(62vw, 42vh), 380px);
+  --card-w: clamp(210px, min(72vw, 40vh), 420px);
   display: flex;
   align-items: center;
   gap: clamp(14px, 3vw, 26px);
@@ -232,7 +232,7 @@
   flex: 0 0 var(--card-w);
   /* Portrait, and as tall as the stage allows. The ratio is what sets the
      height; `min(100%, …)` only steps in on a screen too short for it. */
-  block-size: min(100%, calc(var(--card-w) * 1.52));
+  block-size: min(100%, calc(var(--card-w) * 1.62));
   scroll-snap-align: center;
   /* `scroll-snap-stop: always` is applied only while a finger is down, from
      useSnapLock. Left on permanently it blocks programmatic scrolling outright
@@ -373,7 +373,7 @@
   flex-shrink: 0;
   text-align: center;
   padding: 0 24px clamp(10px, 2vh, 18px);
-  min-block-size: clamp(150px, 25vh, 210px);
+  min-block-size: clamp(120px, 19vh, 165px);
   display: flex;
   flex-direction: column;
   align-items: center;
