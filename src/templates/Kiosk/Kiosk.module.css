@@ -234,8 +234,6 @@
   animation-delay: calc(var(--i) * 48ms);
 }
 
-.card:hover { transform: translateY(-4px); box-shadow: 0 18px 40px rgba(22, 32, 30, .16); }
-
 .card:active { transform: scale(.985); }
 
 .cardSoldOut { opacity: .5; }
@@ -253,8 +251,6 @@
   object-fit: cover;
   transition: transform .55s cubic-bezier(.22, 1, .36, 1);
 }
-
-.card:hover .image { transform: scale(1.07); }
 
 .scrim {
   position: absolute;
@@ -400,8 +396,6 @@
   transition: background .22s ease, transform .22s ease;
 }
 
-.contact:hover { background: rgba(255, 255, 255, .15); transform: translateY(-2px); }
-
 .contact svg { width: 17px; color: var(--kiosk-accent); }
 
 .footerBottom {
@@ -460,3 +454,20 @@
 
 /* The written name shares the bottom edge; keep it clear of the control. */
 .overlay { padding-inline-end: 58px; }
+
+/* Hover is a pointer affordance. These menus are opened by scanning a QR
+   code, so on the phones that matter there is no pointer — and a tap would
+   otherwise leave the hover state stuck on until something else is tapped.
+   Guarded so it applies only where a real pointer exists. */
+@media (hover: hover) and (pointer: fine) {
+  .card:hover { transform: translateY(-4px); box-shadow: 0 18px 40px rgba(22, 32, 30, .16); }
+  .card:hover .image { transform: scale(1.07); }
+  .contact:hover { background: rgba(255, 255, 255, .15); transform: translateY(-2px); }
+}
+
+/* The photograph eases larger as the dish is scrolled to — the hover effect
+   this card was written with, moved onto the gesture a phone has. */
+.card[data-inview='true'] .image { transform: scale(1.07); }
+@media (prefers-reduced-motion: reduce) {
+  .card[data-inview='true'] .image { transform: none; }
+}

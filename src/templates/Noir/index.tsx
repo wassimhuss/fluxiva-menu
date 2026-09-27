@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { AddToOrder } from '../../components/AddToOrder'
 import type { MenuItem } from '../../lib/types'
 import type { MenuTemplateProps } from '../types'
+import { useInView } from '../useInView'
 import { useReveal } from '../useReveal'
 import styles from './Noir.module.css'
 
@@ -14,14 +15,17 @@ function NoirItem({ item, index, t, formatPrice, ordering }: {
   ordering?: MenuTemplateProps['ordering']
 }) {
   const [variantIndex, setVariantIndex] = useState(0)
+  const [cardRef, inView] = useInView<HTMLElement>()
   const variant = item.variants?.[variantIndex]
   const price = variant?.price_lbp ?? item.price_lbp
   const description = t(item.description_en ?? '', item.description_ar ?? '')
 
   return (
     <article
+      ref={cardRef}
       className={`${styles.item} ${item.available ? '' : styles.itemSoldOut}`}
       style={{ '--i': index } as React.CSSProperties}
+      data-inview={inView}
     >
       <div className={styles.priceLine}>
         {item.image_url && <img className={styles.thumb} src={item.image_url} alt="" loading="lazy" />}

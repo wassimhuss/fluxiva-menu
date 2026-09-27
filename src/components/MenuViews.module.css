@@ -72,8 +72,6 @@
   min-block-size: 2px;
 }
 
-.bar:hover { opacity: .85; }
-
 .barBusiest { opacity: .78; }
 
 .axis {
@@ -108,4 +106,12 @@
 
 @media (prefers-reduced-motion: reduce) {
   .bar { transition: none; }
+}
+
+/* Hover is a pointer affordance. These menus are opened by scanning a QR
+   code, so on the phones that matter there is no pointer — and a tap would
+   otherwise leave the hover state stuck on until something else is tapped.
+   Guarded so it applies only where a real pointer exists. */
+@media (hover: hover) and (pointer: fine) {
+  .bar:hover { opacity: .85; }
 }

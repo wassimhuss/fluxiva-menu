@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { AddToOrder } from '../../components/AddToOrder'
 import type { MenuItem } from '../../lib/types'
 import type { MenuTemplateProps } from '../types'
+import { useInView } from '../useInView'
 import { useReveal } from '../useReveal'
 import styles from './Aurora.module.css'
 
@@ -14,14 +15,19 @@ function AuroraCard({ item, index, t, formatPrice, ordering }: {
   ordering?: MenuTemplateProps['ordering']
 }) {
   const [variantIndex, setVariantIndex] = useState(0)
+  const [cardRef, inView] = useInView<HTMLElement>()
   const variant = item.variants?.[variantIndex]
   const price = variant?.price_lbp ?? item.price_lbp
   const description = t(item.description_en ?? '', item.description_ar ?? '')
 
   return (
     <article
+      ref={cardRef}
       className={`${styles.card} ${item.available ? '' : styles.cardSoldOut}`}
       style={{ '--i': index } as React.CSSProperties}
+      /* Scrolling to the dish is the gesture a phone has; it drives the
+         photograph the way pointing at it does on a desktop. */
+      data-inview={inView}
     >
       {item.image_url && (
         <div className={styles.imageWrap}>

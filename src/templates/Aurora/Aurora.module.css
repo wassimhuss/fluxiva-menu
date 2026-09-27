@@ -168,8 +168,6 @@
   transition: transform .3s cubic-bezier(.34, 1.56, .64, 1), background .25s ease, color .25s ease;
 }
 
-.categoryButton:hover { transform: translateY(-2px); }
-
 .categoryButton.categoryActive {
   background: var(--aurora-brand);
   border-color: var(--aurora-brand);
@@ -230,11 +228,6 @@
   animation-delay: calc(var(--i) * 62ms);
 }
 
-.card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 24px 56px rgba(27, 36, 34, .14);
-}
-
 .cardSoldOut { opacity: .55; }
 
 .imageWrap {
@@ -250,8 +243,6 @@
   object-fit: cover;
   transition: transform .6s cubic-bezier(.22, 1, .36, 1);
 }
-
-.card:hover .image { transform: scale(1.06); }
 
 .priceBadge {
   position: absolute;
@@ -325,8 +316,6 @@
   transition: transform .28s cubic-bezier(.34, 1.56, .64, 1), background .22s ease, color .22s ease;
 }
 
-.variants button:hover { transform: translateY(-1px); }
-
 .variants button.variantActive {
   background: var(--aurora-brand);
   border-color: var(--aurora-brand);
@@ -372,8 +361,6 @@
   box-shadow: 0 6px 18px rgba(27, 36, 34, .06);
   transition: transform .3s cubic-bezier(.34, 1.56, .64, 1);
 }
-
-.contact:hover { transform: translateY(-3px); }
 
 .contact svg { width: 17px; color: var(--aurora-strong); }
 
@@ -422,4 +409,35 @@
   --add-active-fg: var(--aurora-ink);
   --add-border: rgba(25, 32, 38, .2);
   --add-fg: #223037;
+}
+
+/* Hover is a pointer affordance. These menus are opened by scanning a QR
+   code, so on the phones that matter there is no pointer — and a tap would
+   otherwise leave the hover state stuck on until something else is tapped.
+   Guarded so it applies only where a real pointer exists. */
+@media (hover: hover) and (pointer: fine) {
+  .categoryButton:hover { transform: translateY(-2px); }
+  .card:hover { transform: translateY(-5px); box-shadow: 0 24px 56px rgba(27, 36, 34, .14); }
+  .card:hover .image { transform: scale(1.06); }
+  .variants button:hover { transform: translateY(-1px); }
+  .contact:hover { transform: translateY(-3px); }
+}
+
+/* Touch has no hover, so the feedback a finger gets is the press itself.
+   Transform and opacity only, so it stays on the compositor. */
+.categoryButton:active,
+.variants button:active,
+.langToggle button:active,
+.contact:active { transform: scale(.96); opacity: .82; }
+
+@media (prefers-reduced-motion: reduce) {
+  .categoryButton:active, .variants button:active, .langToggle button:active, .contact:active { transform: none; }
+}
+
+/* The photograph eases larger as the dish is scrolled to. This is the same
+   effect the card carried on hover, driven by the gesture a phone has —
+   hover still does it where a pointer exists, above. */
+.card[data-inview='true'] .image { transform: scale(1.06); }
+@media (prefers-reduced-motion: reduce) {
+  .card[data-inview='true'] .image { transform: none; }
 }

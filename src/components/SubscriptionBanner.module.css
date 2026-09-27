@@ -56,8 +56,6 @@
   transition: transform .2s ease, opacity .2s ease;
 }
 
-.action:hover { transform: translateY(-1px); opacity: .85; }
-
 .action svg { width: 15px; }
 
 /* ---------- Tones ---------- */
@@ -82,4 +80,12 @@
 
 @media (prefers-reduced-motion: reduce) {
   .action:hover { transform: none; }
+}
+
+/* Hover is a pointer affordance. These menus are opened by scanning a QR
+   code, so on the phones that matter there is no pointer — and a tap would
+   otherwise leave the hover state stuck on until something else is tapped.
+   Guarded so it applies only where a real pointer exists. */
+@media (hover: hover) and (pointer: fine) {
+  .action:hover { transform: translateY(-1px); opacity: .85; }
 }

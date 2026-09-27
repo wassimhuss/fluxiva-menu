@@ -124,8 +124,6 @@
   cursor: pointer;
   transition: transform .18s ease, border-color .18s ease, background .18s ease;
 }
-
-.card:hover { transform: translateY(-3px); border-color: rgba(244, 239, 228, .45); background: rgba(255, 255, 255, .12); }
 .card:active { transform: translateY(0); }
 .card:focus-visible { outline: 2px solid #f4efe4; outline-offset: 3px; }
 
@@ -157,4 +155,12 @@
 
 @media (prefers-reduced-motion: reduce) {
   .card, .card:hover, .card:active { transform: none; transition: none; }
+}
+
+/* Hover is a pointer affordance. These menus are opened by scanning a QR
+   code, so on the phones that matter there is no pointer — and a tap would
+   otherwise leave the hover state stuck on until something else is tapped.
+   Guarded so it applies only where a real pointer exists. */
+@media (hover: hover) and (pointer: fine) {
+  .card:hover { transform: translateY(-3px); border-color: rgba(244, 239, 228, .45); background: rgba(255, 255, 255, .12); }
 }

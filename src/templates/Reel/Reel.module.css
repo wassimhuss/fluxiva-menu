@@ -397,8 +397,6 @@
   transition: background .22s ease, transform .22s ease;
 }
 
-.endContact:hover { background: rgba(255, 255, 255, .18); transform: translateY(-2px); }
-
 .endContact svg { width: 17px; color: var(--reel-accent); }
 
 .endMark {
@@ -472,3 +470,11 @@
 .addToOrder button { inline-size: 44px; block-size: 44px; }
 .addToOrder button svg { width: 19px; height: 19px; }
 .addToOrder span { min-inline-size: 26px; font-size: 15px; }
+
+/* Hover is a pointer affordance. These menus are opened by scanning a QR
+   code, so on the phones that matter there is no pointer — and a tap would
+   otherwise leave the hover state stuck on until something else is tapped.
+   Guarded so it applies only where a real pointer exists. */
+@media (hover: hover) and (pointer: fine) {
+  .endContact:hover { background: rgba(255, 255, 255, .18); transform: translateY(-2px); }
+}

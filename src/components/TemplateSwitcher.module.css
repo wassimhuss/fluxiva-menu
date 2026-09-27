@@ -30,8 +30,6 @@
   transition: opacity .22s ease, transform .22s ease;
 }
 
-.trigger:hover { opacity: 1; transform: translateY(-2px); }
-
 .trigger svg { width: 15px; }
 
 /* ---------- Expanded ---------- */
@@ -78,8 +76,6 @@
   color: rgba(255, 255, 255, .62);
 }
 
-.close:hover { background: rgba(255, 255, 255, .16); color: #fff; }
-
 .close svg { width: 14px; }
 
 .options {
@@ -106,8 +102,6 @@
   transition: background .2s ease;
 }
 
-.option:hover { background: rgba(255, 255, 255, .08); }
-
 .optionName {
   font-size: 13px;
   font-weight: 600;
@@ -128,4 +122,14 @@
 
 @media (prefers-reduced-motion: reduce) {
   .trigger:hover { transform: none; }
+}
+
+/* Hover is a pointer affordance. These menus are opened by scanning a QR
+   code, so on the phones that matter there is no pointer — and a tap would
+   otherwise leave the hover state stuck on until something else is tapped.
+   Guarded so it applies only where a real pointer exists. */
+@media (hover: hover) and (pointer: fine) {
+  .trigger:hover { opacity: 1; transform: translateY(-2px); }
+  .close:hover { background: rgba(255, 255, 255, .16); color: #fff; }
+  .option:hover { background: rgba(255, 255, 255, .08); }
 }

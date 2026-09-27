@@ -333,8 +333,6 @@
   transition: background .26s ease, transform .26s ease, opacity .26s ease;
 }
 
-.arrow:hover { background: rgba(242, 239, 233, .16); transform: scale(1.07); }
-
 .arrow:disabled { opacity: .26; }
 
 .arrow svg { width: 21px; }
@@ -514,8 +512,6 @@
   transition: background .24s ease, color .24s ease, transform .24s ease;
 }
 
-.contact:hover { background: rgba(242, 239, 233, .14); color: #f2efe9; transform: translateY(-2px); }
-
 .contact svg { width: 15px; }
 
 .empty {
@@ -558,3 +554,23 @@
 
 .addToOrder button { inline-size: 42px; block-size: 42px; }
 .addToOrder button svg { width: 18px; height: 18px; }
+
+/* Hover is a pointer affordance. These menus are opened by scanning a QR
+   code, so on the phones that matter there is no pointer — and a tap would
+   otherwise leave the hover state stuck on until something else is tapped.
+   Guarded so it applies only where a real pointer exists. */
+@media (hover: hover) and (pointer: fine) {
+  .arrow:hover { background: rgba(242, 239, 233, .16); transform: scale(1.07); }
+  .contact:hover { background: rgba(242, 239, 233, .14); color: #f2efe9; transform: translateY(-2px); }
+}
+
+/* Touch has no hover, so the feedback a finger gets is the press itself. */
+.chip:active,
+.variants button:active,
+.langToggle button:active,
+.arrow:active,
+.contact:active { transform: scale(.94); opacity: .85; }
+
+@media (prefers-reduced-motion: reduce) {
+  .chip:active, .variants button:active, .langToggle button:active, .arrow:active, .contact:active { transform: none; }
+}

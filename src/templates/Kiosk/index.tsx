@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { AddToOrder } from '../../components/AddToOrder'
 import type { MenuItem } from '../../lib/types'
 import type { MenuTemplateProps } from '../types'
+import { useInView } from '../useInView'
 import { useReveal } from '../useReveal'
 import styles from './Kiosk.module.css'
 
@@ -14,6 +15,7 @@ function KioskCard({ item, index, t, formatPrice, ordering }: {
   ordering?: MenuTemplateProps['ordering']
 }) {
   const [variantIndex, setVariantIndex] = useState(0)
+  const [cardRef, inView] = useInView<HTMLElement>()
   const variant = item.variants?.[variantIndex]
   const price = variant?.price_lbp ?? item.price_lbp
   const name = t(item.name_en, item.name_ar)
@@ -21,8 +23,10 @@ function KioskCard({ item, index, t, formatPrice, ordering }: {
 
   return (
     <article
+      ref={cardRef}
       className={`${styles.card} ${item.available ? '' : styles.cardSoldOut}`}
       style={{ '--i': index } as React.CSSProperties}
+      data-inview={inView}
     >
       <div className={`${styles.media} ${item.image_url ? '' : styles.mediaEmpty}`}>
         {item.image_url

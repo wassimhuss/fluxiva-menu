@@ -3,12 +3,14 @@ import { useState } from 'react'
 import { AddToOrder } from '../../components/AddToOrder'
 import type { MenuItem } from '../../lib/types'
 import type { MenuTemplateProps } from '../types'
+import { useReveal } from '../useReveal'
 
 // Classic keeps using the shared global stylesheet it was originally written
 // against. New templates are scoped with CSS Modules instead.
 
-function MenuCard({ item, t, formatPrice, color, unavailableLabel, ordering }: {
+function MenuCard({ item, index, t, formatPrice, color, unavailableLabel, ordering }: {
   item: MenuItem
+  index: number
   t: MenuTemplateProps['t']
   formatPrice: MenuTemplateProps['formatPrice']
   color: string
@@ -19,7 +21,7 @@ function MenuCard({ item, t, formatPrice, color, unavailableLabel, ordering }: {
   const variant = item.variants?.[variantIndex]
   const price = variant?.price_lbp ?? item.price_lbp
   return (
-    <article className={`public-item ${item.available ? '' : 'sold-out'}`}>
+    <article className={`public-item ${item.available ? '' : 'sold-out'}`} style={{ '--i': index } as React.CSSProperties}>
       {item.image_url && <img src={item.image_url} alt="" loading="lazy" />}
       <div className="public-item-content">
         <div className="item-heading">
@@ -54,6 +56,7 @@ function MenuCard({ item, t, formatPrice, color, unavailableLabel, ordering }: {
 
 export default function ClassicTemplate(props: MenuTemplateProps) {
   const { restaurant, categories, visibleItems, activeCategory, setActiveCategory, language, setLanguage, rtl, theme, t, formatPrice, coverUrl, ordering } = props
+  const [listRef, listShown] = useReveal<HTMLDivElement>()
 
   const activeCategoryEntry = categories.find((category) => category.id === activeCategory)
   const footerContactCount = [restaurant.whatsapp, restaurant.address_en || restaurant.address_ar, restaurant.instagram].filter(Boolean).length
@@ -104,10 +107,13 @@ export default function ClassicTemplate(props: MenuTemplateProps) {
             <h2>{t(activeCategoryEntry?.name_en ?? 'Menu', activeCategoryEntry?.name_ar ?? 'القائمة')}</h2>
             <span />
           </div>
-          <div className="public-items">
-            {visibleItems.map((item) => (
+          {/* The one design that animated nothing as you scrolled; the others
+              have revealed their items since they were written. */}
+          <div className="public-items" ref={listRef} data-shown={listShown} key={activeCategory}>
+            {visibleItems.map((item, index) => (
               <MenuCard
                 key={item.id}
+                index={index}
                 item={item}
                 t={t}
                 formatPrice={formatPrice}
