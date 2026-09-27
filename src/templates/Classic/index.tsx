@@ -1,4 +1,4 @@
-import { Instagram, MapPin, MessageCircle } from 'lucide-react'
+import { Clock, Instagram, MapPin, MessageCircle } from 'lucide-react'
 import { useState } from 'react'
 import { AddToOrder } from '../../components/AddToOrder'
 import type { MenuItem } from '../../lib/types'
@@ -61,6 +61,7 @@ export default function ClassicTemplate(props: MenuTemplateProps) {
   const activeCategoryEntry = categories.find((category) => category.id === activeCategory)
   const footerContactCount = [restaurant.whatsapp, restaurant.address_en || restaurant.address_ar, restaurant.instagram].filter(Boolean).length
   const instagramHandle = restaurant.instagram?.replace(/^@/, '')
+  const hours = t(restaurant.opening_hours ?? '', restaurant.opening_hours_ar ?? '')
 
   return (
     <main
@@ -149,6 +150,12 @@ export default function ClassicTemplate(props: MenuTemplateProps) {
                 <div className="footer-contact-item footer-contact-item-wide">
                   <span className="footer-contact-icon"><MapPin /></span>
                   <span className="footer-contact-copy"><small>{t('Visit us', 'زورونا')}</small><strong>{t(restaurant.address_en ?? '', restaurant.address_ar ?? '')}</strong></span>
+                </div>
+              )}
+              {hours && (
+                <div className="footer-contact-item footer-contact-item-wide">
+                  <span className="footer-contact-icon"><Clock /></span>
+                  <span className="footer-contact-copy"><small>{t('Open', 'أوقات العمل')}</small><strong>{hours}</strong></span>
                 </div>
               )}
               {restaurant.instagram && (

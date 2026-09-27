@@ -60,6 +60,9 @@ export interface PlatformAuditEntry {
 /** How the diner intends to eat, chosen before the menu opens. */
 export type ServiceMode = 'dine-in' | 'takeaway'
 
+/** The currencies a restaurant can price in. */
+export type Currency = 'LBP' | 'USD'
+
 export interface Restaurant {
   id: string
   owner_id?: string
@@ -77,7 +80,11 @@ export interface Restaurant {
   maps_url?: string
   address_en?: string
   address_ar?: string
+  /** Free text, shown to diners. Paired with `opening_hours_ar` below. */
   opening_hours?: string
+  opening_hours_ar?: string
+  /** Which currency the restaurant prices in. Defaults to Lebanese pounds. */
+  currency?: Currency
   temporarily_closed?: boolean
   /** Id of the public menu design; unknown values fall back to the default. */
   template_id?: string
@@ -114,6 +121,9 @@ export interface MenuItem {
   name_ar: string
   description_en?: string
   description_ar?: string
+  /** Price in the restaurant's own currency — see `Restaurant.currency`. The
+   *  field name predates dollar pricing and is kept to avoid renaming it
+   *  across the menu, the dashboard, the basket and every template. */
   price_lbp: number
   image_url?: string
   variants: Variant[]

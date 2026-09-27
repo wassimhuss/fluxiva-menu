@@ -1,4 +1,4 @@
-import { ChevronDown, Instagram, MapPin, MessageCircle } from 'lucide-react'
+import { ChevronDown, Clock, Instagram, MapPin, MessageCircle } from 'lucide-react'
 import { useState } from 'react'
 import { AddToOrder } from '../../components/AddToOrder'
 import type { MenuItem } from '../../lib/types'
@@ -58,6 +58,7 @@ export default function StoryTemplate(props: MenuTemplateProps) {
   const [setChapters, active] = useActiveSlide<HTMLDivElement>(visibleItems.length, { viewportRoot: true })
 
   const instagramHandle = restaurant.instagram?.replace(/^@/, '')
+  const hours = t(restaurant.opening_hours ?? '', restaurant.opening_hours_ar ?? '')
   const address = t(restaurant.address_en ?? '', restaurant.address_ar ?? '')
 
   return (
@@ -157,6 +158,7 @@ export default function StoryTemplate(props: MenuTemplateProps) {
               ? <a className={styles.contact} href={restaurant.maps_url} target="_blank" rel="noreferrer"><MapPin /> {address}</a>
               : <span className={styles.contact}><MapPin /> {address}</span>
           )}
+          {hours && <span className={styles.contact}><Clock /> {hours}</span>}
           {restaurant.instagram && (
             <a className={styles.contact} href={`https://instagram.com/${instagramHandle}`} target="_blank" rel="noreferrer">
               <Instagram /> {restaurant.instagram}

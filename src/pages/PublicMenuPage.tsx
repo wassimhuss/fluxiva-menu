@@ -7,7 +7,7 @@ import { ServiceChoice } from '../components/ServiceChoice'
 import { TemplateSwitcher } from '../components/TemplateSwitcher'
 import { getMenuContactCard, getPublicMenu, recordMenuView } from '../lib/api'
 import { useAuth } from '../lib/auth'
-import { formatLbp, localText } from '../lib/format'
+import { formatMoney, localText } from '../lib/format'
 import { deriveTheme } from '../lib/theme'
 import { useImagePreload } from '../lib/useImagePreload'
 import { useOrder } from '../lib/useOrder'
@@ -212,6 +212,11 @@ export function PublicMenuPage() {
 
   const imagesReady = useImagePreload(criticalImages)
 
+  /* Every design receives its formatter rather than reaching for one, so the
+     restaurant's currency reaches all eight from a single place. */
+  const currency = menu?.restaurant.currency ?? 'LBP'
+  const formatPrice = useCallback((value: number) => formatMoney(value, currency), [currency])
+
   // The owner's saved design, unless a `?template=` override is present — which
   // is how the dashboard previews a design before it is saved.
   const requestedTemplateId = resolveTemplateId(searchParams.get('template') ?? menu?.restaurant.template_id)
@@ -325,7 +330,7 @@ export function PublicMenuPage() {
           rtl={language === 'ar'}
           theme={theme}
           t={t}
-          formatPrice={formatLbp}
+          formatPrice={formatPrice}
           coverUrl={coverUrl}
           ordering={orderingAllowed ? templateOrdering : undefined}
         />
@@ -340,7 +345,7 @@ export function PublicMenuPage() {
           language={language}
           rtl={language === 'ar'}
           t={t}
-          formatPrice={formatLbp}
+          formatPrice={formatPrice}
           brand={theme.brand}
           brandInk={theme.brandInk}
         />

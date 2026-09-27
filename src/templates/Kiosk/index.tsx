@@ -1,4 +1,4 @@
-import { Instagram, MapPin, MessageCircle } from 'lucide-react'
+import { Clock, Instagram, MapPin, MessageCircle } from 'lucide-react'
 import { useState } from 'react'
 import { AddToOrder } from '../../components/AddToOrder'
 import type { MenuItem } from '../../lib/types'
@@ -76,6 +76,7 @@ export default function KioskTemplate(props: MenuTemplateProps) {
 
   const activeCategoryEntry = categories.find((category) => category.id === activeCategory)
   const instagramHandle = restaurant.instagram?.replace(/^@/, '')
+  const hours = t(restaurant.opening_hours ?? '', restaurant.opening_hours_ar ?? '')
 
   return (
     <main
@@ -158,6 +159,11 @@ export default function KioskTemplate(props: MenuTemplateProps) {
             {(restaurant.address_en || restaurant.address_ar) && (
               <span className={styles.contact}>
                 <MapPin /> {t(restaurant.address_en ?? '', restaurant.address_ar ?? '')}
+              </span>
+            )}
+            {hours && (
+              <span className={styles.contact}>
+                <Clock /> {hours}
               </span>
             )}
             {restaurant.instagram && (
