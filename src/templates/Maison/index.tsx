@@ -15,7 +15,7 @@ function MaisonItem({ item, index, t, formatPrice, ordering }: {
 }) {
   const [variantIndex, setVariantIndex] = useState(0)
   const variant = item.variants?.[variantIndex]
-  const price = variant?.price_lbp ?? item.price_lbp
+  const price = variant?.price ?? item.price
   const description = t(item.description_en ?? '', item.description_ar ?? '')
 
   return (

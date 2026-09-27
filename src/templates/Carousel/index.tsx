@@ -57,7 +57,7 @@ export default function CarouselTemplate(props: MenuTemplateProps) {
   const activeItem = visibleItems[captionIndex]
   const activeVariantIndex = activeItem ? variants[activeItem.id] ?? 0 : 0
   const activeVariant = activeItem?.variants?.[activeVariantIndex]
-  const activePrice = activeVariant?.price_lbp ?? activeItem?.price_lbp ?? 0
+  const activePrice = activeVariant?.price ?? activeItem?.price ?? 0
   const activeName = activeItem ? t(activeItem.name_en, activeItem.name_ar) : ''
   const activeDesc = activeItem ? t(activeItem.description_en ?? '', activeItem.description_ar ?? '') : ''
 

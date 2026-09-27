@@ -5,7 +5,7 @@ import type { AdminRole, Category, MenuContactCard, MenuItem, MenuViewDay, MenuV
 
 type RestaurantInput = Pick<Restaurant, 'name_en' | 'name_ar' | 'slug' | 'primary_color' | 'phone' | 'whatsapp' | 'instagram' | 'maps_url' | 'address_en' | 'address_ar' | 'opening_hours' | 'opening_hours_ar' | 'currency' | 'temporarily_closed' | 'default_language'>
 type CategoryInput = Pick<Category, 'restaurant_id' | 'name_en' | 'name_ar' | 'sort_order'>
-type ItemInput = Pick<MenuItem, 'restaurant_id' | 'category_id' | 'name_en' | 'name_ar' | 'description_en' | 'description_ar' | 'price_lbp' | 'image_url' | 'variants' | 'available' | 'sort_order'>
+type ItemInput = Pick<MenuItem, 'restaurant_id' | 'category_id' | 'name_en' | 'name_ar' | 'description_en' | 'description_ar' | 'price' | 'image_url' | 'variants' | 'available' | 'sort_order'>
 type AssetPurpose = 'cover' | 'item' | 'logo'
 
 const IMAGE_LIMITS: Record<AssetPurpose, { width: number; height: number; quality: number; maxBytes: number }> = {
@@ -293,5 +293,5 @@ export async function setSubscription(restaurantId: string, status: Restaurant['
 }
 
 export function cleanVariants(variants: Variant[]) {
-  return variants.filter((variant) => variant.name_en.trim() && variant.price_lbp > 0)
+  return variants.filter((variant) => variant.name_en.trim() && variant.price > 0)
 }

@@ -110,7 +110,7 @@ export interface Variant {
   id?: string
   name_en: string
   name_ar: string
-  price_lbp: number
+  price: number
 }
 
 export interface MenuItem {
@@ -124,7 +124,7 @@ export interface MenuItem {
   /** Price in the restaurant's own currency — see `Restaurant.currency`. The
    *  field name predates dollar pricing and is kept to avoid renaming it
    *  across the menu, the dashboard, the basket and every template. */
-  price_lbp: number
+  price: number
   image_url?: string
   variants: Variant[]
   available: boolean

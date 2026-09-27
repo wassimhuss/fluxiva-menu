@@ -14,14 +14,14 @@ const categoryImages: Record<string, string[]> = {
   'Cold drinks': ['/menu/drinks.jpg', '/menu/water.jpg'],
 }
 const categoryImageCounts: Record<string, number> = {}
-const variant = (id: string, name_en: string, name_ar: string, price_lbp: number): Variant => ({ id, name_en, name_ar, price_lbp })
+const variant = (id: string, name_en: string, name_ar: string, price: number): Variant => ({ id, name_en, name_ar, price })
 let itemNumber = 0
-function item(category: string, name_en: string, name_ar: string, description_en: string, description_ar: string, price_lbp: number, variants: Variant[] = []): MenuItem {
+function item(category: string, name_en: string, name_ar: string, description_en: string, description_ar: string, price: number, variants: Variant[] = []): MenuItem {
   itemNumber += 1
   const images = categoryImages[category] ?? []
   const imageIndex = categoryImageCounts[category] ?? 0
   categoryImageCounts[category] = imageIndex + 1
-  return { id: `demo-item-${itemNumber}`, restaurant_id: 'demo-restaurant', category_id: categoryId(category), name_en, name_ar, description_en, description_ar, price_lbp, image_url: images[imageIndex % images.length], variants, available: true, sort_order: itemNumber }
+  return { id: `demo-item-${itemNumber}`, restaurant_id: 'demo-restaurant', category_id: categoryId(category), name_en, name_ar, description_en, description_ar, price, image_url: images[imageIndex % images.length], variants, available: true, sort_order: itemNumber }
 }
 
 export const demoMenu: RestaurantMenu = {

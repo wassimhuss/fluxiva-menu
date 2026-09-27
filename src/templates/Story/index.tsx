@@ -16,7 +16,7 @@ function Chapter({ item, index, active, t, formatPrice, ordering }: {
 }) {
   const [variantIndex, setVariantIndex] = useState(0)
   const variant = item.variants?.[variantIndex]
-  const price = variant?.price_lbp ?? item.price_lbp
+  const price = variant?.price ?? item.price
   const name = t(item.name_en, item.name_ar)
   const description = t(item.description_en ?? '', item.description_ar ?? '')
 

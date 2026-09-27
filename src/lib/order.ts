@@ -43,7 +43,7 @@ export function resolveLines(lines: OrderLine[], items: MenuItem[], t: (en: stri
     const variant = item.variants?.[line.variantIndex]
     // A size that has since been removed falls back to the base price rather
     // than sending a price nobody offers.
-    const unitPrice = variant?.price_lbp ?? item.price_lbp
+    const unitPrice = variant?.price ?? item.price
     resolved.push({
       ...line,
       item,

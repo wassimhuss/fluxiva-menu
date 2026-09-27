@@ -19,7 +19,7 @@ function MenuCard({ item, index, t, formatPrice, color, unavailableLabel, orderi
 }) {
   const [variantIndex, setVariantIndex] = useState(0)
   const variant = item.variants?.[variantIndex]
-  const price = variant?.price_lbp ?? item.price_lbp
+  const price = variant?.price ?? item.price
   return (
     <article className={`public-item ${item.available ? '' : 'sold-out'}`} style={{ '--i': index } as React.CSSProperties}>
       {item.image_url && <img src={item.image_url} alt="" loading="lazy" />}
