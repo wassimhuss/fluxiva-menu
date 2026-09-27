@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import { scrollOffset, scrollToSlide, slideScrollOffset } from './scrollToSlide'
+import { GESTURE_ATTRIBUTE, scrollOffset, scrollToSlide, slideScrollOffset } from './scrollToSlide'
 
 /**
  * Guarantees one slide per gesture, the way a short-video feed behaves.
@@ -16,9 +16,12 @@ import { scrollOffset, scrollToSlide, slideScrollOffset } from './scrollToSlide'
  *   burst re-arms the lock instead of advancing, so inertia can never queue up
  *   a second jump.
  * - **Touch** keeps its native scrolling, because finger-follow and rubber-band
- *   are most of what makes a feed feel right, and browsers usually honour
- *   snap-stop here. It is only corrected after the scroll settles, and only if
- *   it actually overshot by more than one slide.
+ *   are most of what makes a feed feel right. Instead the container is marked
+ *   for the duration of the gesture, which lets a template turn snap-stop on
+ *   for finger momentum alone, so a hard flick is arrested at the next slide by
+ *   the browser rather than allowed to sail past and dragged back afterwards.
+ *   The after-the-fact correction stays as a fallback for engines that ignore
+ *   snap-stop, and only fires if the scroll really did overshoot.
  *
  * Slides are found by the same `data-slide="<index>"` attribute `useActiveSlide`
  * uses, so both hooks read the same markup.
@@ -174,6 +177,9 @@ export function useSnapLock<T extends HTMLElement>({
       touchOrigin.current = vertical ? touch.clientY : touch.clientX
       touchStartIndex.current = currentIndex()
       touchDriven.current = true
+      // Marked before the scroll begins: snap-stop governs a fling from the
+      // moment it starts, and switching it on mid-flight would not take.
+      element.setAttribute(GESTURE_ATTRIBUTE, 'touch')
     }
 
     const onTouchEnd = (event: TouchEvent) => {
@@ -208,6 +214,7 @@ export function useSnapLock<T extends HTMLElement>({
           return
         }
         touchDriven.current = false
+        element.removeAttribute(GESTURE_ATTRIBUTE)
         indexRef.current = landed
         touchStartIndex.current = landed
       }, SETTLE_MS)
@@ -241,6 +248,7 @@ export function useSnapLock<T extends HTMLElement>({
     window.addEventListener('keydown', onKeyDown)
 
     return () => {
+      element.removeAttribute(GESTURE_ATTRIBUTE)
       element.removeEventListener('wheel', onWheel)
       element.removeEventListener('touchstart', onTouchStart)
       element.removeEventListener('touchend', onTouchEnd)

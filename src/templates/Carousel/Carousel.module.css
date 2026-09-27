@@ -228,10 +228,11 @@
   flex: 0 0 var(--card-w);
   block-size: min(100%, calc(var(--card-w) * 1.36));
   scroll-snap-align: center;
-  /* Deliberately no `scroll-snap-stop: always` here. It forbids a scroll from
-     passing over a snap position, which is exactly what jumping to a dot
-     several cards away has to do, and it leaves those jumps stranded.
-     One-card-per-gesture is enforced in useSnapLock instead. */
+  /* `scroll-snap-stop: always` is applied only while a finger is down, from
+     useSnapLock. Left on permanently it blocks programmatic scrolling outright
+     — measured: the arrows moved the deck zero pixels — because a scroll is
+     not allowed to cross a snap position. Under a finger that is exactly what
+     is wanted, so it is switched on for the gesture and off again after. */
   border-radius: 26px;
   overflow: hidden;
   background: var(--deck-strong);
@@ -574,3 +575,9 @@
 @media (prefers-reduced-motion: reduce) {
   .chip:active, .variants button:active, .langToggle button:active, .arrow:active, .contact:active { transform: none; }
 }
+
+/* A hard flick must land on the next card rather than sail through three.
+   Native scrolling drives the finger — that is most of what makes a deck feel
+   right — so the browser's own snap-stop arrests the momentum instead of a
+   correction that lets it fly past and then drags it back. */
+.track[data-gesture='touch'] .card { scroll-snap-stop: always; }

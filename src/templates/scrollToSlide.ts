@@ -22,6 +22,15 @@ export function slideScrollOffset(container: HTMLElement, index: number, axis: '
     : target.offsetLeft + target.offsetWidth / 2 - container.offsetLeft - container.clientWidth / 2
 }
 
+/**
+ * Marks the container as being scrolled by a finger right now. A template can
+ * hang `scroll-snap-stop: always` off this to arrest a hard flick at the very
+ * next card, which is what the stop rule is for — but it also forbids *any*
+ * scroll from crossing a snap position, so left on permanently it freezes the
+ * arrows and every other jump. Set it for the gesture, clear it for our own.
+ */
+export const GESTURE_ATTRIBUTE = 'data-gesture'
+
 /** Current scroll offset of the container along `axis`. */
 export function scrollOffset(container: HTMLElement, axis: 'x' | 'y') {
   return axis === 'y' ? container.scrollTop : container.scrollLeft
@@ -35,6 +44,9 @@ export function scrollToSlide(
 ) {
   const offset = slideScrollOffset(container, index, axis)
   if (offset === null) return false
+  // Scrolling from code is never a gesture, and a container still marked as
+  // one would refuse to move past the card it is resting on.
+  container.removeAttribute(GESTURE_ATTRIBUTE)
   container.scrollTo(axis === 'y' ? { top: offset, behavior } : { left: offset, behavior })
   return true
 }
