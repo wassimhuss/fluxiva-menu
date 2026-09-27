@@ -209,7 +209,11 @@
   block-size: 100%;
   overflow-x: auto;
   scroll-snap-type: x mandatory;
-  overscroll-behavior-x: contain;
+  /* `none`, not `contain`. Both stop the page behind from scrolling, but
+     `contain` still lets the deck drag away from its first and last card and
+     spring back. There is nothing on either side of those two, so the rubber
+     band is offering to show something that does not exist. */
+  overscroll-behavior-x: none;
   scrollbar-width: none;
   -webkit-overflow-scrolling: touch;
   /* Centres the first and last card rather than pinning them to an edge. */
