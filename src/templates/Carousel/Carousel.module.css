@@ -230,7 +230,9 @@
   --pa: 0;
   position: relative;
   flex: 0 0 var(--card-w);
-  block-size: min(100%, calc(var(--card-w) * 1.36));
+  /* Portrait, and as tall as the stage allows. The ratio is what sets the
+     height; `min(100%, …)` only steps in on a screen too short for it. */
+  block-size: min(100%, calc(var(--card-w) * 1.52));
   scroll-snap-align: center;
   /* `scroll-snap-stop: always` is applied only while a finger is down, from
      useSnapLock. Left on permanently it blocks programmatic scrolling outright
@@ -267,11 +269,22 @@
   inline-size: 100%;
   block-size: 100%;
   object-fit: cover;
-  transform: scale(1.06);
-  transition: transform 1s cubic-bezier(.22, 1, .36, 1);
+  transform: scale(1.02);
+  /* Catches the drop back out when a card stops being the centred one: an
+     animation that is removed would otherwise snap to this value. */
+  transition: transform 1.1s cubic-bezier(.22, 1, .36, 1);
 }
 
-.card[data-active='true'] .image { transform: scale(1); }
+/* The centred card's photo keeps drifting in for a few seconds rather than
+   arriving and sitting still, which is what makes a deck feel filmed rather
+   than rendered. It holds at the end instead of looping, so a dish you are
+   reading about is not permanently in motion under the text. */
+.card[data-active='true'] .image {
+  /* Linear on purpose. An eased curve puts most of the travel in the first
+     second and then stalls, which reads as a pop; a camera push is a constant
+     speed. Over 15% of scale in 7s the stop at the end is not perceptible. */
+  animation: kenBurns 7s linear forwards;
+}
 
 .imageEmpty {
   display: grid;
@@ -533,6 +546,11 @@
   to { opacity: .62; }
 }
 
+@keyframes kenBurns {
+  from { transform: scale(1.02); }
+  to { transform: scale(1.17) translate3d(0, -1.2%, 0); }
+}
+
 @keyframes captionIn {
   from { opacity: 0; transform: translateY(16px); }
   to { opacity: 1; transform: none; }
@@ -542,6 +560,7 @@
   .ambientLayer { animation: none; opacity: .62; }
   .caption { animation: none; }
   .card, .image, .arrow, .contact, .railFill { transition: none; }
+  .card[data-active='true'] .image { animation: none; }
   .card[data-active='true'] .image, .image { transform: none; }
   .arrow:hover, .contact:hover { transform: none; }
 }
