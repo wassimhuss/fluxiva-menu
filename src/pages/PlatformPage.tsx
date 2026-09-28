@@ -2,6 +2,7 @@ import { ArrowLeft, Check, ExternalLink, History, Pause, Play, Search, ShieldChe
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Loading, Notice } from '../components/Status'
+import { PlatformGallery } from '../components/PlatformGallery'
 import { getPlatformAudit, listPlatformRestaurants, setSubscription } from '../lib/api'
 import { useAuth } from '../lib/auth'
 import { subscriptionState } from '../lib/subscription'
@@ -277,6 +278,7 @@ export function PlatformPage() {
               </div>
             ) : <p className={styles.empty}>No changes recorded yet.</p>}
           </section>
+          {canManage && <PlatformGallery />}
         </>}
       </div>
 

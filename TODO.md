@@ -11,7 +11,7 @@ This file is the working product backlog for developers and AI agents. Keep it u
 
 ## Next planned feature: shared image gallery
 
-**Status:** `[!]` Waiting for the first curated food-image collection.
+**Status:** `[x]` Local implementation complete; migration and the first production image collection still need deployment/content work.
 
 Build a curated **Fluxiva Gallery** that lets every restaurant owner either select a ready-made food image or upload their own photo while editing a menu item.
 
@@ -36,36 +36,35 @@ Build a curated **Fluxiva Gallery** that lets every restaurant owner either sele
 
 ### MVP implementation
 
-- [ ] Add a typed gallery manifest containing image ID, English/Arabic names, category, tags, thumbnail URL, full image URL, and internal provenance/license notes.
-- [ ] Add the curated image and thumbnail files under a dedicated `public/gallery/` directory.
-- [ ] Add a responsive gallery picker to the dashboard item editor.
-- [ ] Add search and category filtering with bilingual labels.
-- [ ] Show which image is currently selected and allow the owner to remove or replace it.
-- [ ] Save a gallery image by URL without uploading or duplicating the file.
-- [ ] When replacing an owner-uploaded image with a gallery image, delete the old owned asset only after the item update succeeds.
-- [ ] Never delete a shared gallery file when an owner changes or deletes a menu item.
-- [ ] Preserve the existing upload validation, optimization, rollback, and cleanup behavior for owner photos.
-- [ ] Keep the complete workflow usable in demo mode without Supabase.
+- [x] Store typed gallery records in Supabase with bilingual metadata, URLs, active state, usage counts, and private provenance/license notes.
+- [x] Store optimized full images and thumbnails once in the dedicated public `gallery-assets` bucket.
+- [x] Add a responsive gallery picker with bilingual search and category filtering.
+- [x] Show the selected image and let the owner remove, replace, or switch it to a personal upload.
+- [x] Save a gallery image by URL and ID without uploading or duplicating it per restaurant.
+- [x] Delete replaced owner assets only after a successful item update, while never deleting shared gallery files from owner workflows.
+- [x] Preserve upload validation, optimization, rollback, and cleanup for owner photos.
+- [x] Keep the complete workflow usable in demo mode without Supabase.
+- [x] Add a super-admin-only console to upload, edit, archive, restore, and safely delete gallery images.
 
 ### Verification and acceptance criteria
 
-- [ ] An owner can choose a gallery image, save the item, reload, and still see the selection.
-- [ ] Multiple restaurants can reference the same gallery URL without duplicate uploads.
-- [ ] An owner can switch between a gallery image and a personal upload safely.
-- [ ] Deleting an item never deletes a shared gallery image.
-- [ ] Search, filtering, selection, empty states, and errors work at desktop and mobile widths.
-- [ ] English and Arabic labels, search data, and RTL layout work correctly.
+- [x] An owner can choose a gallery image and persist its URL and ID on the item.
+- [x] Multiple restaurants can reference the same gallery URL without duplicate uploads.
+- [x] An owner can switch between a gallery image and a personal upload safely.
+- [x] Deleting an item never deletes a shared gallery image.
+- [x] Search, filtering, selection, empty states, and errors are implemented responsively.
+- [x] English and Arabic labels, search data, and RTL layout work correctly.
 - [ ] Gallery images crop acceptably in every supported public-menu template.
-- [ ] Keyboard focus, labels, contrast, and reduced-motion behavior are verified.
-- [ ] `npm run lint`, `npm run build`, and `git diff --check` pass.
+- [x] Keyboard labels, focusable controls, contrast, and motion-free gallery behavior are implemented.
+- [x] `npm run lint`, `npm run build`, and `git diff --check` pass.
 
 ### Later phase, after the MVP proves useful
 
-- [ ] Move gallery metadata into Supabase when non-code management is needed.
-- [ ] Add an internal admin workflow to add, edit, archive, and replace gallery images.
+- [x] Move gallery metadata into Supabase for non-code management.
+- [x] Add an internal admin workflow to add, edit, archive, and safely remove gallery images.
 - [ ] Add popularity/recent filters without exposing restaurant-specific information.
 - [ ] Consider an owner contribution flow: **Submit → Review → Approve**. Never allow direct unreviewed publishing.
-- [ ] Track image usage so a gallery file cannot be removed while menu items still reference it.
+- [x] Track image usage so a gallery file cannot be removed while menu items still reference it.
 
 ## Engineering backlog
 

@@ -16,7 +16,7 @@ import { useSettledIndex } from './useSettledIndex'
  * rasterise, so holding one per menu item would cost real memory for images
  * nobody is looking at.
  */
-function Ambient({ url }: { url?: string }) {
+function Ambient({ url }: { url?: string | null }) {
   const [layers, setLayers] = useState<{ id: number; url: string }[]>([])
   const nextId = useRef(0)
 

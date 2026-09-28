@@ -85,6 +85,8 @@ Do not silently depend on a field that is absent from the demo data or existing 
 4. Use explicit `search_path` settings for security-definer functions.
 5. Document manual rollout steps in the PR/commit description and this playbook if the procedure changes.
 
+Migration `014_shared_gallery.sql` adds the shared gallery table, the `gallery_image_id` menu-item reference, protected owner/admin RPCs, and the `gallery-assets` Storage bucket. Apply it before using the gallery with a configured Supabase project. The frontend remains fully demonstrable without it in demo mode.
+
 ## 4. Verification by risk
 
 ### Documentation-only
