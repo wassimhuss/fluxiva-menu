@@ -33,7 +33,7 @@ function preload(src: string) {
 /** A newline cannot appear in a URL, so it is safe to join and split on. */
 const SEPARATOR = '\n'
 
-export function useImagePreload(urls: (string | undefined)[], timeoutMs = MAX_WAIT_MS) {
+export function useImagePreload(urls: (string | null | undefined)[], timeoutMs = MAX_WAIT_MS) {
   // Join into a primitive so the effect is not re-run by a new array identity.
   const key = urls.filter(Boolean).join(SEPARATOR)
   /** The set of images last finished with, compared against the current one. */
