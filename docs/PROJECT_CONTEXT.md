@@ -126,6 +126,8 @@ Variants are stored as a JSON array on each menu item, shaped as `{ id?, name_en
 
 Platform admins are stored in the private `private.platform_admins` table. The frontend calls protected RPC functions to list restaurants and update subscriptions. The SQL migration contains an example statement for adding an authenticated user as an admin.
 
+The shared Fluxiva Gallery is stored in `public.gallery_images`, but direct client table access is revoked. Authenticated owners receive only active, owner-safe fields through `list_gallery_images()`; source and license notes are returned only by the super-admin RPC. Gallery mutations and writes to the public `gallery-assets` bucket require the exact `super_admin` role. Menu items keep both the shared URL and a nullable `gallery_image_id`; a database trigger validates active selections and makes the gallery URL authoritative. An image with menu-item references may be archived but cannot be permanently deleted.
+
 ## Security model
 
 - Supabase RLS is enabled on restaurants, categories, and items.
@@ -153,6 +155,7 @@ The owner dashboard supports:
 - Category/item creation, editing, deletion, and ordering.
 - Item availability toggles and sold-out presentation.
 - Item variants and photos.
+- A bilingual searchable Fluxiva Gallery alongside personal uploads. Shared photos are reused by URL, while personal uploads stay in the restaurant's own Storage folder.
 - Restaurant logo, cover, theme, contact details, opening state, and default language.
   - A restaurant-wide food-photo visibility switch. Hiding photos preserves the uploaded files, limits the design picker to the photo-optional Classic, Noir, and Maison templates, and safely falls back to Classic when a photo-based design had been selected. Maison adds editorial thumbnails when photos are enabled and collapses cleanly to a text-only layout when they are hidden.
 - The owner dashboard has an English/Arabic UI switch in the header. It persists in local storage, applies RTL layout, and translates the dashboard panels, analytics card, subscription warning, forms, dialogs, and action feedback without changing the restaurant's public-menu language setting.
