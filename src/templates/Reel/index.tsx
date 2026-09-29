@@ -26,13 +26,22 @@ function ReelSlide({ item, index, total, category, active, t, formatPrice, order
   return (
     <section className={styles.slide} data-slide={index} data-active={active}>
       {item.image_url
-        ? <img
-            className={styles.shot}
-            src={item.image_url}
-            alt=""
-            // The first screens are the whole first impression, so they load eagerly.
-            loading={index < 2 ? 'eager' : 'lazy'}
-          />
+        ? <>
+            <img
+              className={styles.shotBackdrop}
+              src={item.image_url}
+              alt=""
+              aria-hidden="true"
+              loading={index < 2 ? 'eager' : 'lazy'}
+            />
+            <img
+              className={styles.shot}
+              src={item.image_url}
+              alt=""
+              // The first screens are the whole first impression, so they load eagerly.
+              loading={index < 2 ? 'eager' : 'lazy'}
+            />
+          </>
         : <div className={styles.shotEmpty}><span className={styles.shotEmptyMark}>{name.slice(0, 2).toUpperCase()}</span></div>}
       <div className={styles.scrim} />
 

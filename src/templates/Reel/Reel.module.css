@@ -35,6 +35,8 @@
 
 /* ---------- Media ---------- */
 
+.shotBackdrop { display: none; }
+
 .shot {
   position: absolute;
   inset: 0;
@@ -443,6 +445,28 @@
 @keyframes nudge {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-5px); }
+}
+
+/* Gallery photography is commonly square. On a portrait phone, covering the
+   full viewport would discard more than half of that photograph. A soft copy
+   fills the canvas while the foreground keeps the complete dish visible. */
+@media (max-width: 600px) {
+  .shotBackdrop {
+    display: block;
+    position: absolute;
+    inset: -24px;
+    inline-size: calc(100% + 48px);
+    block-size: calc(100% + 48px);
+    object-fit: cover;
+    filter: blur(24px) brightness(.48) saturate(.88);
+    transform: scale(1.08);
+    opacity: .92;
+    z-index: 0;
+  }
+
+  .shot { object-fit: contain; }
+
+  .slide[data-active='true'] .shot { animation: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {
