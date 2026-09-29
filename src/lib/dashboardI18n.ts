@@ -113,6 +113,8 @@ const arabic: Record<string, string> = {
   'Item photo': 'صورة الصنف',
   'Fluxiva Gallery': 'مكتبة Fluxiva',
   'Upload your photo': 'ارفع صورتك',
+  'Choose a photo at least 1200 × 1200 px, then crop it to a square.': 'اختر صورة لا تقل عن 1200 × 1200 بكسل، ثم قصّها بشكل مربع.',
+  'This image could not be opened.': 'تعذّر فتح هذه الصورة.',
   'Selected from Fluxiva Gallery': 'مختارة من مكتبة Fluxiva',
   'Current photo': 'الصورة الحالية',
   'Remove photo': 'إزالة الصورة',
