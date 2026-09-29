@@ -45,6 +45,9 @@ Build a curated **Fluxiva Gallery** that lets every restaurant owner either sele
 - [x] Preserve upload validation, optimization, rollback, and cleanup for owner photos.
 - [x] Keep the complete workflow usable in demo mode without Supabase.
 - [x] Add a super-admin-only console to upload, edit, archive, restore, and safely delete gallery images.
+- [x] Organize the gallery into real bilingual folders that the super admin can create, rename, order, archive, and delete when empty.
+- [x] Make owners browse folders before selecting an image, while keeping cross-folder search available.
+- [x] Store new gallery files under stable category and image IDs rather than visible folder names.
 
 ### Verification and acceptance criteria
 
