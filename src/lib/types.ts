@@ -61,6 +61,7 @@ export interface PlatformAuditEntry {
  * returned only to the super-admin console. */
 export interface GalleryImage {
   id: string
+  category_id: string
   name_en: string
   name_ar: string
   category_en: string
@@ -73,6 +74,18 @@ export interface GalleryImage {
   source?: string
   license_notes?: string
   usage_count?: number
+  created_at?: string
+  updated_at?: string
+}
+
+/** A bilingual folder used to organize the shared gallery. */
+export interface GalleryCategory {
+  id: string
+  name_en: string
+  name_ar: string
+  active: boolean
+  sort_order: number
+  image_count?: number
   created_at?: string
   updated_at?: string
 }

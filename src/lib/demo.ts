@@ -1,4 +1,4 @@
-import type { Category, GalleryImage, MenuContactCard, MenuItem, MenuViewDay, MenuViewStats, PlatformAuditEntry, PlatformRestaurant, RestaurantMenu, Variant } from './types'
+import type { Category, GalleryCategory, GalleryImage, MenuContactCard, MenuItem, MenuViewDay, MenuViewStats, PlatformAuditEntry, PlatformRestaurant, RestaurantMenu, Variant } from './types'
 
 const categories: Category[] = [
   ['manakish', 'Manakish', 'مناقيش'], ['croissants', 'Croissants', 'كرواسون'], ['soiree', 'Soiree', 'سوارية'],
@@ -14,11 +14,19 @@ const categoryImages: Record<string, string[]> = {
   'Cold drinks': ['/menu/drinks.jpg', '/menu/water.jpg'],
 }
 
+export const demoGalleryCategories: GalleryCategory[] = [
+  { id: 'folder-cold-mezza', name_en: 'Cold Mezza', name_ar: 'مقبلات باردة', active: true, sort_order: 1 },
+  { id: 'folder-hot-mezza', name_en: 'Hot Mezza', name_ar: 'مقبلات ساخنة', active: true, sort_order: 2 },
+  { id: 'folder-bakery', name_en: 'Bakery', name_ar: 'مخبوزات', active: true, sort_order: 3 },
+  { id: 'folder-pizza', name_en: 'Pizza', name_ar: 'بيتزا', active: true, sort_order: 4 },
+  { id: 'folder-drinks', name_en: 'Drinks', name_ar: 'مشروبات', active: true, sort_order: 5 },
+]
+
 export const demoGalleryImages: GalleryImage[] = [
-  { id: 'gallery-manakish', name_en: 'Zaatar Manoushe', name_ar: 'منقوشة زعتر', category_en: 'Lebanese bakery', category_ar: 'مخبوزات لبنانية', tags_en: ['zaatar', 'manakish', 'bakery'], tags_ar: ['زعتر', 'مناقيش', 'فرن'], image_url: '/menu/manakish.jpg', thumbnail_url: '/menu/manakish.jpg', active: true, source: 'Bundled Fluxiva demo photography', license_notes: 'Demo asset', usage_count: 0 },
-  { id: 'gallery-croissant', name_en: 'Butter Croissant', name_ar: 'كرواسون بالزبدة', category_en: 'Bakery', category_ar: 'مخبوزات', tags_en: ['croissant', 'breakfast', 'pastry'], tags_ar: ['كرواسون', 'فطور', 'معجنات'], image_url: '/menu/croissants.jpg', thumbnail_url: '/menu/croissants.jpg', active: true, source: 'Bundled Fluxiva demo photography', license_notes: 'Demo asset', usage_count: 0 },
-  { id: 'gallery-pizza', name_en: 'Margherita Pizza', name_ar: 'بيتزا مارغريتا', category_en: 'Pizza', category_ar: 'بيتزا', tags_en: ['pizza', 'cheese', 'tomato'], tags_ar: ['بيتزا', 'جبنة', 'طماطم'], image_url: '/menu/pizza.jpg', thumbnail_url: '/menu/pizza.jpg', active: true, source: 'Bundled Fluxiva demo photography', license_notes: 'Demo asset', usage_count: 0 },
-  { id: 'gallery-drink', name_en: 'Cold Drink', name_ar: 'مشروب بارد', category_en: 'Drinks', category_ar: 'مشروبات', tags_en: ['drink', 'cold', 'juice'], tags_ar: ['مشروب', 'بارد', 'عصير'], image_url: '/menu/drinks.jpg', thumbnail_url: '/menu/drinks.jpg', active: true, source: 'Bundled Fluxiva demo photography', license_notes: 'Demo asset', usage_count: 0 },
+  { id: 'gallery-manakish', category_id: 'folder-hot-mezza', name_en: 'Zaatar Manoushe', name_ar: 'منقوشة زعتر', category_en: 'Hot Mezza', category_ar: 'مقبلات ساخنة', tags_en: ['zaatar', 'manakish', 'bakery'], tags_ar: ['زعتر', 'مناقيش', 'فرن'], image_url: '/menu/manakish.jpg', thumbnail_url: '/menu/manakish.jpg', active: true, source: 'Bundled Fluxiva demo photography', license_notes: 'Demo asset', usage_count: 0 },
+  { id: 'gallery-croissant', category_id: 'folder-bakery', name_en: 'Butter Croissant', name_ar: 'كرواسون بالزبدة', category_en: 'Bakery', category_ar: 'مخبوزات', tags_en: ['croissant', 'breakfast', 'pastry'], tags_ar: ['كرواسون', 'فطور', 'معجنات'], image_url: '/menu/croissants.jpg', thumbnail_url: '/menu/croissants.jpg', active: true, source: 'Bundled Fluxiva demo photography', license_notes: 'Demo asset', usage_count: 0 },
+  { id: 'gallery-pizza', category_id: 'folder-pizza', name_en: 'Margherita Pizza', name_ar: 'بيتزا مارغريتا', category_en: 'Pizza', category_ar: 'بيتزا', tags_en: ['pizza', 'cheese', 'tomato'], tags_ar: ['بيتزا', 'جبنة', 'طماطم'], image_url: '/menu/pizza.jpg', thumbnail_url: '/menu/pizza.jpg', active: true, source: 'Bundled Fluxiva demo photography', license_notes: 'Demo asset', usage_count: 0 },
+  { id: 'gallery-drink', category_id: 'folder-drinks', name_en: 'Cold Drink', name_ar: 'مشروب بارد', category_en: 'Drinks', category_ar: 'مشروبات', tags_en: ['drink', 'cold', 'juice'], tags_ar: ['مشروب', 'بارد', 'عصير'], image_url: '/menu/drinks.jpg', thumbnail_url: '/menu/drinks.jpg', active: true, source: 'Bundled Fluxiva demo photography', license_notes: 'Demo asset', usage_count: 0 },
 ]
 const categoryImageCounts: Record<string, number> = {}
 const variant = (id: string, name_en: string, name_ar: string, price: number): Variant => ({ id, name_en, name_ar, price })

@@ -1,13 +1,13 @@
 import type { Session } from '@supabase/supabase-js'
-import { demoContactCard, demoGalleryImages, demoMenu, demoMenuViewStats, demoPlatformAudit, demoPlatformRestaurants } from './demo'
+import { demoContactCard, demoGalleryCategories, demoGalleryImages, demoMenu, demoMenuViewStats, demoPlatformAudit, demoPlatformRestaurants } from './demo'
 import { supabase } from './supabase'
-import type { AdminRole, Category, GalleryImage, MenuContactCard, MenuItem, MenuViewDay, MenuViewStats, PlatformAuditEntry, PlatformRestaurant, Restaurant, RestaurantMenu, Variant } from './types'
+import type { AdminRole, Category, GalleryCategory, GalleryImage, MenuContactCard, MenuItem, MenuViewDay, MenuViewStats, PlatformAuditEntry, PlatformRestaurant, Restaurant, RestaurantMenu, Variant } from './types'
 
 type RestaurantInput = Pick<Restaurant, 'name_en' | 'name_ar' | 'slug' | 'primary_color' | 'phone' | 'whatsapp' | 'instagram' | 'maps_url' | 'address_en' | 'address_ar' | 'opening_hours' | 'opening_hours_ar' | 'currency' | 'temporarily_closed' | 'default_language'>
 type CategoryInput = Pick<Category, 'restaurant_id' | 'name_en' | 'name_ar' | 'sort_order'>
 type ItemInput = Pick<MenuItem, 'restaurant_id' | 'category_id' | 'name_en' | 'name_ar' | 'description_en' | 'description_ar' | 'price' | 'image_url' | 'gallery_image_id' | 'variants' | 'available' | 'sort_order'>
 type AssetPurpose = 'cover' | 'item' | 'logo' | 'gallery-thumb'
-export type GalleryImageInput = Pick<GalleryImage, 'name_en' | 'name_ar' | 'category_en' | 'category_ar' | 'tags_en' | 'tags_ar'> & Pick<GalleryImage, 'source' | 'license_notes'>
+export type GalleryImageInput = Pick<GalleryImage, 'category_id' | 'name_en' | 'name_ar' | 'tags_en' | 'tags_ar'> & Pick<GalleryImage, 'source' | 'license_notes'>
 
 const IMAGE_LIMITS: Record<AssetPurpose, { width: number; height: number; quality: number; maxBytes: number }> = {
   cover: { width: 1600, height: 1200, quality: 0.8, maxBytes: 420 * 1024 },
@@ -297,7 +297,7 @@ export async function setSubscription(restaurantId: string, status: Restaurant['
 /** Active, owner-safe gallery records. Provenance stays inside the console. */
 export async function listGalleryImages(): Promise<GalleryImage[]> {
   if (!supabase) return demoGalleryImages.filter((image) => image.active).map((image) => ({
-    id: image.id, name_en: image.name_en, name_ar: image.name_ar,
+    id: image.id, category_id: image.category_id, name_en: image.name_en, name_ar: image.name_ar,
     category_en: image.category_en, category_ar: image.category_ar,
     tags_en: image.tags_en, tags_ar: image.tags_ar, image_url: image.image_url,
     thumbnail_url: image.thumbnail_url, active: image.active,
@@ -308,6 +308,16 @@ export async function listGalleryImages(): Promise<GalleryImage[]> {
   return (data ?? []) as GalleryImage[]
 }
 
+export async function listGalleryCategories(): Promise<GalleryCategory[]> {
+  if (!supabase) return demoGalleryCategories.filter((category) => category.active).map((category) => ({
+    ...category,
+    image_count: demoGalleryImages.filter((image) => image.active && image.category_id === category.id).length,
+  }))
+  const { data, error } = await supabase.rpc('list_gallery_categories')
+  if (error) throw error
+  return (data ?? []) as GalleryCategory[]
+}
+
 export async function listPlatformGalleryImages(): Promise<GalleryImage[]> {
   if (!supabase) return structuredClone(demoGalleryImages)
   const { data, error } = await supabase.rpc('platform_list_gallery_images')
@@ -315,14 +325,24 @@ export async function listPlatformGalleryImages(): Promise<GalleryImage[]> {
   return (data ?? []) as GalleryImage[]
 }
 
+export async function listPlatformGalleryCategories(): Promise<GalleryCategory[]> {
+  if (!supabase) return demoGalleryCategories.map((category) => ({
+    ...structuredClone(category),
+    image_count: demoGalleryImages.filter((image) => image.category_id === category.id).length,
+  }))
+  const { data, error } = await supabase.rpc('platform_list_gallery_categories')
+  if (error) throw error
+  return (data ?? []) as GalleryCategory[]
+}
+
 /** Uploads one shared original and one browsing thumbnail under a gallery UUID. */
-export async function uploadGalleryAssets(id: string, file: File) {
+export async function uploadGalleryAssets(categoryId: string, id: string, file: File) {
   const [full, thumbnail] = await Promise.all([optimizeImage(file, 'item'), optimizeImage(file, 'gallery-thumb')])
   if (!supabase) return { image_url: URL.createObjectURL(full), thumbnail_url: URL.createObjectURL(thumbnail) }
   const fullExtension = full.name.split('.').pop() || 'webp'
   const thumbExtension = thumbnail.name.split('.').pop() || 'webp'
-  const fullPath = `${id}/full.${fullExtension}`
-  const thumbnailPath = `${id}/thumbnail.${thumbExtension}`
+  const fullPath = `${categoryId}/${id}/full.${fullExtension}`
+  const thumbnailPath = `${categoryId}/${id}/thumbnail.${thumbExtension}`
   const fullResult = await supabase.storage.from('gallery-assets').upload(fullPath, full, { contentType: full.type, cacheControl: '31536000' })
   if (fullResult.error) throw fullResult.error
   const thumbnailResult = await supabase.storage.from('gallery-assets').upload(thumbnailPath, thumbnail, { contentType: thumbnail.type, cacheControl: '31536000' })
@@ -338,13 +358,14 @@ export async function uploadGalleryAssets(id: string, file: File) {
 
 export async function createGalleryImage(id: string, input: GalleryImageInput, urls: Pick<GalleryImage, 'image_url' | 'thumbnail_url'>): Promise<GalleryImage> {
   if (!supabase) {
-    const image: GalleryImage = { id, ...input, ...urls, active: true, usage_count: 0, created_at: new Date().toISOString() }
+    const category = demoGalleryCategories.find((entry) => entry.id === input.category_id)
+    if (!category?.active) throw new Error('Choose an active gallery folder.')
+    const image: GalleryImage = { id, ...input, category_en: category.name_en, category_ar: category.name_ar, ...urls, active: true, usage_count: 0, created_at: new Date().toISOString() }
     demoGalleryImages.unshift(image)
     return image
   }
   const { data, error } = await supabase.rpc('platform_create_gallery_image', {
-    id_input: id, name_en_input: input.name_en, name_ar_input: input.name_ar,
-    category_en_input: input.category_en, category_ar_input: input.category_ar,
+    id_input: id, category_id_input: input.category_id, name_en_input: input.name_en, name_ar_input: input.name_ar,
     tags_en_input: input.tags_en, tags_ar_input: input.tags_ar,
     image_url_input: urls.image_url, thumbnail_url_input: urls.thumbnail_url,
     source_input: input.source ?? '', license_notes_input: input.license_notes ?? '',
@@ -360,11 +381,50 @@ export async function updateGalleryImage(id: string, input: GalleryImageInput & 
     return
   }
   const { error } = await supabase.rpc('platform_update_gallery_image', {
-    id_input: id, name_en_input: input.name_en, name_ar_input: input.name_ar,
-    category_en_input: input.category_en, category_ar_input: input.category_ar,
+    id_input: id, category_id_input: input.category_id, name_en_input: input.name_en, name_ar_input: input.name_ar,
     tags_en_input: input.tags_en, tags_ar_input: input.tags_ar,
     source_input: input.source ?? '', license_notes_input: input.license_notes ?? '', active_input: input.active,
   })
+  if (error) throw error
+}
+
+export async function createGalleryCategory(input: Pick<GalleryCategory, 'name_en' | 'name_ar' | 'sort_order'>): Promise<GalleryCategory> {
+  if (!supabase) {
+    const category: GalleryCategory = { id: crypto.randomUUID(), ...input, active: true, image_count: 0, created_at: new Date().toISOString() }
+    demoGalleryCategories.push(category)
+    return category
+  }
+  const { data, error } = await supabase.rpc('platform_create_gallery_category', {
+    name_en_input: input.name_en, name_ar_input: input.name_ar, sort_order_input: input.sort_order,
+  })
+  if (error) throw error
+  return { ...(data as GalleryCategory), image_count: 0 }
+}
+
+export async function updateGalleryCategory(id: string, input: Pick<GalleryCategory, 'name_en' | 'name_ar' | 'active' | 'sort_order'>) {
+  if (!supabase) {
+    const category = demoGalleryCategories.find((entry) => entry.id === id)
+    if (category) Object.assign(category, input, { updated_at: new Date().toISOString() })
+    for (const image of demoGalleryImages.filter((entry) => entry.category_id === id)) {
+      image.category_en = input.name_en; image.category_ar = input.name_ar
+    }
+    return
+  }
+  const { error } = await supabase.rpc('platform_update_gallery_category', {
+    id_input: id, name_en_input: input.name_en, name_ar_input: input.name_ar,
+    active_input: input.active, sort_order_input: input.sort_order,
+  })
+  if (error) throw error
+}
+
+export async function deleteGalleryCategory(category: GalleryCategory) {
+  if (!supabase) {
+    if (demoGalleryImages.some((image) => image.category_id === category.id)) throw new Error('Move or delete the images in this folder first.')
+    const index = demoGalleryCategories.findIndex((entry) => entry.id === category.id)
+    if (index >= 0) demoGalleryCategories.splice(index, 1)
+    return
+  }
+  const { error } = await supabase.rpc('platform_delete_gallery_category', { id_input: category.id })
   if (error) throw error
 }
 
@@ -391,7 +451,7 @@ export async function discardGalleryAssets(id: string, urls?: Partial<Pick<Galle
   }
   const paths = urls
     ? [galleryStoragePath(urls.image_url), galleryStoragePath(urls.thumbnail_url)].filter((path): path is string => Boolean(path))
-    : [`${id}/full.webp`, `${id}/full.jpg`, `${id}/full.png`, `${id}/thumbnail.webp`, `${id}/thumbnail.jpg`, `${id}/thumbnail.png`]
+    : []
   if (paths.length) await supabase.storage.from('gallery-assets').remove(paths)
 }
 
