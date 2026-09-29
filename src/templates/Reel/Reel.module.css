@@ -447,9 +447,9 @@
   50% { transform: translateY(-5px); }
 }
 
-/* Gallery photography is commonly square. On a portrait phone, covering the
-   full viewport would discard more than half of that photograph. A soft copy
-   fills the canvas while the foreground keeps the complete dish visible. */
+/* The 4:5 item master is taller than a menu card but shorter than a typical
+   phone. A soft copy fills the remaining canvas while the foreground keeps
+   the complete dish visible. */
 @media (max-width: 600px) {
   .shotBackdrop {
     display: block;

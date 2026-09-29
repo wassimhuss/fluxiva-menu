@@ -511,3 +511,8 @@
 }
 
 @media (max-width: 620px){.galleryHeading{align-items:flex-start;flex-direction:column}.galleryHeadingActions{width:100%;justify-content:flex-start}.galleryCards,.folderCards{grid-template-columns:1fr}.galleryCard{grid-template-columns:105px 1fr}.galleryCard>img{min-height:145px}}
+
+/* Item masters are portrait so the same stored photo serves mobile menus and
+   Reel layouts without maintaining a second image. */
+.cropperStage{width:min(380px,100%);aspect-ratio:4/5}
+.cropperControls{width:min(380px,100%)}

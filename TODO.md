@@ -28,7 +28,7 @@ Build a curated **Fluxiva Gallery** that lets every restaurant owner either sele
 
 - [ ] Collect the initial set of food images.
 - [ ] Confirm ownership/licensing and record the source for every image.
-- [x] Open a square cropper for every new gallery photo, produce an exact `1200 × 1200` optimized original, and generate a `320 × 320` thumbnail during upload.
+- [x] Open a 4:5 portrait cropper for every new gallery photo, produce an exact `1200 × 1500` optimized original, and generate a `320 × 320` thumbnail during upload.
 - [ ] Frame the full plate near the center with generous space around it so the same image survives portrait, square, and landscape crops.
 - [ ] Avoid text, logos, watermarks, hands, and important details near the edges.
 - [ ] Prepare a `320 × 320` thumbnail for fast gallery browsing.
@@ -81,7 +81,7 @@ Build a curated **Fluxiva Gallery** that lets every restaurant owner either sele
 
 ## Completed product improvements
 
-- [x] Add a drag-and-zoom cropper that produces exact `1200 × 1200` super-admin gallery uploads (2026-09-29).
-- [x] Reuse the `1200 × 1200` cropper for owners replacing personal item photos, including an immediate cropped preview (2026-09-29).
+- [x] Add a drag-and-zoom cropper that produces exact `1200 × 1500` 4:5 portrait super-admin gallery uploads (2026-09-29).
+- [x] Reuse the `1200 × 1500` portrait cropper for owners replacing personal item photos, including an immediate cropped preview (2026-09-29).
 - [x] Show immediate loading feedback while switching templates in the public demo menu (2026-09-25).
 - [x] Let owners show or hide all food-item photos without deleting uploaded files (2026-09-23).

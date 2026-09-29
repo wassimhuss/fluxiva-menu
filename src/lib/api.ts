@@ -11,12 +11,13 @@ export type GalleryImageInput = Pick<GalleryImage, 'category_id' | 'name_en' | '
 
 const IMAGE_LIMITS: Record<AssetPurpose, { width: number; height: number; quality: number; maxBytes: number }> = {
   cover: { width: 1600, height: 1200, quality: 0.8, maxBytes: 420 * 1024 },
-  item: { width: 1200, height: 1200, quality: 0.8, maxBytes: 280 * 1024 },
+  item: { width: 1200, height: 1500, quality: 0.8, maxBytes: 340 * 1024 },
   logo: { width: 512, height: 512, quality: 0.88, maxBytes: 160 * 1024 },
   'gallery-thumb': { width: 320, height: 320, quality: 0.76, maxBytes: 80 * 1024 },
 }
 
-export const GALLERY_IMAGE_SIZE = 1200
+export const ITEM_IMAGE_WIDTH = 1200
+export const ITEM_IMAGE_HEIGHT = 1500
 
 function loadImage(file: File) {
   return new Promise<HTMLImageElement>((resolve, reject) => {
@@ -28,24 +29,24 @@ function loadImage(file: File) {
   })
 }
 
-/** Shared gallery photography must start square so every template receives a
- * predictable master without an automatic crop hiding part of the dish. */
+/** Item photography uses one portrait master that works naturally in the
+ * mobile-first menu and Reel while still cropping safely into compact cards. */
 export async function validateGallerySource(file: File) {
   const supportedTypes = ['image/jpeg', 'image/png', 'image/webp']
   if (!supportedTypes.includes(file.type)) throw new Error('Choose a JPG, PNG or WebP image.')
   if (file.size > 8 * 1024 * 1024) throw new Error('Images must be smaller than 8 MB.')
   const image = await loadImage(file)
   const dimensions = { width: image.naturalWidth, height: image.naturalHeight }
-  if (dimensions.width < GALLERY_IMAGE_SIZE || dimensions.height < GALLERY_IMAGE_SIZE) {
-    throw new Error(`Choose a photo at least ${GALLERY_IMAGE_SIZE} × ${GALLERY_IMAGE_SIZE} pixels. This photo is ${dimensions.width} × ${dimensions.height}.`)
+  if (dimensions.width < ITEM_IMAGE_WIDTH || dimensions.height < ITEM_IMAGE_HEIGHT) {
+    throw new Error(`Choose a photo at least ${ITEM_IMAGE_WIDTH} × ${ITEM_IMAGE_HEIGHT} pixels. This photo is ${dimensions.width} × ${dimensions.height}.`)
   }
   return dimensions
 }
 
 export async function validateGalleryImage(file: File) {
   const dimensions = await validateGallerySource(file)
-  if (dimensions.width !== GALLERY_IMAGE_SIZE || dimensions.height !== GALLERY_IMAGE_SIZE) {
-    throw new Error(`Crop gallery photos to exactly ${GALLERY_IMAGE_SIZE} × ${GALLERY_IMAGE_SIZE} pixels before upload.`)
+  if (dimensions.width !== ITEM_IMAGE_WIDTH || dimensions.height !== ITEM_IMAGE_HEIGHT) {
+    throw new Error(`Crop item photos to exactly ${ITEM_IMAGE_WIDTH} × ${ITEM_IMAGE_HEIGHT} pixels before upload.`)
   }
   return dimensions
 }
