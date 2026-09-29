@@ -16,6 +16,8 @@ const IMAGE_LIMITS: Record<AssetPurpose, { width: number; height: number; qualit
   'gallery-thumb': { width: 320, height: 320, quality: 0.76, maxBytes: 80 * 1024 },
 }
 
+export const GALLERY_IMAGE_SIZE = 1200
+
 function loadImage(file: File) {
   return new Promise<HTMLImageElement>((resolve, reject) => {
     const objectUrl = URL.createObjectURL(file)
@@ -24,6 +26,20 @@ function loadImage(file: File) {
     image.onerror = () => { URL.revokeObjectURL(objectUrl); reject(new Error('This image could not be opened.')) }
     image.src = objectUrl
   })
+}
+
+/** Shared gallery photography must start square so every template receives a
+ * predictable master without an automatic crop hiding part of the dish. */
+export async function validateGalleryImage(file: File) {
+  const supportedTypes = ['image/jpeg', 'image/png', 'image/webp']
+  if (!supportedTypes.includes(file.type)) throw new Error('Choose a JPG, PNG or WebP image.')
+  if (file.size > 8 * 1024 * 1024) throw new Error('Images must be smaller than 8 MB.')
+  const image = await loadImage(file)
+  const dimensions = { width: image.naturalWidth, height: image.naturalHeight }
+  if (dimensions.width !== GALLERY_IMAGE_SIZE || dimensions.height !== GALLERY_IMAGE_SIZE) {
+    throw new Error(`Gallery photos must be exactly ${GALLERY_IMAGE_SIZE} × ${GALLERY_IMAGE_SIZE} pixels. This photo is ${dimensions.width} × ${dimensions.height}.`)
+  }
+  return dimensions
 }
 
 async function optimizeImage(file: File, purpose: AssetPurpose) {
@@ -337,6 +353,7 @@ export async function listPlatformGalleryCategories(): Promise<GalleryCategory[]
 
 /** Uploads one shared original and one browsing thumbnail under a gallery UUID. */
 export async function uploadGalleryAssets(categoryId: string, id: string, file: File) {
+  await validateGalleryImage(file)
   const [full, thumbnail] = await Promise.all([optimizeImage(file, 'item'), optimizeImage(file, 'gallery-thumb')])
   if (!supabase) return { image_url: URL.createObjectURL(full), thumbnail_url: URL.createObjectURL(thumbnail) }
   const fullExtension = full.name.split('.').pop() || 'webp'
