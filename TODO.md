@@ -82,5 +82,6 @@ Build a curated **Fluxiva Gallery** that lets every restaurant owner either sele
 ## Completed product improvements
 
 - [x] Add a drag-and-zoom cropper that produces exact `1200 × 1200` super-admin gallery uploads (2026-09-29).
+- [x] Reuse the `1200 × 1200` cropper for owners replacing personal item photos, including an immediate cropped preview (2026-09-29).
 - [x] Show immediate loading feedback while switching templates in the public demo menu (2026-09-25).
 - [x] Let owners show or hide all food-item photos without deleting uploaded files (2026-09-23).
