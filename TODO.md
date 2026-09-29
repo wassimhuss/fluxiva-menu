@@ -28,7 +28,7 @@ Build a curated **Fluxiva Gallery** that lets every restaurant owner either sele
 
 - [ ] Collect the initial set of food images.
 - [ ] Confirm ownership/licensing and record the source for every image.
-- [ ] Prepare one square `1200 × 1200` WebP per image, ideally below `280 KB`.
+- [x] Require every new gallery original to be exactly `1200 × 1200`; optimize it for delivery and generate a `320 × 320` thumbnail during upload.
 - [ ] Frame the full plate near the center with generous space around it so the same image survives portrait, square, and landscape crops.
 - [ ] Avoid text, logos, watermarks, hands, and important details near the edges.
 - [ ] Prepare a `320 × 320` thumbnail for fast gallery browsing.
@@ -81,5 +81,6 @@ Build a curated **Fluxiva Gallery** that lets every restaurant owner either sele
 
 ## Completed product improvements
 
+- [x] Enforce exact `1200 × 1200` source dimensions for super-admin gallery uploads (2026-09-29).
 - [x] Show immediate loading feedback while switching templates in the public demo menu (2026-09-25).
 - [x] Let owners show or hide all food-item photos without deleting uploaded files (2026-09-23).
