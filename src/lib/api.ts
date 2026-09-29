@@ -30,14 +30,22 @@ function loadImage(file: File) {
 
 /** Shared gallery photography must start square so every template receives a
  * predictable master without an automatic crop hiding part of the dish. */
-export async function validateGalleryImage(file: File) {
+export async function validateGallerySource(file: File) {
   const supportedTypes = ['image/jpeg', 'image/png', 'image/webp']
   if (!supportedTypes.includes(file.type)) throw new Error('Choose a JPG, PNG or WebP image.')
   if (file.size > 8 * 1024 * 1024) throw new Error('Images must be smaller than 8 MB.')
   const image = await loadImage(file)
   const dimensions = { width: image.naturalWidth, height: image.naturalHeight }
+  if (dimensions.width < GALLERY_IMAGE_SIZE || dimensions.height < GALLERY_IMAGE_SIZE) {
+    throw new Error(`Choose a photo at least ${GALLERY_IMAGE_SIZE} × ${GALLERY_IMAGE_SIZE} pixels. This photo is ${dimensions.width} × ${dimensions.height}.`)
+  }
+  return dimensions
+}
+
+export async function validateGalleryImage(file: File) {
+  const dimensions = await validateGallerySource(file)
   if (dimensions.width !== GALLERY_IMAGE_SIZE || dimensions.height !== GALLERY_IMAGE_SIZE) {
-    throw new Error(`Gallery photos must be exactly ${GALLERY_IMAGE_SIZE} × ${GALLERY_IMAGE_SIZE} pixels. This photo is ${dimensions.width} × ${dimensions.height}.`)
+    throw new Error(`Crop gallery photos to exactly ${GALLERY_IMAGE_SIZE} × ${GALLERY_IMAGE_SIZE} pixels before upload.`)
   }
   return dimensions
 }
