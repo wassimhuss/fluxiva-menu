@@ -162,7 +162,7 @@ The owner dashboard supports:
 - CSV import using fields such as `category_en`, `category_ar`, `name_en`, `name_ar`, `description_en`, `description_ar`, `price_lbp`, and `available`.
 - PNG/SVG QR downloads and browser printing.
 
-Image files are validated as JPG, PNG, or WebP and limited to 8 MB. Before upload, the browser applies high-quality resizing and adaptive WebP compression: items fit within 1200×1200, covers within 1600×1200, and logos within 512×512. Replaced item, cover, and logo files—and item files removed with an item or category—are deleted from the restaurant's Storage folder on a best-effort basis so unused assets do not consume the quota.
+Image files are validated as JPG, PNG, or WebP and limited to 8 MB. A personal item photo selected in the owner editor must be at least 1200×1200; it opens the same drag-and-zoom square cropper as the shared gallery and is previewed as an exact 1200×1200 WebP before the item is saved. Covers fit within 1600×1200 and logos within 512×512 through high-quality resizing and adaptive WebP compression. Replaced item, cover, and logo files—and item files removed with an item or category—are deleted from the restaurant's Storage folder on a best-effort basis so unused assets do not consume the quota.
 
 ### Public menu
 
