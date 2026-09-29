@@ -1,6 +1,7 @@
 import { Crop, Move, RotateCcw, X } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { GALLERY_IMAGE_SIZE } from '../lib/api'
+import type { Language } from '../lib/types'
 import styles from '../pages/Platform.module.css'
 
 type Point = { x: number; y: number }
@@ -8,10 +9,11 @@ type Size = { width: number; height: number }
 
 const clamp = (value: number, minimum: number, maximum: number) => Math.min(maximum, Math.max(minimum, value))
 
-export function SquareImageCropper({ file, onCancel, onConfirm }: {
+export function SquareImageCropper({ file, onCancel, onConfirm, language = 'en' }: {
   file: File
   onCancel: () => void
   onConfirm: (file: File) => void
+  language?: Language
 }) {
   const stageRef = useRef<HTMLDivElement>(null)
   const imageRef = useRef<HTMLImageElement>(null)
@@ -23,6 +25,20 @@ export function SquareImageCropper({ file, onCancel, onConfirm }: {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const sourceUrl = useMemo(() => URL.createObjectURL(file), [file])
+  const arabic = language === 'ar'
+  const copy = arabic ? {
+    close: 'إغلاق أداة قص الصورة', eyebrow: 'قص الصورة', title: 'حدّد إطار صورة الطبق',
+    description: 'اسحب الصورة وقرّبها حتى يظهر الطبق كاملًا ومرتاحًا داخل المربع.',
+    area: 'منطقة القص. اسحب الصورة أو استخدم مفاتيح الأسهم لتغيير موضعها.',
+    move: 'اسحب لتغيير الموضع', zoom: 'تكبير', reset: 'إعادة ضبط', source: 'المصدر', output: 'الناتج',
+    cancel: 'إلغاء', preparing: 'جارٍ التحضير…', use: `استخدم صورة ${GALLERY_IMAGE_SIZE} × ${GALLERY_IMAGE_SIZE}`,
+  } : {
+    close: 'Close image cropper', eyebrow: 'Image crop', title: 'Frame the food photo',
+    description: 'Drag the photo and zoom until the complete dish sits comfortably inside the square.',
+    area: 'Crop area. Drag the image or use the arrow keys to reposition it.',
+    move: 'Drag to reposition', zoom: 'Zoom', reset: 'Reset', source: 'source', output: 'output',
+    cancel: 'Cancel', preparing: 'Preparing…', use: `Use ${GALLERY_IMAGE_SIZE} × ${GALLERY_IMAGE_SIZE} image`,
+  }
 
   useEffect(() => () => URL.revokeObjectURL(sourceUrl), [sourceUrl])
   useEffect(() => {
@@ -114,15 +130,15 @@ export function SquareImageCropper({ file, onCancel, onConfirm }: {
   }
 
   return (
-    <div className={styles.cropperBackdrop} role="dialog" aria-modal="true" aria-labelledby="gallery-crop-title">
+    <div className={styles.cropperBackdrop} role="dialog" aria-modal="true" aria-labelledby="gallery-crop-title" dir={arabic ? 'rtl' : 'ltr'}>
       <section className={styles.cropperModal}>
-        <button className={styles.cropperClose} type="button" onClick={onCancel} aria-label="Close image cropper"><X /></button>
-        <div className={styles.cropperHeader}><span><Crop /> Image crop</span><h2 id="gallery-crop-title">Frame the food photo</h2><p>Drag the photo and zoom until the complete dish sits comfortably inside the square.</p></div>
+        <button className={styles.cropperClose} type="button" onClick={onCancel} aria-label={copy.close}><X /></button>
+        <div className={styles.cropperHeader}><span><Crop /> {copy.eyebrow}</span><h2 id="gallery-crop-title">{copy.title}</h2><p>{copy.description}</p></div>
         <div
           ref={stageRef}
           className={styles.cropperStage}
           tabIndex={0}
-          aria-label="Crop area. Drag the image or use the arrow keys to reposition it."
+          aria-label={copy.area}
           onPointerDown={handlePointerDown}
           onPointerMove={handlePointerMove}
           onPointerUp={stopDragging}
@@ -143,15 +159,15 @@ export function SquareImageCropper({ file, onCancel, onConfirm }: {
             }}
           />
           <span className={styles.cropperGrid} aria-hidden="true" />
-          <span className={styles.cropperMoveHint}><Move /> Drag to reposition</span>
+          <span className={styles.cropperMoveHint}><Move /> {copy.move}</span>
         </div>
         <div className={styles.cropperControls}>
-          <label>Zoom<input type="range" min="1" max="3" step="0.01" value={zoom} onChange={(event) => setZoom(Number(event.target.value))} /></label>
-          <button type="button" onClick={() => { setZoom(1); setOffset({ x: 0, y: 0 }) }}><RotateCcw /> Reset</button>
-          <span>{imageSize.width} × {imageSize.height} source → {GALLERY_IMAGE_SIZE} × {GALLERY_IMAGE_SIZE} output</span>
+          <label>{copy.zoom}<input type="range" min="1" max="3" step="0.01" value={zoom} onChange={(event) => setZoom(Number(event.target.value))} /></label>
+          <button type="button" onClick={() => { setZoom(1); setOffset({ x: 0, y: 0 }) }}><RotateCcw /> {copy.reset}</button>
+          <span>{imageSize.width} × {imageSize.height} {copy.source} → {GALLERY_IMAGE_SIZE} × {GALLERY_IMAGE_SIZE} {copy.output}</span>
         </div>
         {error && <p className={styles.cropperError} role="alert">{error}</p>}
-        <div className={styles.cropperActions}><button type="button" onClick={onCancel}>Cancel</button><button type="button" className="button button-primary" disabled={saving || !imageSize.width} onClick={() => void applyCrop()}>{saving ? 'Preparing…' : `Use ${GALLERY_IMAGE_SIZE} × ${GALLERY_IMAGE_SIZE} image`}</button></div>
+        <div className={styles.cropperActions}><button type="button" onClick={onCancel}>{copy.cancel}</button><button type="button" className="button button-primary" disabled={saving || !imageSize.width} onClick={() => void applyCrop()}>{saving ? copy.preparing : copy.use}</button></div>
       </section>
     </div>
   )
