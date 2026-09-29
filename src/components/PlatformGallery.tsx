@@ -1,8 +1,9 @@
 import { Archive, ArrowDown, ArrowUp, Folder, FolderPlus, ImagePlus, Pencil, Plus, RotateCcw, Trash2, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { createGalleryCategory, createGalleryImage, deleteGalleryCategory, deleteGalleryImage, discardGalleryAssets, GALLERY_IMAGE_SIZE, listPlatformGalleryCategories, listPlatformGalleryImages, updateGalleryCategory, updateGalleryImage, uploadGalleryAssets, validateGalleryImage } from '../lib/api'
+import { createGalleryCategory, createGalleryImage, deleteGalleryCategory, deleteGalleryImage, discardGalleryAssets, GALLERY_IMAGE_SIZE, listPlatformGalleryCategories, listPlatformGalleryImages, updateGalleryCategory, updateGalleryImage, uploadGalleryAssets, validateGalleryImage, validateGallerySource } from '../lib/api'
 import type { GalleryCategory, GalleryImage } from '../lib/types'
 import styles from '../pages/Platform.module.css'
+import { SquareImageCropper } from './SquareImageCropper'
 
 type ImageDraft = {
   category_id: string; name_en: string; name_ar: string; tags_en: string; tags_ar: string
@@ -29,6 +30,7 @@ export function PlatformGallery() {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const [fileCheck, setFileCheck] = useState<FileCheck>({ state: 'idle', message: '' })
+  const [pendingCrop, setPendingCrop] = useState<File | null>(null)
 
   async function refresh() {
     const [nextImages, nextCategories] = await Promise.all([listPlatformGalleryImages(), listPlatformGalleryCategories()])
@@ -43,17 +45,28 @@ export function PlatformGallery() {
     setEditing(image); setImageFormOpen(true)
     setDraft({ category_id: image.category_id, name_en: image.name_en, name_ar: image.name_ar, tags_en: image.tags_en.join(', '), tags_ar: image.tags_ar.join('، '), source: image.source ?? '', license_notes: image.license_notes ?? '', file: null })
   }
-  function closeImageForm() { setImageFormOpen(false); setEditing(null); setDraft(emptyImage()); setFileCheck({ state: 'idle', message: '' }) }
+  function closeImageForm() { setImageFormOpen(false); setEditing(null); setPendingCrop(null); setDraft(emptyImage()); setFileCheck({ state: 'idle', message: '' }) }
 
   async function chooseImage(file: File | null) {
-    setDraft((current) => ({ ...current, file }))
     if (!file) { setFileCheck({ state: 'idle', message: '' }); return }
-    setFileCheck({ state: 'checking', message: 'Checking dimensions…' })
+    setFileCheck({ state: 'checking', message: 'Preparing cropper…' })
     try {
-      await validateGalleryImage(file)
-      setFileCheck({ state: 'valid', message: `${GALLERY_IMAGE_SIZE} × ${GALLERY_IMAGE_SIZE} px · Ready to upload` })
+      await validateGallerySource(file)
+      setPendingCrop(file)
+      setFileCheck({ state: 'idle', message: '' })
     } catch (caught) {
       setFileCheck({ state: 'invalid', message: caught instanceof Error ? caught.message : 'This image could not be checked.' })
+    }
+  }
+
+  async function acceptCrop(file: File) {
+    try {
+      await validateGalleryImage(file)
+      setDraft((current) => ({ ...current, file }))
+      setPendingCrop(null)
+      setFileCheck({ state: 'valid', message: `${GALLERY_IMAGE_SIZE} × ${GALLERY_IMAGE_SIZE} px · Cropped and ready to upload` })
+    } catch (caught) {
+      setFileCheck({ state: 'invalid', message: caught instanceof Error ? caught.message : 'This crop could not be prepared.' })
     }
   }
 
@@ -152,10 +165,11 @@ export function PlatformGallery() {
       {folderFormOpen && <div className="modal-backdrop"><form className={`modal-card ${styles.galleryForm}`} onSubmit={saveFolder}><button type="button" className="modal-close" onClick={closeFolderForm}><X /></button><span className="eyebrow"><span /> Super admin only</span><h2>{editingFolder ? 'Edit gallery folder' : 'Create gallery folder'}</h2><p>Give the folder a name in both owner languages.</p><label>English folder name<input required autoFocus value={folderDraft.name_en} onChange={(event) => setFolderDraft({ ...folderDraft, name_en: event.target.value })} placeholder="Cold Mezza" /></label><label dir="rtl">Arabic folder name<input required dir="rtl" value={folderDraft.name_ar} onChange={(event) => setFolderDraft({ ...folderDraft, name_ar: event.target.value })} placeholder="مقبلات باردة" /></label><button className="button button-primary full" disabled={saving}>{saving ? 'Saving…' : editingFolder ? 'Save folder' : 'Create folder'}</button></form></div>}
 
       {imageFormOpen && <div className="modal-backdrop"><form className={`modal-card modal-large ${styles.galleryForm}`} onSubmit={saveImage}><button type="button" className="modal-close" onClick={closeImageForm}><X /></button><span className="eyebrow"><span /> Super admin only</span><h2>{editing ? 'Edit gallery image' : 'Add gallery image'}</h2><p>Choose the folder first, then add paired names and searchable tags.</p><div className="form-grid">
-        {!editing && <label className={`image-upload ${styles.galleryFile}`}>Food photo <small>Required: an exact {GALLERY_IMAGE_SIZE} × {GALLERY_IMAGE_SIZE} px square</small><span><ImagePlus /> {draft.file?.name ?? 'Choose JPG, PNG or WebP'}</span><input required type="file" accept="image/png,image/jpeg,image/webp" onChange={(event) => void chooseImage(event.target.files?.[0] ?? null)} />{fileCheck.state !== 'idle' && <small className={fileCheck.state === 'valid' ? styles.fileValid : fileCheck.state === 'invalid' ? styles.fileInvalid : styles.fileChecking} role="status">{fileCheck.message}</small>}</label>}
+        {!editing && <label className={`image-upload ${styles.galleryFile}`}>Food photo <small>Choose a photo at least {GALLERY_IMAGE_SIZE} × {GALLERY_IMAGE_SIZE} px, then crop it to a square.</small><span><ImagePlus /> {draft.file?.name ?? 'Choose JPG, PNG or WebP'}</span><input required={!draft.file} type="file" accept="image/png,image/jpeg,image/webp" onChange={(event) => { const file = event.currentTarget.files?.[0] ?? null; event.currentTarget.value = ''; void chooseImage(file) }} />{fileCheck.state !== 'idle' && <small className={fileCheck.state === 'valid' ? styles.fileValid : fileCheck.state === 'invalid' ? styles.fileInvalid : styles.fileChecking} role="status">{fileCheck.message}</small>}</label>}
         <label className={styles.galleryFile}>Folder<select required disabled={Boolean(editing)} value={draft.category_id} onChange={(event) => setDraft({ ...draft, category_id: event.target.value })}><option value="">Choose a folder</option>{categories.map((category) => <option key={category.id} value={category.id} disabled={!category.active && category.id !== draft.category_id}>{category.name_en} · {category.name_ar}</option>)}</select>{editing && <small>To keep Storage organized, an existing image stays in its original folder.</small>}</label>
         <label>English name<input required value={draft.name_en} onChange={(event) => setDraft({ ...draft, name_en: event.target.value })} /></label><label dir="rtl">Arabic name<input required dir="rtl" value={draft.name_ar} onChange={(event) => setDraft({ ...draft, name_ar: event.target.value })} /></label><label>English tags <small>Comma separated</small><input value={draft.tags_en} onChange={(event) => setDraft({ ...draft, tags_en: event.target.value })} /></label><label dir="rtl">Arabic tags <small>افصل بفاصلة</small><input dir="rtl" value={draft.tags_ar} onChange={(event) => setDraft({ ...draft, tags_ar: event.target.value })} /></label><label>Source / owner<input value={draft.source} onChange={(event) => setDraft({ ...draft, source: event.target.value })} /></label><label>License notes<input value={draft.license_notes} onChange={(event) => setDraft({ ...draft, license_notes: event.target.value })} /></label>
       </div><button className="button button-primary full" disabled={saving || (!editing && fileCheck.state !== 'valid')}>{saving ? 'Saving…' : editing ? 'Save details' : 'Upload to folder'}</button></form></div>}
+      {pendingCrop && <SquareImageCropper file={pendingCrop} onCancel={() => { setPendingCrop(null); setFileCheck(draft.file ? { state: 'valid', message: `${GALLERY_IMAGE_SIZE} × ${GALLERY_IMAGE_SIZE} px · Cropped and ready to upload` } : { state: 'idle', message: '' }) }} onConfirm={(file) => void acceptCrop(file)} />}
     </section>
   )
 }
