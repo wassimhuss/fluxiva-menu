@@ -87,6 +87,8 @@ Do not silently depend on a field that is absent from the demo data or existing 
 
 Migration `014_shared_gallery.sql` adds the shared gallery table, the `gallery_image_id` menu-item reference, protected owner/admin RPCs, and the `gallery-assets` Storage bucket. Apply it before using the gallery with a configured Supabase project. The frontend remains fully demonstrable without it in demo mode.
 
+Migration `015_gallery_categories.sql` upgrades the gallery's repeated category text into real bilingual folders. It backfills a folder for every existing category pair, preserves all images, updates the RPC contracts, and changes new upload paths to `{category-id}/{image-id}`. Apply it after `014`; do not rewrite the already-applied gallery migration.
+
 ## 4. Verification by risk
 
 ### Documentation-only
