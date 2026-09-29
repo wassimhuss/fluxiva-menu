@@ -7,7 +7,8 @@ import { Loading, Notice } from '../components/Status'
 import { MenuViews } from '../components/MenuViews'
 import { SubscriptionBanner } from '../components/SubscriptionBanner'
 import { GalleryPicker } from '../components/GalleryPicker'
-import { cleanVariants, createCategory, createItem, deleteCategory, deleteItem, deleteRestaurantAsset, getMenuViewStats, getOwnerMenu, listGalleryCategories, listGalleryImages, updateCategory, updateItem, updateRestaurant, uploadRestaurantAsset } from '../lib/api'
+import { SquareImageCropper } from '../components/SquareImageCropper'
+import { cleanVariants, createCategory, createItem, deleteCategory, deleteItem, deleteRestaurantAsset, getMenuViewStats, getOwnerMenu, listGalleryCategories, listGalleryImages, updateCategory, updateItem, updateRestaurant, uploadRestaurantAsset, validateGallerySource } from '../lib/api'
 import { useAuth } from '../lib/auth'
 import { demoMenu } from '../lib/demo'
 import { formatMoney, localText } from '../lib/format'
@@ -63,6 +64,9 @@ export function DashboardPage() {
   const [galleryOpen, setGalleryOpen] = useState(false)
   const [galleryLoading, setGalleryLoading] = useState(false)
   const [galleryLoaded, setGalleryLoaded] = useState(false)
+  const [pendingItemCrop, setPendingItemCrop] = useState<File | null>(null)
+  const [itemPhotoError, setItemPhotoError] = useState('')
+  const [itemFilePreviewUrl, setItemFilePreviewUrl] = useState('')
   const [importFile, setImportFile] = useState<File | null>(null)
   const [importStatus, setImportStatus] = useState('')
   const [viewStats, setViewStats] = useState<MenuViewStats | null>(null)
@@ -100,6 +104,13 @@ export function DashboardPage() {
   }, [session, demoMode, navigate])
 
   useEffect(() => () => window.clearTimeout(successTimer.current), [])
+
+  useEffect(() => {
+    if (!itemDraft.image_file) { setItemFilePreviewUrl(''); return }
+    const objectUrl = URL.createObjectURL(itemDraft.image_file)
+    setItemFilePreviewUrl(objectUrl)
+    return () => URL.revokeObjectURL(objectUrl)
+  }, [itemDraft.image_file])
 
   useEffect(() => {
     if (!menu || window.localStorage.getItem(DASHBOARD_LANGUAGE_KEY)) return
@@ -189,7 +200,7 @@ export function DashboardPage() {
       } else item = await createItem(input)
       if (editingItem?.image_url && editingItem.image_url !== image_url && !editingItem.gallery_image_id) await discardAsset(menu.restaurant.id, editingItem.image_url)
       setMenu({ ...menu, items: editingItem ? menu.items.map((entry) => entry.id === item.id ? item : entry) : [...menu.items, item] })
-      setItemModal(false); setEditingItem(null); setItemDraft(emptyItem(menu.categories[0]?.id))
+      setItemModal(false); setEditingItem(null); setPendingItemCrop(null); setItemPhotoError(''); setItemDraft(emptyItem(menu.categories[0]?.id))
       showSuccess(dashboardText(dashboardLanguage, editingItem ? 'Menu item updated.' : 'Menu item added.'))
     } catch (caught) {
       await discardAsset(menu.restaurant.id, uploadedImageUrl)
@@ -318,7 +329,30 @@ export function DashboardPage() {
     if (!menu?.categories.length) { openCategory(); return }
     setEditingItem(item ?? null)
     setItemDraft(item ? { category_id: item.category_id, name_en: item.name_en, name_ar: item.name_ar, description_en: item.description_en ?? '', description_ar: item.description_ar ?? '', price: String(item.price || ''), variants: structuredClone(item.variants), image_file: null, image_url: item.image_url, gallery_image_id: item.gallery_image_id } : emptyItem(categoryId))
+    setPendingItemCrop(null)
+    setItemPhotoError('')
     setItemModal(true)
+  }
+
+  function closeItem() {
+    setItemModal(false); setEditingItem(null); setPendingItemCrop(null); setItemPhotoError('')
+  }
+
+  async function chooseItemPhoto(file: File | null) {
+    if (!file) return
+    setItemPhotoError('')
+    try {
+      await validateGallerySource(file)
+      setPendingItemCrop(file)
+    } catch (caught) {
+      setItemPhotoError(caught instanceof Error ? caught.message : t('This image could not be opened.'))
+    }
+  }
+
+  function acceptItemCrop(file: File) {
+    setItemDraft((current) => ({ ...current, image_file: file, gallery_image_id: null }))
+    setPendingItemCrop(null)
+    setItemPhotoError('')
   }
 
   async function openGallery() {
@@ -602,8 +636,9 @@ export function DashboardPage() {
 
       {categoryModal && <div className="modal-backdrop"><form className="modal-card" onSubmit={saveCategory}><button type="button" className="modal-close" onClick={() => { setCategoryModal(false); setEditingCategory(null) }}><X /></button><span className="eyebrow"><span /> {editingCategory ? t('Edit section') : t('New section')}</span><h2>{editingCategory ? t('Edit category') : t('Add a category')}</h2><p>{t('Give it a name in both menu languages.')}</p><label>{t('English name')}<input required autoFocus value={categoryDraft.name_en} onChange={(e) => setCategoryDraft({ ...categoryDraft, name_en: e.target.value })} placeholder="Pizza" /></label><label dir="rtl">{t('Arabic name')}<input required value={categoryDraft.name_ar} onChange={(e) => setCategoryDraft({ ...categoryDraft, name_ar: e.target.value })} placeholder="بيتزا" /></label><button className="button button-primary full" disabled={saving}>{saving ? t('Saving…') : editingCategory ? t('Save category') : t('Add category')}</button></form></div>}
 
-      {itemModal && <div className="modal-backdrop"><form className="modal-card modal-large" onSubmit={saveItem}><button type="button" className="modal-close" onClick={() => { setItemModal(false); setEditingItem(null) }}><X /></button><span className="eyebrow"><span /> {editingItem ? t('Edit item') : t('New item')}</span><h2>{editingItem ? t('Edit menu item') : t('Add a menu item')}</h2><div className="form-grid"><label>{t('Category')}<select required value={itemDraft.category_id} onChange={(e) => setItemDraft({ ...itemDraft, category_id: e.target.value })}><option value="">{t('Choose category')}</option>{menu.categories.map((category) => <option value={category.id} key={category.id}>{category.name_en}</option>)}</select></label><div className="item-photo-choices"><span>{t('Item photo')}</span><div className="item-photo-actions"><button type="button" className="item-photo-choice" onClick={openGallery}><Images /> {t('Fluxiva Gallery')}</button><label className="item-photo-choice upload"><ImagePlus /> {t('Upload your photo')}<input type="file" accept="image/png,image/jpeg,image/webp" onChange={(e) => setItemDraft({ ...itemDraft, image_file: e.target.files?.[0] ?? null, gallery_image_id: null })} /></label></div>{(itemDraft.image_url || itemDraft.image_file) && <div className="item-photo-preview">{itemDraft.image_url && <img src={itemDraft.image_url} alt="" />}<span>{itemDraft.image_file?.name || (itemDraft.gallery_image_id ? t('Selected from Fluxiva Gallery') : t('Current photo'))}</span><button type="button" onClick={() => setItemDraft({ ...itemDraft, image_file: null, image_url: null, gallery_image_id: null })} aria-label={t('Remove photo')}><Trash2 /></button></div>}</div><label>{t('English name')}<input required value={itemDraft.name_en} onChange={(e) => setItemDraft({ ...itemDraft, name_en: e.target.value })} placeholder="Margherita" /></label><label dir="rtl">{t('Arabic name')}<input required value={itemDraft.name_ar} onChange={(e) => setItemDraft({ ...itemDraft, name_ar: e.target.value })} placeholder="مارغريتا" /></label><label>{t('English description')}<textarea value={itemDraft.description_en} onChange={(e) => setItemDraft({ ...itemDraft, description_en: e.target.value })} placeholder="Tomato, mozzarella and basil" /></label><label dir="rtl">{t('Arabic description')}<textarea value={itemDraft.description_ar} onChange={(e) => setItemDraft({ ...itemDraft, description_ar: e.target.value })} placeholder="طماطم، موزاريلا وريحان" /></label></div><div className="price-section"><label>{t('Base price')} ({currencyLabel})<input required={itemDraft.variants.length === 0} min="0" step={priceStep} type="number" value={itemDraft.price} onChange={(e) => setItemDraft({ ...itemDraft, price: e.target.value })} placeholder={pricePlaceholder} /></label><div className="variant-title"><div><b>{t('Size options')}</b><small>{t('Optional — add sizes when prices differ.')}</small></div><button type="button" onClick={addVariant}><Plus /> {t('Add size')}</button></div>{itemDraft.variants.map((variant, index) => <div className="variant-row" key={variant.id}><input required placeholder="S" value={variant.name_en} onChange={(e) => updateVariant(index, 'name_en', e.target.value)} /><input placeholder="ص" dir="rtl" value={variant.name_ar} onChange={(e) => updateVariant(index, 'name_ar', e.target.value)} /><input required min="0" step={priceStep} type="number" placeholder={`${t('Price')} ${currencyLabel}`} value={variant.price || ''} onChange={(e) => updateVariant(index, 'price', Number(e.target.value))} /><button type="button" onClick={() => setItemDraft((current) => ({ ...current, variants: current.variants.filter((_, position) => position !== index) }))}><X /></button></div>)}</div><button className="button button-primary full" disabled={saving || !menu.categories.length}>{saving ? t('Saving…') : editingItem ? t('Save menu item') : t('Add menu item')}</button></form></div>}
+      {itemModal && <div className="modal-backdrop"><form className="modal-card modal-large" onSubmit={saveItem}><button type="button" className="modal-close" onClick={closeItem}><X /></button><span className="eyebrow"><span /> {editingItem ? t('Edit item') : t('New item')}</span><h2>{editingItem ? t('Edit menu item') : t('Add a menu item')}</h2><div className="form-grid"><label>{t('Category')}<select required value={itemDraft.category_id} onChange={(e) => setItemDraft({ ...itemDraft, category_id: e.target.value })}><option value="">{t('Choose category')}</option>{menu.categories.map((category) => <option value={category.id} key={category.id}>{category.name_en}</option>)}</select></label><div className="item-photo-choices"><span>{t('Item photo')}</span><small className="item-photo-help">{t('Choose a photo at least 1200 × 1200 px, then crop it to a square.')}</small><div className="item-photo-actions"><button type="button" className="item-photo-choice" onClick={openGallery}><Images /> {t('Fluxiva Gallery')}</button><label className="item-photo-choice upload"><ImagePlus /> {t('Upload your photo')}<input type="file" accept="image/png,image/jpeg,image/webp" onChange={(event) => { const file = event.currentTarget.files?.[0] ?? null; event.currentTarget.value = ''; void chooseItemPhoto(file) }} /></label></div>{itemPhotoError && <small className="item-photo-error" role="alert">{itemPhotoError}</small>}{(itemDraft.image_url || itemDraft.image_file) && <div className="item-photo-preview">{(itemFilePreviewUrl || itemDraft.image_url) && <img src={itemFilePreviewUrl || itemDraft.image_url || ''} alt="" />}<span>{itemDraft.image_file?.name || (itemDraft.gallery_image_id ? t('Selected from Fluxiva Gallery') : t('Current photo'))}</span><button type="button" onClick={() => { setItemDraft({ ...itemDraft, image_file: null, image_url: null, gallery_image_id: null }); setItemPhotoError('') }} aria-label={t('Remove photo')}><Trash2 /></button></div>}</div><label>{t('English name')}<input required value={itemDraft.name_en} onChange={(e) => setItemDraft({ ...itemDraft, name_en: e.target.value })} placeholder="Margherita" /></label><label dir="rtl">{t('Arabic name')}<input required value={itemDraft.name_ar} onChange={(e) => setItemDraft({ ...itemDraft, name_ar: e.target.value })} placeholder="مارغريتا" /></label><label>{t('English description')}<textarea value={itemDraft.description_en} onChange={(e) => setItemDraft({ ...itemDraft, description_en: e.target.value })} placeholder="Tomato, mozzarella and basil" /></label><label dir="rtl">{t('Arabic description')}<textarea value={itemDraft.description_ar} onChange={(e) => setItemDraft({ ...itemDraft, description_ar: e.target.value })} placeholder="طماطم، موزاريلا وريحان" /></label></div><div className="price-section"><label>{t('Base price')} ({currencyLabel})<input required={itemDraft.variants.length === 0} min="0" step={priceStep} type="number" value={itemDraft.price} onChange={(e) => setItemDraft({ ...itemDraft, price: e.target.value })} placeholder={pricePlaceholder} /></label><div className="variant-title"><div><b>{t('Size options')}</b><small>{t('Optional — add sizes when prices differ.')}</small></div><button type="button" onClick={addVariant}><Plus /> {t('Add size')}</button></div>{itemDraft.variants.map((variant, index) => <div className="variant-row" key={variant.id}><input required placeholder="S" value={variant.name_en} onChange={(e) => updateVariant(index, 'name_en', e.target.value)} /><input placeholder="ص" dir="rtl" value={variant.name_ar} onChange={(e) => updateVariant(index, 'name_ar', e.target.value)} /><input required min="0" step={priceStep} type="number" placeholder={`${t('Price')} ${currencyLabel}`} value={variant.price || ''} onChange={(e) => updateVariant(index, 'price', Number(e.target.value))} /><button type="button" onClick={() => setItemDraft((current) => ({ ...current, variants: current.variants.filter((_, position) => position !== index) }))}><X /></button></div>)}</div><button className="button button-primary full" disabled={saving || !menu.categories.length}>{saving ? t('Saving…') : editingItem ? t('Save menu item') : t('Add menu item')}</button></form></div>}
       {galleryOpen && <GalleryPicker images={galleryImages} categories={galleryCategories} language={dashboardLanguage} loading={galleryLoading} selectedId={itemDraft.gallery_image_id} onSelect={(image) => { setItemDraft({ ...itemDraft, image_url: image.image_url, gallery_image_id: image.id, image_file: null }); setGalleryOpen(false) }} onRemove={() => { setItemDraft({ ...itemDraft, image_url: null, gallery_image_id: null, image_file: null }); setGalleryOpen(false) }} onClose={() => setGalleryOpen(false)} />}
+      {pendingItemCrop && <SquareImageCropper file={pendingItemCrop} language={dashboardLanguage} onCancel={() => setPendingItemCrop(null)} onConfirm={acceptItemCrop} />}
 
       {importModal && <div className="modal-backdrop"><form className="modal-card" onSubmit={importCsv}><button type="button" className="modal-close" onClick={() => { setImportModal(false); setImportStatus(''); setImportFile(null) }}><X /></button><span className="eyebrow"><span /> {t('Bulk import')}</span><h2>{t('Import menu items')}</h2><p>{t('Upload a CSV exported from Excel or Google Sheets. Columns: category_en, category_ar, name_en, name_ar, description_en, description_ar, price, available.')}</p><label className="file-drop"><Upload /><b>{importFile?.name || t('Choose CSV file')}</b><small>{t('One item per row')}</small><input type="file" accept=".csv,text/csv" onChange={(e) => setImportFile(e.target.files?.[0] ?? null)} /></label>{importStatus && <p className="notice notice-success">{importStatus}</p>}<button className="button button-primary full" disabled={saving || !importFile}>{saving ? t('Importing…') : t('Import items')}</button></form></div>}
 
