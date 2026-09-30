@@ -35,20 +35,28 @@
 
 /* ---------- Media ---------- */
 
-.shotBackdrop { display: none; }
-
 .shot {
   position: absolute;
   inset: 0;
   inline-size: 100%;
   block-size: 100%;
-  object-fit: cover;
-  z-index: 0;
+  /* The 4:5 master stays entirely visible.  The soft duplicate below fills
+     whichever edges a 9:16 phone (or a wider desktop preview) leaves over. */
+  object-fit: contain;
+  z-index: 1;
+  filter: drop-shadow(0 14px 32px rgba(0, 0, 0, .26));
 }
 
-/* Only the slide in view animates, so off-screen slides cost nothing. */
-.slide[data-active='true'] .shot {
-  animation: kenburns 11s ease-out both;
+.shotBackdrop {
+  position: absolute;
+  inset: -24px;
+  inline-size: calc(100% + 48px);
+  block-size: calc(100% + 48px);
+  object-fit: cover;
+  filter: blur(24px) brightness(.48) saturate(.88);
+  transform: scale(1.08);
+  opacity: .92;
+  z-index: 0;
 }
 
 .shotEmpty {
@@ -70,7 +78,7 @@
 .scrim {
   position: absolute;
   inset: 0;
-  z-index: 1;
+  z-index: 2;
   background:
     linear-gradient(180deg, rgba(7, 9, 8, .74) 0%, transparent 26%, transparent 42%, rgba(7, 9, 8, .82) 82%, rgba(7, 9, 8, .96) 100%);
 }
@@ -79,7 +87,7 @@
 
 .info {
   position: relative;
-  z-index: 2;
+  z-index: 3;
   /* The last term is zero unless the takeaway bar is on screen. */
   padding: 0 22px calc(env(safe-area-inset-bottom, 0px) + 34px + var(--fluxiva-order-space, 0px));
   max-width: 640px;
@@ -437,41 +445,13 @@
 
 /* ---------- Motion ---------- */
 
-@keyframes kenburns {
-  from { transform: scale(1.001); }
-  to { transform: scale(1.11); }
-}
-
 @keyframes nudge {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-5px); }
 }
 
-/* The 4:5 item master is taller than a menu card but shorter than a typical
-   phone. A soft copy fills the remaining canvas while the foreground keeps
-   the complete dish visible. */
-@media (max-width: 600px) {
-  .shotBackdrop {
-    display: block;
-    position: absolute;
-    inset: -24px;
-    inline-size: calc(100% + 48px);
-    block-size: calc(100% + 48px);
-    object-fit: cover;
-    filter: blur(24px) brightness(.48) saturate(.88);
-    transform: scale(1.08);
-    opacity: .92;
-    z-index: 0;
-  }
-
-  .shot { object-fit: contain; }
-
-  .slide[data-active='true'] .shot { animation: none; }
-}
-
 @media (prefers-reduced-motion: reduce) {
   .reel { scroll-behavior: auto; }
-  .slide[data-active='true'] .shot { animation: none; }
   .info { transition: none; opacity: 1; transform: none; }
   .hint { animation: none; }
   .endContact:hover, .variants button:active { transform: none; }
