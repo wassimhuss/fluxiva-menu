@@ -255,7 +255,7 @@
   position: relative;
   display: flex;
   align-items: flex-end;
-  padding: 0 22px 13vh;
+  padding: 0 22px 7vh;
   isolation: isolate;
 }
 
@@ -264,9 +264,9 @@
   position: absolute;
   inset-inline: 0;
   inset-block-end: 0;
-  block-size: min(34dvh, 340px);
-  background: linear-gradient(180deg, transparent 0%, rgba(12, 15, 14, .1) 30%, rgba(12, 15, 14, .4) 100%);
-  backdrop-filter: blur(6px);
+  block-size: min(24dvh, 240px);
+  background: linear-gradient(180deg, transparent 0%, rgba(12, 15, 14, .06) 30%, rgba(12, 15, 14, .28) 100%);
+  backdrop-filter: blur(2px);
   opacity: 0;
   pointer-events: none;
   transition: opacity .55s ease;
@@ -292,7 +292,7 @@
   position: relative;
   z-index: 1;
   inline-size: min(100%, 560px);
-  min-block-size: clamp(220px, 26dvh, 310px);
+  min-block-size: clamp(190px, 22dvh, 260px);
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
