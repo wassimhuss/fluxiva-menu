@@ -122,7 +122,12 @@ export default function StoryTemplate(props: MenuTemplateProps) {
               {visibleItems.map((item, index) => (
                 <div key={item.id} className={styles.layer} data-active={active === index}>
                   {item.image_url
-                    ? <img className={styles.layerImage} src={item.image_url} alt="" loading={index < 2 ? 'eager' : 'lazy'} />
+                    ? (
+                      <>
+                        <img className={styles.layerBackdrop} src={item.image_url} alt="" aria-hidden="true" loading={index < 2 ? 'eager' : 'lazy'} />
+                        <img className={styles.layerImage} src={item.image_url} alt="" loading={index < 2 ? 'eager' : 'lazy'} />
+                      </>
+                    )
                     : <div className={styles.layerEmpty}>{t(item.name_en, item.name_ar).slice(0, 2).toUpperCase()}</div>}
                   <div className={styles.mediaScrim} />
                 </div>
