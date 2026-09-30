@@ -214,24 +214,15 @@
 
 .layer[data-active='true'] { opacity: 1; }
 
-.layerBackdrop {
-  position: absolute;
-  inset: -24px;
-  inline-size: calc(100% + 48px);
-  block-size: calc(100% + 48px);
-  /* Preserve the complete source photo behind the sharp, contained image. */
-  object-fit: fill;
-  filter: blur(14px) brightness(.72) saturate(.92);
-  z-index: 0;
-}
-
 .layerImage {
   inline-size: 100%;
   block-size: 100%;
-  object-fit: contain;
-  position: relative;
-  z-index: 1;
+  object-fit: cover;
+  transform: scale(1.04);
+  transition: transform 1.4s cubic-bezier(.22, 1, .36, 1);
 }
+
+.layer[data-active='true'] .layerImage { transform: scale(1); }
 
 .layerEmpty {
   position: absolute;
@@ -247,7 +238,6 @@
 .mediaScrim {
   position: absolute;
   inset: 0;
-  z-index: 2;
   background: linear-gradient(180deg, rgba(12, 15, 14, .5) 0%, rgba(12, 15, 14, .2) 34%, rgba(12, 15, 14, .9) 100%);
 }
 
