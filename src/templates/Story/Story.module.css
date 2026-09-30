@@ -264,9 +264,9 @@
   position: absolute;
   inset-inline: 0;
   inset-block-end: 0;
-  block-size: min(24dvh, 240px);
-  background: linear-gradient(180deg, transparent 0%, rgba(12, 15, 14, .06) 30%, rgba(12, 15, 14, .28) 100%);
-  backdrop-filter: blur(2px);
+  block-size: min(30dvh, 300px);
+  background: linear-gradient(180deg, transparent 0%, rgba(12, 15, 14, .1) 30%, rgba(12, 15, 14, .34) 100%);
+  backdrop-filter: blur(4px);
   opacity: 0;
   pointer-events: none;
   transition: opacity .55s ease;
