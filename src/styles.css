@@ -386,6 +386,7 @@ html.menu-preview-document::-webkit-scrollbar,body.menu-preview-document::-webki
 
 /* Overview: menu opens sits full width above the two-column row. */
 .overview-views{margin-bottom:18px}
+.mobile-section-hub{display:none}
 
 @media(max-width:900px){.dashboard-layout[dir="rtl"] .dashboard-sidebar{left:auto;right:-270px}.dashboard-layout[dir="rtl"] .dashboard-sidebar.open{left:auto;right:0}.dashboard-layout[dir="rtl"] .mobile-menu{margin-left:12px;margin-right:0}}
 /* Out of the flow on purpose. These cards are a fixed height and the content column is a flex box, so an ordering row in normal flow did not overflow — it shrank the description to a 7px sliver and sliced the text through the middle. Positioned in the corner it already occupied, it costs no height. */
@@ -426,6 +427,30 @@ html.menu-preview-document::-webkit-scrollbar,body.menu-preview-document::-webki
 @keyframes classicReveal{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
 .public-items[data-shown='true'] .public-item{animation:classicReveal .5s cubic-bezier(.22,1,.36,1) both;animation-delay:calc(var(--i, 0) * 42ms)}
 @media (prefers-reduced-motion: reduce){.public-items[data-shown='true'] .public-item{animation:none;opacity:1;transform:none}}
+
+/* Mobile dashboard hub: replace the hidden sidebar navigation with a small,
+   card-based launcher. Desktop keeps the sidebar and overview composition. */
+@media(max-width:600px){
+  .dashboard-header>div:first-of-type{display:flex;min-width:0;flex-direction:column;gap:3px}
+  .dashboard-header>div:first-of-type b{max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .dashboard-header>div:first-of-type span{font-size:8px}
+  .overview-columns{display:none}
+  .mobile-section-hub{display:block;margin:7px 0 22px}
+  .mobile-section-hub-heading{margin-bottom:13px}
+  .mobile-section-hub-heading h2{font-family:'Playfair Display',serif;font-size:23px;line-height:1.15;margin:8px 0 5px}
+  .mobile-section-hub-heading p{color:var(--muted);font-size:12px;margin:0}
+  .mobile-section-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .mobile-section-card{position:relative;min-height:137px;border:1px solid #e1e5e1;border-radius:15px;background:#fff;color:var(--ink);padding:14px;text-align:start;display:flex;flex-direction:column;align-items:flex-start;gap:12px;box-shadow:0 7px 20px rgba(27,57,49,.045)}
+  .mobile-section-card>svg{position:absolute;inset-inline-end:13px;inset-block-end:13px;width:15px;color:#9aa7a1}
+  .mobile-section-card>span:nth-child(2){display:flex;flex-direction:column;gap:5px;padding-inline-end:8px}
+  .mobile-section-card b{font-size:13px;line-height:1.2}
+  .mobile-section-card small{font-size:10px;line-height:1.4;color:#87938d}
+  .mobile-section-icon{width:36px;height:36px;border-radius:10px;background:#edf4f1;color:var(--green);display:grid;place-items:center}
+  .mobile-section-icon svg{width:18px}
+  .mobile-section-card-primary{background:var(--green);border-color:var(--green);color:#fff}
+  .mobile-section-card-primary .mobile-section-icon{background:rgba(255,255,255,.14);color:#fff}
+  .mobile-section-card-primary small,.mobile-section-card-primary>svg{color:#b6d0c7}
+}
 
 /* Touch has no hover, so the feedback a finger gets is the press itself.
    Classic predates the CSS Modules templates and shares this sheet, so its
