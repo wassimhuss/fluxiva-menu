@@ -20,6 +20,8 @@ const arabic: Record<string, string> = {
   'Close navigation': 'إغلاق التنقّل',
   'Good to see you': 'سعيدون بعودتك',
   'Your menu at a glance.': 'كل تفاصيل قائمتك أمامك.',
+  'Analysis': 'التحليل',
+  'Your menu performance at a glance.': 'أداء قائمتك أمامك.',
   'Workspace': 'مساحة العمل',
   'What would you like to manage?': 'ماذا تريد أن تدير؟',
   'Choose an area to continue.': 'اختر قسمًا للمتابعة.',

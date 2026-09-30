@@ -474,11 +474,17 @@ export function DashboardPage() {
 
           {panel === 'overview' && <>
             <div className="page-heading"><div><span className="eyebrow"><span /> {t('Good to see you')}</span><h1>{t('Your menu at a glance.')}</h1></div><button className="button button-primary" onClick={() => { setPanel('menu'); openItem() }}><Plus /> {t('Add menu item')}</button></div>
-            <div className="overview-grid">
-              <article className="stat-card"><span>{t('Menu items')}</span><strong>{menu.items.length}</strong><small>{menu.items.filter((item) => item.available).length} {t('currently visible')}</small></article>
-              <article className="stat-card"><span>{t('Categories')}</span><strong>{menu.categories.length}</strong><small>{t('Organize your menu')}</small></article>
-              <article className="stat-card accent"><span>{subscriptionLabel}</span><strong>{subscriptionValue}</strong><small>{subscriptionNote}</small></article>
-            </div>
+            <section className="analysis-card dashboard-card" aria-labelledby="analysis-title">
+              <div className="card-heading"><div><h2 id="analysis-title">{t('Analysis')}</h2><p>{t('Your menu performance at a glance.')}</p></div></div>
+              <div className="analysis-body">
+                <div className="overview-grid">
+                  <article className="stat-card"><span>{t('Menu items')}</span><strong>{menu.items.length}</strong><small>{menu.items.filter((item) => item.available).length} {t('currently visible')}</small></article>
+                  <article className="stat-card"><span>{t('Categories')}</span><strong>{menu.categories.length}</strong><small>{t('Organize your menu')}</small></article>
+                  <article className="stat-card accent"><span>{subscriptionLabel}</span><strong>{subscriptionValue}</strong><small>{subscriptionNote}</small></article>
+                </div>
+                {viewStats && <div className="overview-views"><MenuViews stats={viewStats} language={dashboardLanguage} /></div>}
+              </div>
+            </section>
             <section className="mobile-section-hub" aria-labelledby="mobile-section-hub-title">
               <div className="mobile-section-hub-heading"><div><span className="eyebrow"><span /> {t('Workspace')}</span><h2 id="mobile-section-hub-title">{t('What would you like to manage?')}</h2><p>{t('Choose an area to continue.')}</p></div></div>
               <div className="mobile-section-grid">
@@ -488,7 +494,6 @@ export function DashboardPage() {
                 <button className="mobile-section-card" onClick={openQr}><span className="mobile-section-icon"><QrCode /></span><span><b>{t('QR code')}</b><small>{t('Download or print your menu QR')}</small></span><ChevronRight /></button>
               </div>
             </section>
-            {viewStats && <div className="overview-views"><MenuViews stats={viewStats} language={dashboardLanguage} /></div>}
             <div className="overview-columns">
               <article className="dashboard-card"><div className="card-heading"><div><h2>{t('Quick actions')}</h2><p>{t('The most common menu tasks.')}</p></div></div><div className="quick-actions"><button onClick={() => { setPanel('menu'); openItem() }}><span><Plus /></span><div><b>{t('Add an item')}</b><small>{t('Name, price and size options')}</small></div><ChevronRight /></button><button onClick={() => { setPanel('menu'); openCategory() }}><span><Menu /></span><div><b>{t('Add a category')}</b><small>{t('Group your menu items')}</small></div><ChevronRight /></button><button onClick={openQr}><span><QrCode /></span><div><b>{t('Download QR code')}</b><small>{t('Ready to print and share')}</small></div><ChevronRight /></button></div></article>
               <article className="dashboard-card qr-preview"><div className="card-heading"><div><h2>{t('Your menu link')}</h2><p>{t('Share this link anywhere.')}</p></div></div><div className="link-preview"><span>{menuUrl.replace(/^https?:\/\//, '')}</span><Link to={`/m/${menu.restaurant.slug}`} target="_blank"><ExternalLink /></Link></div><div className="phone-mini"><div className="phone-mini-cover" style={{ backgroundColor: menu.restaurant.primary_color }}><span>{menu.restaurant.name_en.slice(0, 2).toUpperCase()}</span><b>{menu.restaurant.name_en}</b></div><div><i /><i /><i /></div></div></article>
