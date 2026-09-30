@@ -387,6 +387,10 @@ html.menu-preview-document::-webkit-scrollbar,body.menu-preview-document::-webki
 /* Overview: menu opens sits full width above the two-column row. */
 .overview-views{margin-bottom:18px}
 .mobile-section-hub{display:none}
+.analysis-card{overflow:hidden;margin-bottom:18px}
+.analysis-body{padding:16px}
+.analysis-body .overview-grid{gap:12px}
+.analysis-body .overview-views{margin:16px 0 0}
 
 @media(max-width:900px){.dashboard-layout[dir="rtl"] .dashboard-sidebar{left:auto;right:-270px}.dashboard-layout[dir="rtl"] .dashboard-sidebar.open{left:auto;right:0}.dashboard-layout[dir="rtl"] .mobile-menu{margin-left:12px;margin-right:0}}
 /* Out of the flow on purpose. These cards are a fixed height and the content column is a flex box, so an ordering row in normal flow did not overflow — it shrank the description to a 7px sliver and sliced the text through the middle. Positioned in the corner it already occupied, it costs no height. */
@@ -435,6 +439,8 @@ html.menu-preview-document::-webkit-scrollbar,body.menu-preview-document::-webki
   .dashboard-header>div:first-of-type b{max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .dashboard-header>div:first-of-type span{font-size:8px}
   .overview-columns{display:none}
+  .analysis-body{padding:12px}
+  .analysis-body .stat-card{padding:14px}
   .mobile-section-hub{display:block;margin:7px 0 22px}
   .mobile-section-hub-heading{margin-bottom:13px}
   .mobile-section-hub-heading h2{font-family:'Playfair Display',serif;font-size:23px;line-height:1.15;margin:8px 0 5px}
