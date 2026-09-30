@@ -238,7 +238,7 @@
 .mediaScrim {
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, rgba(12, 15, 14, .5) 0%, rgba(12, 15, 14, .2) 34%, rgba(12, 15, 14, .9) 100%);
+  background: linear-gradient(180deg, rgba(12, 15, 14, .3) 0%, rgba(12, 15, 14, .06) 34%, rgba(12, 15, 14, .54) 100%);
 }
 
 /* Pulled up over the sticky pane so the photography sits behind the writing.
@@ -252,19 +252,50 @@
 
 .chapter {
   min-block-size: 100dvh;
+  position: relative;
   display: flex;
   align-items: flex-end;
   padding: 0 22px 13vh;
+  isolation: isolate;
 }
 
+.chapter::before {
+  content: '';
+  position: absolute;
+  inset-inline: 0;
+  inset-block-end: 0;
+  block-size: min(42dvh, 420px);
+  background: linear-gradient(180deg, transparent 0%, rgba(12, 15, 14, .18) 30%, rgba(12, 15, 14, .58) 100%);
+  backdrop-filter: blur(8px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .55s ease;
+}
+
+.chapter[data-active='true']::before { opacity: 1; }
+
+.chapter[data-active='true'] .index,
+.chapter[data-active='true'] .name,
+.chapter[data-active='true'] .desc,
+.chapter[data-active='true'] .variants,
+.chapter[data-active='true'] .priceRow {
+  animation: storyReveal .58s cubic-bezier(.22, 1, .36, 1) both;
+}
+
+.chapter[data-active='true'] .index { animation-delay: .06s; }
+.chapter[data-active='true'] .name { animation-delay: .12s; }
+.chapter[data-active='true'] .desc { animation-delay: .19s; }
+.chapter[data-active='true'] .variants { animation-delay: .25s; }
+.chapter[data-active='true'] .priceRow { animation-delay: .31s; }
+
 .chapterInner {
-  max-width: 560px;
-  padding: 18px 20px;
-  border: 1px solid rgba(236, 231, 222, .13);
-  border-radius: 18px;
-  background: linear-gradient(135deg, rgba(8, 10, 9, .66) 0%, rgba(8, 10, 9, .46) 72%, rgba(8, 10, 9, .26) 100%);
-  box-shadow: 0 16px 40px rgba(0, 0, 0, .14);
-  backdrop-filter: blur(9px);
+  position: relative;
+  z-index: 1;
+  inline-size: min(100%, 560px);
+  min-block-size: clamp(220px, 26dvh, 310px);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
   opacity: 0;
   transform: translateY(26px);
   transition: opacity .7s ease, transform .7s cubic-bezier(.22, 1, .36, 1);
@@ -277,8 +308,26 @@
   font-size: 46px;
   line-height: 1;
   color: var(--story-accent);
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 11px;
   margin-bottom: 10px;
+  opacity: 0;
+  transform: translateY(14px);
+}
+
+.index::after {
+  content: '';
+  inline-size: 34px;
+  block-size: 1px;
+  background: currentColor;
+  opacity: .7;
+  transform: scaleX(0);
+  transform-origin: inline-start;
+}
+
+.chapter[data-active='true'] .index::after {
+  animation: lineReveal .48s cubic-bezier(.22, 1, .36, 1) .14s both;
 }
 
 .name {
@@ -289,6 +338,8 @@
   line-height: 1.08;
   margin: 0 0 14px;
   text-shadow: 0 2px 14px rgba(0, 0, 0, .42);
+  opacity: 0;
+  transform: translateY(14px);
 }
 
 .desc {
@@ -297,7 +348,10 @@
   color: rgba(236, 231, 222, .68);
   margin: 0 0 22px;
   max-width: 46ch;
+  min-block-size: 3.44em;
   text-shadow: 0 1px 8px rgba(0, 0, 0, .46);
+  opacity: 0;
+  transform: translateY(14px);
 }
 
 .variants {
@@ -305,6 +359,8 @@
   flex-wrap: wrap;
   gap: 7px;
   margin-bottom: 20px;
+  opacity: 0;
+  transform: translateY(14px);
 }
 
 .variants button {
@@ -332,6 +388,8 @@
   align-items: center;
   flex-wrap: wrap;
   gap: 12px;
+  opacity: 0;
+  transform: translateY(14px);
 }
 
 .price {
@@ -363,13 +421,13 @@
   .chapter { align-items: center; padding: 0 clamp(32px, 5vw, 76px); }
 
   .chapterInner {
-    padding: 0;
-    border: 0;
-    border-radius: 0;
-    background: none;
-    box-shadow: none;
-    backdrop-filter: none;
+    min-block-size: 0;
+    display: block;
   }
+
+  .chapter::before { display: none; }
+
+  .desc { min-block-size: 0; }
 
   .mediaScrim { background: linear-gradient(90deg, rgba(12, 15, 14, .28) 0%, transparent 42%); }
 
@@ -439,9 +497,30 @@
   50% { transform: translateY(-5px); }
 }
 
+@keyframes storyReveal {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes lineReveal {
+  from { opacity: 0; transform: scaleX(0); }
+  to { opacity: .7; transform: scaleX(1); }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .introInner, .scrollCue { animation: none; }
+  .chapter::before { transition: none; }
   .chapterInner { transition: none; opacity: 1; transform: none; }
+  .chapter[data-active='true'] .index,
+  .chapter[data-active='true'] .name,
+  .chapter[data-active='true'] .desc,
+  .chapter[data-active='true'] .variants,
+  .chapter[data-active='true'] .priceRow,
+  .chapter[data-active='true'] .index::after {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
   .layer { transition: none; }
   .layerImage, .layer[data-active='true'] .layerImage { transition: none; transform: none; }
   .contact:hover { transform: none; }
