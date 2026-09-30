@@ -89,6 +89,8 @@ Migration `014_shared_gallery.sql` adds the shared gallery table, the `gallery_i
 
 Migration `015_gallery_categories.sql` upgrades the gallery's repeated category text into real bilingual folders. It backfills a folder for every existing category pair, preserves all images, updates the RPC contracts, and changes new upload paths to `{category-id}/{image-id}`. Apply it after `014`; do not rewrite the already-applied gallery migration.
 
+Migration `016_clear_gallery_images.sql` adds the protected bulk-reset RPC used by the super-admin console's **Clear gallery** action. It clears shared-gallery references and image URLs from every menu item before deleting all gallery records; the client then removes the matching `gallery-assets` files. It deliberately preserves the bilingual folders for replacement photos. Apply it after `015` before using that action in a configured Supabase project.
+
 ## 4. Verification by risk
 
 ### Documentation-only

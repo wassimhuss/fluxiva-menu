@@ -1,6 +1,6 @@
 import { Archive, ArrowDown, ArrowUp, Folder, FolderPlus, ImagePlus, Pencil, Plus, RotateCcw, Trash2, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { createGalleryCategory, createGalleryImage, deleteGalleryCategory, deleteGalleryImage, discardGalleryAssets, ITEM_IMAGE_HEIGHT, ITEM_IMAGE_WIDTH, listPlatformGalleryCategories, listPlatformGalleryImages, updateGalleryCategory, updateGalleryImage, uploadGalleryAssets, validateGalleryImage, validateGallerySource } from '../lib/api'
+import { clearGalleryImages, createGalleryCategory, createGalleryImage, deleteGalleryCategory, deleteGalleryImage, discardGalleryAssets, ITEM_IMAGE_HEIGHT, ITEM_IMAGE_WIDTH, listPlatformGalleryCategories, listPlatformGalleryImages, updateGalleryCategory, updateGalleryImage, uploadGalleryAssets, validateGalleryImage, validateGallerySource } from '../lib/api'
 import type { GalleryCategory, GalleryImage } from '../lib/types'
 import styles from '../pages/Platform.module.css'
 import { PortraitImageCropper } from './PortraitImageCropper'
@@ -31,6 +31,7 @@ export function PlatformGallery() {
   const [success, setSuccess] = useState('')
   const [fileCheck, setFileCheck] = useState<FileCheck>({ state: 'idle', message: '' })
   const [pendingCrop, setPendingCrop] = useState<File | null>(null)
+  const [clearGalleryOpen, setClearGalleryOpen] = useState(false)
 
   async function refresh() {
     const [nextImages, nextCategories] = await Promise.all([listPlatformGalleryImages(), listPlatformGalleryCategories()])
@@ -104,6 +105,17 @@ export function PlatformGallery() {
     catch (caught) { setError(caught instanceof Error ? caught.message : 'Could not delete this image') }
   }
 
+  async function clearGallery() {
+    setSaving(true); setError(''); setSuccess('')
+    try {
+      const deletedCount = await clearGalleryImages(images)
+      await refresh(); setClearGalleryOpen(false)
+      setSuccess(`${deletedCount} gallery image${deletedCount === 1 ? '' : 's'} removed. Menu items that used them no longer have an image.`)
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : 'Could not clear the gallery')
+    } finally { setSaving(false) }
+  }
+
   function openFolder(category?: GalleryCategory) {
     setEditingFolder(category ?? null); setFolderDraft(category ? { name_en: category.name_en, name_ar: category.name_ar } : emptyFolder()); setFolderFormOpen(true)
   }
@@ -150,7 +162,7 @@ export function PlatformGallery() {
 
   return (
     <section className={styles.gallerySection}>
-      <div className={styles.galleryHeading}><div><span>Shared assets</span><h2>Fluxiva Gallery</h2><p>Organize reusable food photography into bilingual folders.</p></div><div className={styles.galleryHeadingActions}><button className={styles.action} onClick={() => openFolder()}><FolderPlus /> New folder</button><button className={`${styles.action} ${styles.actionPrimary}`} disabled={!categories.some((category) => category.active)} onClick={openNewImage}><Plus /> Add image</button></div></div>
+      <div className={styles.galleryHeading}><div><span>Shared assets</span><h2>Fluxiva Gallery</h2><p>Organize reusable food photography into bilingual folders.</p></div><div className={styles.galleryHeadingActions}><button className={styles.action} disabled={!images.length} onClick={() => setClearGalleryOpen(true)}><Trash2 /> Clear gallery</button><button className={styles.action} onClick={() => openFolder()}><FolderPlus /> New folder</button><button className={`${styles.action} ${styles.actionPrimary}`} disabled={!categories.some((category) => category.active)} onClick={openNewImage}><Plus /> Add image</button></div></div>
       {error && <p className={styles.galleryError}>{error}</p>}{success && <p className={styles.gallerySuccess}>{success}</p>}
       {loading ? <p className={styles.empty}>Loading gallery…</p> : <>
         <div className={styles.folderSectionTitle}><Folder /><div><h3>Folders</h3><p>Owners browse these folders before choosing a photo.</p></div></div>
@@ -169,6 +181,7 @@ export function PlatformGallery() {
         <label className={styles.galleryFile}>Folder<select required disabled={Boolean(editing)} value={draft.category_id} onChange={(event) => setDraft({ ...draft, category_id: event.target.value })}><option value="">Choose a folder</option>{categories.map((category) => <option key={category.id} value={category.id} disabled={!category.active && category.id !== draft.category_id}>{category.name_en} · {category.name_ar}</option>)}</select>{editing && <small>To keep Storage organized, an existing image stays in its original folder.</small>}</label>
         <label>English name<input required value={draft.name_en} onChange={(event) => setDraft({ ...draft, name_en: event.target.value })} /></label><label dir="rtl">Arabic name<input required dir="rtl" value={draft.name_ar} onChange={(event) => setDraft({ ...draft, name_ar: event.target.value })} /></label><label>English tags <small>Comma separated</small><input value={draft.tags_en} onChange={(event) => setDraft({ ...draft, tags_en: event.target.value })} /></label><label dir="rtl">Arabic tags <small>افصل بفاصلة</small><input dir="rtl" value={draft.tags_ar} onChange={(event) => setDraft({ ...draft, tags_ar: event.target.value })} /></label><label>Source / owner<input value={draft.source} onChange={(event) => setDraft({ ...draft, source: event.target.value })} /></label><label>License notes<input value={draft.license_notes} onChange={(event) => setDraft({ ...draft, license_notes: event.target.value })} /></label>
       </div><button className="button button-primary full" disabled={saving || (!editing && fileCheck.state !== 'valid')}>{saving ? 'Saving…' : editing ? 'Save details' : 'Upload to folder'}</button></form></div>}
+      {clearGalleryOpen && <div className="modal-backdrop"><div className={`modal-card ${styles.galleryForm}`} role="dialog" aria-modal="true" aria-labelledby="clear-gallery-title"><button type="button" className="modal-close" disabled={saving} onClick={() => setClearGalleryOpen(false)}><X /></button><span className="eyebrow"><span /> Permanent action</span><h2 id="clear-gallery-title">Clear all gallery images?</h2><p>This permanently removes {images.length} gallery image{images.length === 1 ? '' : 's'}, including their thumbnails, and clears them from every menu item. Your bilingual gallery folders will stay ready for the replacement photos.</p><div className={styles.clearGalleryActions}><button type="button" className="button button-outline" disabled={saving} onClick={() => setClearGalleryOpen(false)}>Cancel</button><button type="button" className={`button ${styles.clearGalleryButton}`} disabled={saving} onClick={() => void clearGallery()}><Trash2 /> {saving ? 'Removing…' : 'Remove all images'}</button></div></div></div>}
       {pendingCrop && <PortraitImageCropper file={pendingCrop} onCancel={() => { setPendingCrop(null); setFileCheck(draft.file ? { state: 'valid', message: `${ITEM_IMAGE_WIDTH} × ${ITEM_IMAGE_HEIGHT} px · Cropped and ready to upload` } : { state: 'idle', message: '' }) }} onConfirm={(file) => void acceptCrop(file)} />}
     </section>
   )

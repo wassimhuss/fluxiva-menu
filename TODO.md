@@ -68,6 +68,7 @@ Build a curated **Fluxiva Gallery** that lets every restaurant owner either sele
 - [ ] Add popularity/recent filters without exposing restaurant-specific information.
 - [ ] Consider an owner contribution flow: **Submit → Review → Approve**. Never allow direct unreviewed publishing.
 - [x] Track image usage so a gallery file cannot be removed while menu items still reference it.
+- [x] Give super admins a confirmed bulk reset that clears all gallery references before replacing the curated photo set.
 
 ## Engineering backlog
 
