@@ -1,4 +1,4 @@
-import { ArrowDown, ArrowUp, ChevronRight, ExternalLink, Eye, EyeOff, ImagePlus, Images, LayoutDashboard, LogOut, Menu, Palette, Pencil, Plus, QrCode, Settings, ShieldCheck, Store, Trash2, Upload, X } from 'lucide-react'
+import { ArrowDown, ArrowLeft, ArrowUp, ChevronRight, ExternalLink, Eye, EyeOff, ImagePlus, Images, LayoutDashboard, LogOut, Menu, Palette, Pencil, Plus, QrCode, Settings, ShieldCheck, Store, Trash2, Upload, X } from 'lucide-react'
 import QRCode from 'qrcode'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
@@ -48,7 +48,6 @@ export function DashboardPage() {
   const [menu, setMenu] = useState<RestaurantMenu | null>(null)
   const [loading, setLoading] = useState(true)
   const [panel, setPanel] = useState<Panel>('overview')
-  const [mobileNav, setMobileNav] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const [categoryModal, setCategoryModal] = useState(false)
@@ -454,21 +453,19 @@ export function DashboardPage() {
 
   return (
     <main className="dashboard-layout" dir={dashboardLanguage === 'ar' ? 'rtl' : 'ltr'}>
-      <aside className={`dashboard-sidebar ${mobileNav ? 'open' : ''}`}>
-        <div className="sidebar-top"><Brand light /><button className="mobile-close" aria-label={t('Close navigation')} onClick={() => setMobileNav(false)}><X /></button></div>
+      <aside className="dashboard-sidebar">
+        <div className="sidebar-top"><Brand light /></div>
         <div className="restaurant-switcher"><span className="mini-monogram" style={{ backgroundColor: menu.restaurant.primary_color }}>{menu.restaurant.name_en.slice(0, 2).toUpperCase()}</span><span><b>{menu.restaurant.name_en}</b><small>{t('Owner workspace')}</small></span><ChevronRight /></div>
         <nav>
-          <button className={panel === 'overview' ? 'selected' : ''} onClick={() => { setPanel('overview'); setMobileNav(false) }}><LayoutDashboard /> {t('Overview')}</button>
-          <button className={panel === 'menu' ? 'selected' : ''} onClick={() => { setPanel('menu'); setMobileNav(false) }}><Menu /> {t('Menu editor')}</button>
-          <button className={panel === 'design' ? 'selected' : ''} onClick={() => { setPanel('design'); setMobileNav(false) }}><Palette /> {t('Menu design')}</button>
-          <button className={panel === 'settings' ? 'selected' : ''} onClick={() => { setPanel('settings'); setMobileNav(false) }}><Settings /> {t('Restaurant settings')}</button>
+          <button className={panel === 'overview' ? 'selected' : ''} onClick={() => setPanel('overview')}><LayoutDashboard /> {t('Overview')}</button>
+          <button className={panel === 'menu' ? 'selected' : ''} onClick={() => setPanel('menu')}><Menu /> {t('Menu editor')}</button>
+          <button className={panel === 'design' ? 'selected' : ''} onClick={() => setPanel('design')}><Palette /> {t('Menu design')}</button>
+          <button className={panel === 'settings' ? 'selected' : ''} onClick={() => setPanel('settings')}><Settings /> {t('Restaurant settings')}</button>
         </nav>
         <div className="sidebar-bottom"><Link to={`/m/${menu.restaurant.slug}`} target="_blank"><ExternalLink /> {t('Open public menu')}</Link><button onClick={async () => { await signOut(); navigate('/') }}><LogOut /> {t('Sign out')}</button>{adminRole && <Link className="platform-link" to="/platform"><ShieldCheck /> {t('Operator console')}</Link>}</div>
       </aside>
-      {mobileNav && <button className="sidebar-backdrop" onClick={() => setMobileNav(false)} aria-label={t('Close navigation')} />}
-
       <section className="dashboard-main">
-        <header className="dashboard-header"><button className="mobile-menu" aria-label={t('Open navigation')} onClick={() => setMobileNav(true)}><Menu /></button><div><span>{t('Restaurant dashboard')}</span><b>{menu.restaurant.name_en}</b></div><div className="header-actions"><button type="button" className="language-switch" onClick={() => changeDashboardLanguage(dashboardLanguage === 'ar' ? 'en' : 'ar')} aria-label={dashboardLanguage === 'ar' ? 'Switch to English' : 'التبديل إلى العربية'}>{dashboardLanguage === 'ar' ? 'EN' : 'عربي'}</button><Link className="button button-small button-outline" to={`/m/${menu.restaurant.slug}`} target="_blank">{t('View menu')} <ExternalLink /></Link><button className="button button-small button-primary" onClick={openQr}><QrCode /> {t('QR code')}</button></div></header>
+        <header className="dashboard-header">{panel !== 'overview' && <button className="mobile-menu" aria-label={t('Back to overview')} onClick={() => setPanel('overview')}><ArrowLeft /></button>}<div><span>{t('Restaurant dashboard')}</span><b>{menu.restaurant.name_en}</b></div><div className="header-actions"><button type="button" className="language-switch" onClick={() => changeDashboardLanguage(dashboardLanguage === 'ar' ? 'en' : 'ar')} aria-label={dashboardLanguage === 'ar' ? 'Switch to English' : 'التبديل إلى العربية'}>{dashboardLanguage === 'ar' ? 'EN' : 'عربي'}</button><Link className="button button-small button-outline" to={`/m/${menu.restaurant.slug}`} target="_blank">{t('View menu')} <ExternalLink /></Link><button className="button button-small button-primary" onClick={openQr}><QrCode /> {t('QR code')}</button></div></header>
         <div className="dashboard-content">
           {error && <Notice tone="error">{error}</Notice>}
           {success && <div className="dashboard-toast" role="status"><Notice tone="success">{success}</Notice></div>}
@@ -482,6 +479,15 @@ export function DashboardPage() {
               <article className="stat-card"><span>{t('Categories')}</span><strong>{menu.categories.length}</strong><small>{t('Organize your menu')}</small></article>
               <article className="stat-card accent"><span>{subscriptionLabel}</span><strong>{subscriptionValue}</strong><small>{subscriptionNote}</small></article>
             </div>
+            <section className="mobile-section-hub" aria-labelledby="mobile-section-hub-title">
+              <div className="mobile-section-hub-heading"><div><span className="eyebrow"><span /> {t('Workspace')}</span><h2 id="mobile-section-hub-title">{t('What would you like to manage?')}</h2><p>{t('Choose an area to continue.')}</p></div></div>
+              <div className="mobile-section-grid">
+                <button className="mobile-section-card mobile-section-card-primary" onClick={() => setPanel('menu')}><span className="mobile-section-icon"><Menu /></span><span><b>{t('Menu editor')}</b><small>{menu.items.length} {t('items')} · {menu.categories.length} {t('Categories').toLowerCase()}</small></span><ChevronRight /></button>
+                <button className="mobile-section-card" onClick={() => setPanel('design')}><span className="mobile-section-icon"><Palette /></span><span><b>{t('Menu design')}</b><small>{t('Layout, photos and brand')}</small></span><ChevronRight /></button>
+                <button className="mobile-section-card" onClick={() => setPanel('settings')}><span className="mobile-section-icon"><Settings /></span><span><b>{t('Restaurant settings')}</b><small>{t('Details, status and contact')}</small></span><ChevronRight /></button>
+                <button className="mobile-section-card" onClick={openQr}><span className="mobile-section-icon"><QrCode /></span><span><b>{t('QR code')}</b><small>{t('Download or print your menu QR')}</small></span><ChevronRight /></button>
+              </div>
+            </section>
             {viewStats && <div className="overview-views"><MenuViews stats={viewStats} language={dashboardLanguage} /></div>}
             <div className="overview-columns">
               <article className="dashboard-card"><div className="card-heading"><div><h2>{t('Quick actions')}</h2><p>{t('The most common menu tasks.')}</p></div></div><div className="quick-actions"><button onClick={() => { setPanel('menu'); openItem() }}><span><Plus /></span><div><b>{t('Add an item')}</b><small>{t('Name, price and size options')}</small></div><ChevronRight /></button><button onClick={() => { setPanel('menu'); openCategory() }}><span><Menu /></span><div><b>{t('Add a category')}</b><small>{t('Group your menu items')}</small></div><ChevronRight /></button><button onClick={openQr}><span><QrCode /></span><div><b>{t('Download QR code')}</b><small>{t('Ready to print and share')}</small></div><ChevronRight /></button></div></article>
