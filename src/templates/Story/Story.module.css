@@ -259,6 +259,12 @@
 
 .chapterInner {
   max-width: 560px;
+  padding: 18px 20px;
+  border: 1px solid rgba(236, 231, 222, .13);
+  border-radius: 18px;
+  background: linear-gradient(135deg, rgba(8, 10, 9, .84) 0%, rgba(8, 10, 9, .64) 72%, rgba(8, 10, 9, .42) 100%);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, .2);
+  backdrop-filter: blur(9px);
   opacity: 0;
   transform: translateY(26px);
   transition: opacity .7s ease, transform .7s cubic-bezier(.22, 1, .36, 1);
@@ -282,6 +288,7 @@
   letter-spacing: -.6px;
   line-height: 1.08;
   margin: 0 0 14px;
+  text-shadow: 0 2px 14px rgba(0, 0, 0, .58);
 }
 
 .desc {
@@ -290,6 +297,7 @@
   color: rgba(236, 231, 222, .68);
   margin: 0 0 22px;
   max-width: 46ch;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, .62);
 }
 
 .variants {
@@ -353,6 +361,15 @@
   .chapters { margin-block-start: 0; background: #0c0f0e; }
 
   .chapter { align-items: center; padding: 0 clamp(32px, 5vw, 76px); }
+
+  .chapterInner {
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: none;
+    box-shadow: none;
+    backdrop-filter: none;
+  }
 
   .mediaScrim { background: linear-gradient(90deg, rgba(12, 15, 14, .28) 0%, transparent 42%); }
 
