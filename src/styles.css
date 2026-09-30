@@ -456,6 +456,8 @@ html.menu-preview-document::-webkit-scrollbar,body.menu-preview-document::-webki
   .mobile-section-card-primary{background:var(--green);border-color:var(--green);color:#fff}
   .mobile-section-card-primary .mobile-section-icon{background:rgba(255,255,255,.14);color:#fff}
   .mobile-section-card-primary small,.mobile-section-card-primary>svg{color:#b6d0c7}
+  .mobile-section-card-analysis{grid-column:1/-1;min-height:82px;flex-direction:row;align-items:center;gap:11px}
+  .mobile-section-card-analysis>svg{inset-block-start:50%;inset-block-end:auto;transform:translateY(-50%)}
 }
 
 /* Touch has no hover, so the feedback a finger gets is the press itself.

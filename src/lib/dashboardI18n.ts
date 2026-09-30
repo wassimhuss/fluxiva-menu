@@ -22,6 +22,8 @@ const arabic: Record<string, string> = {
   'Your menu at a glance.': 'كل تفاصيل قائمتك أمامك.',
   'Analysis': 'التحليل',
   'Your menu performance at a glance.': 'أداء قائمتك أمامك.',
+  'Menu performance and opens': 'أداء القائمة والزيارات',
+  'Track your menu size, availability, subscription and customer opens.': 'تابع حجم قائمتك وتوافرها واشتراكك وعدد زيارات الزبائن.',
   'Workspace': 'مساحة العمل',
   'What would you like to manage?': 'ماذا تريد أن تدير؟',
   'Choose an area to continue.': 'اختر قسمًا للمتابعة.',
