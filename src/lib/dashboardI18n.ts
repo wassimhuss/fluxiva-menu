@@ -113,7 +113,7 @@ const arabic: Record<string, string> = {
   'Item photo': 'صورة الصنف',
   'Fluxiva Gallery': 'مكتبة Fluxiva',
   'Upload your photo': 'ارفع صورتك',
-  'Choose a photo at least 1200 × 1500 px, then crop it to a 4:5 portrait.': 'اختر صورة لا تقل عن 1200 × 1500 بكسل، ثم قصّها بإطار طولي بنسبة 4:5.',
+  'Upload a clear food photo, then frame it for your menu.': 'ارفع صورة طعام واضحة، ثم حدّد إطارها لقائمتك.',
   'This image could not be opened.': 'تعذّر فتح هذه الصورة.',
   'Selected from Fluxiva Gallery': 'مختارة من مكتبة Fluxiva',
   'Current photo': 'الصورة الحالية',
@@ -252,6 +252,13 @@ const arabic: Record<string, string> = {
   'Add a WhatsApp number above to take takeaway orders.': 'أضف رقم واتساب في الأعلى لاستقبال طلبات السفري.',
 }
 
+// Keep the dashboard's existing key stable while presenting clearer upload
+// guidance to owners in both languages.
+const currentEnglishCopy: Record<string, string> = {
+  'Choose a photo at least 1200 × 1500 px, then crop it to a 4:5 portrait.': 'Upload a clear food photo, then frame it for your menu.',
+}
+
 export function dashboardText(language: Language, english: string) {
-  return language === 'ar' ? arabic[english] ?? english : english
+  const copy = currentEnglishCopy[english] ?? english
+  return language === 'ar' ? arabic[copy] ?? copy : copy
 }

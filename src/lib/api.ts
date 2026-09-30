@@ -18,6 +18,7 @@ const IMAGE_LIMITS: Record<AssetPurpose, { width: number; height: number; qualit
 
 export const ITEM_IMAGE_WIDTH = 1200
 export const ITEM_IMAGE_HEIGHT = 1500
+const MIN_ITEM_SOURCE_DIMENSION = 900
 
 function loadImage(file: File) {
   return new Promise<HTMLImageElement>((resolve, reject) => {
@@ -37,8 +38,8 @@ export async function validateGallerySource(file: File) {
   if (file.size > 8 * 1024 * 1024) throw new Error('Images must be smaller than 8 MB.')
   const image = await loadImage(file)
   const dimensions = { width: image.naturalWidth, height: image.naturalHeight }
-  if (dimensions.width < ITEM_IMAGE_WIDTH || dimensions.height < ITEM_IMAGE_HEIGHT) {
-    throw new Error(`Choose a photo at least ${ITEM_IMAGE_WIDTH} × ${ITEM_IMAGE_HEIGHT} pixels. This photo is ${dimensions.width} × ${dimensions.height}.`)
+  if (dimensions.width < MIN_ITEM_SOURCE_DIMENSION || dimensions.height < MIN_ITEM_SOURCE_DIMENSION) {
+    throw new Error(`This photo is too small for a clear menu image. Choose one at least ${MIN_ITEM_SOURCE_DIMENSION} pixels wide and high. This photo is ${dimensions.width} × ${dimensions.height}.`)
   }
   return dimensions
 }
