@@ -106,6 +106,8 @@ const arabic: Record<string, string> = {
   'Photos required': 'الصور مطلوبة',
   'Live preview': 'معاينة مباشرة',
   'Your real menu, in this design.': 'قائمتك الحقيقية بهذا التصميم.',
+  'Preview your menu': 'عاين قائمتك',
+  'Open the real menu full screen before you save.': 'افتح القائمة الحقيقية بملء الشاشة قبل الحفظ.',
   'Open full preview': 'فتح المعاينة الكاملة',
   'Restaurant details.': 'تفاصيل المطعم.',
   'Your name, contact details and menu status. Logo and colour live in Menu design.': 'اسمك وبيانات التواصل وحالة القائمة. الشعار واللون موجودان في تصميم القائمة.',

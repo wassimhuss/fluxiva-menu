@@ -373,6 +373,7 @@
 .language-switch{border:1px solid #d8dedb;background:#fff;color:var(--green);border-radius:9px;min-width:45px;height:39px;padding:0 10px;font-size:12px;font-weight:700;cursor:pointer}.dashboard-layout[dir="rtl"] .dashboard-sidebar nav button,.dashboard-layout[dir="rtl"] .sidebar-bottom>a,.dashboard-layout[dir="rtl"] .sidebar-bottom>button{text-align:right}.dashboard-layout[dir="rtl"] .header-actions{margin-left:0;margin-right:auto}.dashboard-layout[dir="rtl"] .modal-close{right:auto;left:17px}.dashboard-layout[dir="rtl"] .quick-actions>button,.dashboard-layout[dir="rtl"] .dashboard-items article{text-align:right}
 .template-preview{background:#fff;border:1px solid var(--line);border-radius:18px;padding:20px}
 .template-preview .card-heading{margin-bottom:14px}
+.mobile-design-summary{display:none}
 .preview-phone{position:relative;width:min(100%,350px);margin-inline:auto;aspect-ratio:9/20;border-radius:28px;overflow:hidden;background:#0c0f0e;border:7px solid #1d2725;box-shadow:0 18px 44px rgba(23,63,53,.2)}
 .preview-phone iframe{width:100%;height:100%;border:0;display:block;overflow:hidden}
 html.menu-preview-document,body.menu-preview-document{scrollbar-width:none;overflow-x:clip}
@@ -528,7 +529,7 @@ html.menu-preview-document::-webkit-scrollbar,body.menu-preview-document::-webki
   .mobile-design-wizard-copy b{max-width:100%;margin-top:2px;overflow:hidden;color:var(--ink);font-size:11px;text-overflow:ellipsis;white-space:nowrap}
   .mobile-design-wizard-track{height:4px;margin-top:10px;overflow:hidden;border-radius:999px;background:#e6ece8}
   .mobile-design-wizard-track span{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,var(--green),#5c917f);transition:width .25s ease}
-  .design-layout{display:flex;flex-direction:column;gap:14px}
+  .design-layout{display:flex;flex-direction:column;align-items:stretch;gap:14px}
   .design-layout[data-step="1"] .menu-photo-setting,.design-layout[data-step="1"] .template-grid,.design-layout[data-step="1"] .template-preview{display:none}
   .design-layout[data-step="2"] .brand-card,.design-layout[data-step="2"] .template-preview{display:none}
   .design-layout[data-step="3"] .brand-card,.design-layout[data-step="3"] .menu-photo-setting,.design-layout[data-step="3"] .template-grid{display:none}
@@ -552,8 +553,13 @@ html.menu-preview-document::-webkit-scrollbar,body.menu-preview-document::-webki
   .template-preview .card-heading{padding:2px 0 11px;margin-bottom:12px}
   .template-preview .card-heading h2{font-size:14px}
   .template-preview .card-heading p{font-size:10px;margin-top:4px}
-  .preview-phone{width:min(100%,280px);aspect-ratio:9/18;border-width:6px;border-radius:24px}
-  .template-preview .button{margin-top:12px}
+  .template-preview .preview-phone{display:none}
+  .mobile-design-summary{display:grid;gap:8px}
+  .mobile-design-summary>div{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:12px 13px;border-radius:12px;background:#f3f6f4}
+  .mobile-design-summary span{color:#7a8882;font-size:10px}
+  .mobile-design-summary b{display:flex;align-items:center;gap:7px;color:var(--ink);font-size:11px;text-align:end}
+  .mobile-design-summary i{width:16px;height:16px;border:2px solid #fff;border-radius:50%;box-shadow:0 0 0 1px #d3dbd6}
+  .template-preview .mobile-preview-launch{min-height:46px;margin-top:12px;border-color:var(--green);background:var(--green);color:#fff;justify-content:center;font-size:11px}
 }
 
 /* The menu editor is the most frequent mobile workflow. Keep its hierarchy

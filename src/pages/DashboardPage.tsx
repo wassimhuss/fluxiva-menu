@@ -430,6 +430,7 @@ export function DashboardPage() {
   const previewShowItemImages = imageVisibilityDraft ?? liveShowItemImages
   const designDirty = previewTemplate !== liveTemplate || previewColor !== menu.restaurant.primary_color || previewShowItemImages !== liveShowItemImages
   const availableTemplates = previewShowItemImages ? TEMPLATES : TEMPLATES.filter((template) => !template.requiresItemImages)
+  const selectedTemplate = TEMPLATES.find((template) => template.id === previewTemplate) ?? TEMPLATES[0]
   const imageConfirmationCopy = {
     eyebrow: localText(dashboardLanguage, 'Confirm menu change', 'تأكيد تغيير القائمة'),
     showTitle: localText(dashboardLanguage, 'Show food photos?', 'إظهار صور الأطباق؟'),
@@ -595,13 +596,18 @@ export function DashboardPage() {
                 </div>
               </div>
               <aside className="template-preview">
-                <div className="card-heading"><div><h2>{t('Live preview')}</h2><p>{t('Your real menu, in this design.')}</p></div></div>
+                <div className="card-heading"><div><h2>{t('Preview your menu')}</h2><p>{t('Open the real menu full screen before you save.')}</p></div></div>
+                <div className="mobile-design-summary">
+                  <div><span>{t('Menu style')}</span><b>{t(selectedTemplate.name)}</b></div>
+                  <div><span>{t('Food photos')}</span><b>{previewShowItemImages ? t('Photos shown') : t('Photos hidden')}</b></div>
+                  <div><span>{t('Brand color')}</span><b><i style={{ backgroundColor: previewColor }} />{previewColor.toUpperCase()}</b></div>
+                </div>
                 <div className="preview-phone">
                   {/* Keyed so switching design reloads the frame rather than leaving the old one. */}
                   <iframe key={`${previewTemplate}|${previewColor}|${previewShowItemImages}`} title={t('Menu design preview')} scrolling="no" src={`/m/${menu.restaurant.slug}?template=${previewTemplate}&color=${encodeURIComponent(previewColor)}&images=${previewShowItemImages ? '1' : '0'}&preview=1`} />
                 </div>
-                <Link className="button button-small button-outline full" to={`/m/${menu.restaurant.slug}?template=${previewTemplate}&color=${encodeURIComponent(previewColor)}&images=${previewShowItemImages ? '1' : '0'}&preview=1`} target="_blank">
-                  {t('Open full size')} <ExternalLink />
+                <Link className="button button-small button-outline full mobile-preview-launch" to={`/m/${menu.restaurant.slug}?template=${previewTemplate}&color=${encodeURIComponent(previewColor)}&images=${previewShowItemImages ? '1' : '0'}&preview=1`} target="_blank">
+                  {t('Open full preview')} <ExternalLink />
                 </Link>
               </aside>
             </div>
