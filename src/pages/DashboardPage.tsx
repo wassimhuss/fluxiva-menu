@@ -713,26 +713,43 @@ export function DashboardPage() {
                         than asking the owner to look. */}
                     <small className="field-hint">{t('Changes the currency shown on your menu. Existing prices are not converted — check them after switching.')}</small>
                   </label>
-                  <label className="closed-toggle"><span>{t('Menu status')}</span><button type="button" className={`status-switch ${menu.restaurant.temporarily_closed ? 'danger' : 'positive'}`} onClick={() => restaurantField('temporarily_closed', !menu.restaurant.temporarily_closed)}><i />{menu.restaurant.temporarily_closed ? t('Temporarily closed') : t('Open for customers')}</button></label>
+                  <div className="settings-choice">
+                    <span className="settings-choice-label">{t('Menu status')}</span>
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={!menu.restaurant.temporarily_closed}
+                      className={`settings-switch-card ${!menu.restaurant.temporarily_closed ? 'active' : ''}`}
+                      onClick={() => restaurantField('temporarily_closed', !menu.restaurant.temporarily_closed)}
+                    >
+                      <span className="settings-switch-copy">
+                        <b>{menu.restaurant.temporarily_closed ? t('Menu is temporarily closed') : t('Menu is open')}</b>
+                        <small>{menu.restaurant.temporarily_closed ? t('Customers see that you are closed.') : t('Customers can view your menu.')}</small>
+                      </span>
+                      <span className="settings-switch-control" aria-hidden="true"><i /></span>
+                    </button>
+                  </div>
                   {/* Ordering needs somewhere for the order to arrive, so the
                       switch is unavailable until a WhatsApp number exists. The
                       public menu applies the same rule independently. */}
-                  <label className="closed-toggle">
-                    <span>{t('Takeaway orders')}</span>
+                  <div className="settings-choice">
+                    <span className="settings-choice-label">{t('Takeaway orders')}</span>
                     <button
                       type="button"
-                      className={`status-switch ${menu.restaurant.takeaway_enabled ? 'positive' : ''}`}
+                      role="switch"
+                      aria-checked={menu.restaurant.takeaway_enabled}
+                      className={`settings-switch-card ${menu.restaurant.takeaway_enabled ? 'active' : ''}`}
                       disabled={!menu.restaurant.whatsapp}
                       onClick={() => restaurantField('takeaway_enabled', !menu.restaurant.takeaway_enabled)}
                     >
-                      <i />{menu.restaurant.takeaway_enabled ? t('Diners can send an order') : t('Menu only, no ordering')}
+                      <span className="settings-switch-copy">
+                        <b>{t('Accept takeaway orders')}</b>
+                        <small>{menu.restaurant.takeaway_enabled ? t('Customers can order through WhatsApp.') : t('Takeaway ordering is off.')}</small>
+                      </span>
+                      <span className="settings-switch-control" aria-hidden="true"><i /></span>
                     </button>
-                    <small className="field-hint">
-                      {menu.restaurant.whatsapp
-                        ? t('Adds an order button to your menu. Orders arrive as a WhatsApp message you confirm yourself.')
-                        : t('Add a WhatsApp number in Contact details to take takeaway orders.')}
-                    </small>
-                  </label>
+                    {!menu.restaurant.whatsapp && <small className="field-hint">{t('Add a WhatsApp number in Contact details to take takeaway orders.')}</small>}
+                  </div>
                   <label>{t('Default language')}<select value={menu.restaurant.default_language} onChange={(e) => restaurantField('default_language', e.target.value)}><option value="en">{t('English')}</option><option value="ar">{t('Arabic')}</option></select></label>
                 </section>
               </div>

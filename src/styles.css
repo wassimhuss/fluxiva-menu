@@ -50,12 +50,19 @@
 .file-drop svg{width:24px;color:var(--orange)}
 .file-drop b{font-size:13px;color:var(--ink)}
 .file-drop small{font-size:10px;color:var(--muted)}
-.closed-toggle>span{display:block}
-.status-switch{display:flex;align-items:center;gap:9px;border:1px solid #d9dedc;background:#fff;border-radius:10px;padding:12px 14px;color:#5e7069;text-align:left;font-size:12px;font-weight:600}
-.status-switch i{width:12px;height:12px;border-radius:50%;background:#50a26c;box-shadow:0 0 0 3px #e4f3e7}
-.status-switch.positive{color:#426b60;background:#f2f8f5;border-color:#c9ddd5}
-.status-switch.danger{color:#a14631;background:#fff7f4;border-color:#f1c9be}
-.status-switch.danger i{background:#c75947;box-shadow:0 0 0 3px #fde5df}
+.settings-choice{margin-bottom:16px}
+.settings-choice-label{display:block;margin-bottom:7px;font-size:12px;font-weight:700;color:var(--ink)}
+.settings-switch-card{width:100%;min-height:72px;display:flex;align-items:center;gap:14px;padding:12px 13px;border:1px solid #dde3df;border-radius:12px;background:#fff;color:var(--ink);text-align:start;cursor:pointer;transition:border-color .18s ease,background .18s ease}
+.settings-switch-card.active{border-color:#b9d3c9;background:#f3f8f6}
+.settings-switch-copy{min-width:0;display:block;flex:1}
+.settings-switch-copy b,.settings-switch-copy small{display:block}
+.settings-switch-copy b{font-size:12px;line-height:1.3}
+.settings-switch-copy small{margin-top:4px;color:var(--muted);font-size:10px;font-weight:500;line-height:1.45}
+.settings-switch-control{position:relative;width:44px;height:26px;flex:none;border-radius:999px;background:#cfd7d2;transition:background .18s ease}
+.settings-switch-control i{position:absolute;inset-block-start:3px;inset-inline-start:3px;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 1px 4px rgba(21,52,44,.22);transition:inset-inline-start .18s ease}
+.settings-switch-card.active .settings-switch-control{background:var(--green)}
+.settings-switch-card.active .settings-switch-control i{inset-inline-start:21px}
+.settings-switch-card:disabled{opacity:.55;cursor:not-allowed;background:#f4f5f4}
 .theme-presets{display:flex;align-items:center;gap:18px;padding:18px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);font-size:12px}
 .theme-presets>div{display:flex;gap:8px;flex-wrap:wrap}
 .theme-presets button{display:flex;align-items:center;gap:7px;border:1px solid #dfe4e1;background:#fff;border-radius:8px;padding:7px 10px;font-size:11px;color:#52645e}
@@ -402,7 +409,6 @@ html.menu-preview-document::-webkit-scrollbar,body.menu-preview-document::-webki
 /* Keeps size chips clear of the control sharing their corner. */
 .variant-buttons{padding-inline-end:44px}
 .field-hint{display:block;margin-top:7px;color:#8d968f;font-size:10px;line-height:1.5}
-.status-switch:disabled{opacity:.55;cursor:not-allowed}
 
 /* Hover is a pointer affordance. These menus are opened by scanning a QR
    code, so on the phones that matter there is no pointer — and a tap would
@@ -587,7 +593,6 @@ html.menu-preview-document::-webkit-scrollbar,body.menu-preview-document::-webki
   .settings-basic-preview{gap:8px;margin:2px 0 14px}
   .settings-basic-preview>div{padding:12px 13px}
   .settings-basic-preview b{font-size:17px}
-  .settings-step-menu .status-switch{width:100%}
   .restaurant-settings-save{display:none}
 }
 
