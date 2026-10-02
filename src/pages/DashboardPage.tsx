@@ -48,6 +48,7 @@ export function DashboardPage() {
   const [menu, setMenu] = useState<RestaurantMenu | null>(null)
   const [loading, setLoading] = useState(true)
   const [panel, setPanel] = useState<Panel>('overview')
+  const [designStep, setDesignStep] = useState(1)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const [categoryModal, setCategoryModal] = useState(false)
@@ -105,6 +106,7 @@ export function DashboardPage() {
   useEffect(() => () => window.clearTimeout(successTimer.current), [])
 
   const DirectionalChevron = dashboardLanguage === 'ar' ? ChevronLeft : ChevronRight
+  const designSteps: Array<[number, string]> = [[1, 'Brand'], [2, 'Menu style'], [3, 'Preview & save']]
 
   useEffect(() => {
     if (!itemDraft.image_file) { setItemFilePreviewUrl(''); return }
@@ -462,7 +464,7 @@ export function DashboardPage() {
           <button className={panel === 'overview' ? 'selected' : ''} onClick={() => setPanel('overview')}><LayoutDashboard /> {t('Overview')}</button>
           <button className={panel === 'analysis' ? 'selected' : ''} onClick={() => setPanel('analysis')}><Eye /> {t('Analysis')}</button>
           <button className={panel === 'menu' ? 'selected' : ''} onClick={() => setPanel('menu')}><Menu /> {t('Menu editor')}</button>
-          <button className={panel === 'design' ? 'selected' : ''} onClick={() => setPanel('design')}><Palette /> {t('Menu design')}</button>
+          <button className={panel === 'design' ? 'selected' : ''} onClick={() => { setPanel('design'); setDesignStep(1) }}><Palette /> {t('Menu design')}</button>
           <button className={panel === 'settings' ? 'selected' : ''} onClick={() => setPanel('settings')}><Settings /> {t('Restaurant settings')}</button>
         </nav>
         <div className="sidebar-bottom"><Link to={`/m/${menu.restaurant.slug}`} target="_blank"><ExternalLink /> {t('Open public menu')}</Link><button onClick={async () => { await signOut(); navigate('/') }}><LogOut /> {t('Sign out')}</button>{adminRole && <Link className="platform-link" to="/platform"><ShieldCheck /> {t('Operator console')}</Link>}</div>
@@ -481,7 +483,7 @@ export function DashboardPage() {
               <div className="mobile-section-hub-heading"><div><span className="eyebrow"><span /> {t('Workspace')}</span><h2 id="mobile-section-hub-title">{t('What would you like to manage?')}</h2><p>{t('Choose an area to continue.')}</p></div></div>
               <div className="mobile-section-grid">
                 <button className="mobile-section-card mobile-section-card-primary" onClick={() => setPanel('menu')}><span className="mobile-section-icon"><Menu /></span><span><b>{t('Menu editor')}</b><small>{menu.items.length} {t('items')} · {menu.categories.length} {t('Categories').toLowerCase()}</small></span><DirectionalChevron /></button>
-                <button className="mobile-section-card" onClick={() => setPanel('design')}><span className="mobile-section-icon"><Palette /></span><span><b>{t('Menu design')}</b><small>{t('Layout, photos and brand')}</small></span><DirectionalChevron /></button>
+                <button className="mobile-section-card" onClick={() => { setPanel('design'); setDesignStep(1) }}><span className="mobile-section-icon"><Palette /></span><span><b>{t('Menu design')}</b><small>{t('Layout, photos and brand')}</small></span><DirectionalChevron /></button>
                 <button className="mobile-section-card" onClick={() => setPanel('settings')}><span className="mobile-section-icon"><Settings /></span><span><b>{t('Restaurant settings')}</b><small>{t('Details, status and contact')}</small></span><DirectionalChevron /></button>
                 <button className="mobile-section-card" onClick={openQr}><span className="mobile-section-icon"><QrCode /></span><span><b>{t('QR code')}</b><small>{t('Download or print your menu QR')}</small></span><DirectionalChevron /></button>
                 <button className="mobile-section-card mobile-section-card-analysis" onClick={() => setPanel('analysis')}><span className="mobile-section-icon"><Eye /></span><span><b>{t('Analysis')}</b><small>{t('Menu performance and opens')}</small></span><DirectionalChevron /></button>
@@ -519,7 +521,10 @@ export function DashboardPage() {
                 {!designDirty ? t('Design in use') : saving ? t('Saving…') : t('Save design')}
               </button>
             </div>
-            <div className="design-layout">
+            <div className="mobile-design-progress" aria-label={t('Menu design steps')}>
+              {designSteps.map(([step, label]) => <button type="button" key={step} className={designStep === step ? 'current' : designStep > step ? 'complete' : ''} onClick={() => setDesignStep(step)}><span>{step}</span><b>{t(label)}</b></button>)}
+            </div>
+            <div className="design-layout" data-step={designStep}>
               <div className="design-choices">
                 <section className="dashboard-card brand-card">
                   <div className="card-heading"><div><h2>{t('Brand')}</h2><p>{t('Your logo, cover photo and colour, across every design.')}</p></div></div>
@@ -593,6 +598,10 @@ export function DashboardPage() {
                   {t('Open full size')} <ExternalLink />
                 </Link>
               </aside>
+            </div>
+            <div className="mobile-design-navigation">
+              <button type="button" className="button button-outline" disabled={designStep === 1} onClick={() => setDesignStep((step) => Math.max(1, step - 1))}>{t('Back')}</button>
+              <button type="button" className="button button-primary" disabled={saving || (designStep === 3 && !designDirty)} onClick={() => designStep < 3 ? setDesignStep((step) => step + 1) : void saveDesign(previewTemplate, previewColor, previewShowItemImages)}>{designStep === 3 ? (saving ? t('Saving…') : designDirty ? t('Save design') : t('Design in use')) : t('Continue')}</button>
             </div>
           </>}
 

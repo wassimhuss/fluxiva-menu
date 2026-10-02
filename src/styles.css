@@ -353,6 +353,7 @@
 .template-card small{font-size:12.5px;line-height:1.5;color:var(--muted)}
 .template-scroll{font-size:11px;font-weight:600;color:var(--green-2);background:#edf3f0;border-radius:999px;padding:5px 10px}
 .template-photo-note{font-size:10px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:#9a6048}
+.mobile-design-progress,.mobile-design-navigation{display:none}
 .menu-photo-setting{display:flex;align-items:center;justify-content:space-between;gap:22px;padding:20px 22px}
 .menu-photo-setting-copy{display:flex;align-items:center;gap:14px;min-width:0}
 .menu-photo-setting-icon{width:42px;height:42px;flex:none;display:grid;place-items:center;border-radius:12px;background:#edf3f0;color:var(--green)}
@@ -515,14 +516,26 @@ html.menu-preview-document::-webkit-scrollbar,body.menu-preview-document::-webki
   .menu-design-page-heading{display:flex;flex-direction:column;align-items:stretch;gap:12px;margin-bottom:16px}
   .menu-design-page-heading h1{max-width:none;font-size:28px;line-height:1.12}
   .menu-design-page-heading p{max-width:300px}
-  .page-heading>.design-save-button{align-self:stretch;width:100%;min-height:42px;padding:10px 13px;font-size:11px;white-space:nowrap}
+  .page-heading>.design-save-button{display:none}
+  .mobile-design-progress{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin:0 0 14px}
+  .mobile-design-progress button{display:flex;flex-direction:column;align-items:flex-start;gap:7px;min-width:0;padding:10px;border:1px solid #dfe5e1;border-radius:12px;background:#fff;color:#7c8983;text-align:start}
+  .mobile-design-progress button span{display:grid;place-items:center;width:24px;height:24px;border-radius:50%;background:#edf2ef;color:#668077;font-size:11px;font-weight:800}
+  .mobile-design-progress button b{font-size:10px;line-height:1.25}
+  .mobile-design-progress button.current{border-color:var(--green);background:#edf5f1;color:var(--green)}
+  .mobile-design-progress button.current span,.mobile-design-progress button.complete span{background:var(--green);color:#fff}
+  .mobile-design-progress button.complete{border-color:#b9d0c7;color:#426b60}
   .design-layout{display:flex;flex-direction:column;gap:14px}
+  .design-layout[data-step="1"] .menu-photo-setting,.design-layout[data-step="1"] .template-grid,.design-layout[data-step="1"] .template-preview{display:none}
+  .design-layout[data-step="2"] .brand-card,.design-layout[data-step="2"] .template-preview{display:none}
+  .design-layout[data-step="3"] .brand-card,.design-layout[data-step="3"] .menu-photo-setting,.design-layout[data-step="3"] .template-grid{display:none}
   .template-preview{order:-1;padding:14px;border-radius:16px}
   .template-preview .card-heading{padding:2px 0 11px;margin-bottom:12px}
   .template-preview .card-heading h2{font-size:14px}
   .template-preview .card-heading p{font-size:10px;margin-top:4px}
   .preview-phone{width:min(100%,210px);aspect-ratio:9/17;border-width:6px;border-radius:22px}
   .template-preview .button{margin-top:12px}
+  .mobile-design-navigation{display:grid;grid-template-columns:minmax(0,.75fr) minmax(0,1.25fr);gap:8px;margin-top:14px}
+  .mobile-design-navigation .button{min-height:44px;padding:10px 12px;justify-content:center;font-size:11px}
 }
 
 /* The menu editor is the most frequent mobile workflow. Keep its hierarchy
