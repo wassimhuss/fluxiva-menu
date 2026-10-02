@@ -552,7 +552,7 @@ html.menu-preview-document::-webkit-scrollbar,body.menu-preview-document::-webki
   .template-preview .card-heading{padding:2px 0 11px;margin-bottom:12px}
   .template-preview .card-heading h2{font-size:14px}
   .template-preview .card-heading p{font-size:10px;margin-top:4px}
-  .preview-phone{width:min(100%,210px);aspect-ratio:9/17;border-width:6px;border-radius:22px}
+  .preview-phone{width:min(100%,280px);aspect-ratio:9/18;border-width:6px;border-radius:24px}
   .template-preview .button{margin-top:12px}
 }
 
