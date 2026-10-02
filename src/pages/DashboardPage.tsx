@@ -527,7 +527,7 @@ export function DashboardPage() {
               <div className="mobile-design-wizard-row">
                 <button type="button" className="mobile-design-wizard-action" disabled={designStep === 1} onClick={() => setDesignStep((step) => Math.max(1, step - 1))}><BackChevron />{t('Back')}</button>
                 <div className="mobile-design-wizard-copy"><span>{t('Step')} {designStep} {t('of')} {designSteps.length}</span><b>{t(designSteps[designStep - 1][1])}</b></div>
-                <button type="button" className="mobile-design-wizard-action primary" disabled={saving || (designStep === 3 && !designDirty)} onClick={() => designStep < 3 ? setDesignStep((step) => step + 1) : void saveDesign(previewTemplate, previewColor, previewShowItemImages)}>{designStep === 3 ? (saving ? t('Saving…') : designDirty ? t('Save design') : t('Saved')) : t('Continue')}<DirectionalChevron /></button>
+                <button type="button" className="mobile-design-wizard-action primary" disabled={saving || (designStep === 3 && !designDirty)} onClick={() => designStep < 3 ? setDesignStep((step) => step + 1) : void saveDesign(previewTemplate, previewColor, previewShowItemImages)}>{designStep === 3 ? (saving ? t('Saving…') : designDirty ? t('Save design') : t('Saved')) : t('Continue')}{designStep < 3 && <DirectionalChevron />}</button>
               </div>
               <div className="mobile-design-wizard-track" aria-hidden="true"><span style={{ width: `${(designStep / designSteps.length) * 100}%` }} /></div>
             </div>
