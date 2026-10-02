@@ -1,4 +1,4 @@
-import { ArrowDown, ArrowLeft, ArrowUp, ChevronLeft, ChevronRight, ExternalLink, Eye, EyeOff, ImagePlus, Images, LayoutDashboard, LogOut, Menu, Palette, Pencil, Plus, QrCode, Settings, ShieldCheck, Store, Trash2, Upload, X } from 'lucide-react'
+import { ArrowDown, ArrowLeft, ArrowUp, ChevronLeft, ChevronRight, ExternalLink, Eye, EyeOff, ImagePlus, Images, LayoutDashboard, LogOut, Menu, Palette, Pencil, Plus, QrCode, RotateCcw, Settings, ShieldCheck, Store, Trash2, Upload, X } from 'lucide-react'
 import QRCode from 'qrcode'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
@@ -431,6 +431,17 @@ export function DashboardPage() {
   const designDirty = previewTemplate !== liveTemplate || previewColor !== menu.restaurant.primary_color || previewShowItemImages !== liveShowItemImages
   const availableTemplates = previewShowItemImages ? TEMPLATES : TEMPLATES.filter((template) => !template.requiresItemImages)
   const selectedTemplate = TEMPLATES.find((template) => template.id === previewTemplate) ?? TEMPLATES[0]
+  const currentDesignStepDirty = designStep === 1
+    ? previewColor !== menu.restaurant.primary_color
+    : designStep === 2
+      ? previewTemplate !== liveTemplate || previewShowItemImages !== liveShowItemImages
+      : designDirty
+
+  function resetCurrentDesignStep() {
+    if (designStep === 1) setColorDraft('')
+    else if (designStep === 2) { setTemplateDraft(''); setImageVisibilityDraft(null) }
+    else { setTemplateDraft(''); setColorDraft(''); setImageVisibilityDraft(null) }
+  }
   const imageConfirmationCopy = {
     eyebrow: localText(dashboardLanguage, 'Confirm menu change', 'تأكيد تغيير القائمة'),
     showTitle: localText(dashboardLanguage, 'Show food photos?', 'إظهار صور الأطباق؟'),
@@ -529,7 +540,10 @@ export function DashboardPage() {
                 <div className="mobile-design-wizard-copy"><span>{t('Step')} {designStep} {t('of')} {designSteps.length}</span><b>{t(designSteps[designStep - 1][1])}</b></div>
                 <button type="button" className="mobile-design-wizard-action primary" disabled={saving || (designStep === 3 && !designDirty)} onClick={() => designStep < 3 ? setDesignStep((step) => step + 1) : void saveDesign(previewTemplate, previewColor, previewShowItemImages)}>{designStep === 3 ? (saving ? t('Saving…') : designDirty ? t('Save design') : t('Saved')) : t('Continue')}{designStep < 3 && <DirectionalChevron />}</button>
               </div>
-              <div className="mobile-design-wizard-track" aria-hidden="true"><span style={{ width: `${(designStep / designSteps.length) * 100}%` }} /></div>
+              <div className="mobile-design-wizard-footer">
+                <div className="mobile-design-wizard-track" aria-hidden="true"><span style={{ width: `${(designStep / designSteps.length) * 100}%` }} /></div>
+                <button type="button" className="mobile-design-reset" disabled={!currentDesignStepDirty || saving} onClick={resetCurrentDesignStep}><RotateCcw />{t('Reset step')}</button>
+              </div>
             </div>
             <div className="design-layout" data-step={designStep}>
               <div className="design-choices">

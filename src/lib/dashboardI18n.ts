@@ -18,6 +18,7 @@ const arabic: Record<string, string> = {
   'Step': 'الخطوة',
   'of': 'من',
   'Saved': 'محفوظ',
+  'Reset step': 'إعادة ضبط الخطوة',
   'Restaurant settings': 'إعدادات المطعم',
   'Open public menu': 'فتح القائمة العامة',
   'Sign out': 'تسجيل الخروج',
