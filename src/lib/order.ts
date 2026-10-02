@@ -34,7 +34,7 @@ export function lineKey(itemId: string, variantIndex: number) {
  * exists. A menu can change between the diner adding a dish and sending the
  * order — an item deleted or marked unavailable must not travel with it.
  */
-export function resolveLines(lines: OrderLine[], items: MenuItem[], t: (en: string, ar: string) => string): ResolvedLine[] {
+export function resolveLines(lines: OrderLine[], items: MenuItem[]): ResolvedLine[] {
   const byId = new Map(items.map((item) => [item.id, item]))
   const resolved: ResolvedLine[] = []
   for (const line of lines) {
@@ -47,7 +47,7 @@ export function resolveLines(lines: OrderLine[], items: MenuItem[], t: (en: stri
     resolved.push({
       ...line,
       item,
-      variantName: variant ? t(variant.name_en, variant.name_ar) : '',
+      variantName: variant?.name_en ?? '',
       unitPrice,
       lineTotal: unitPrice * line.quantity,
     })

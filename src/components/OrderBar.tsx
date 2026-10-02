@@ -28,7 +28,7 @@ export function OrderBar({ restaurant, items, order, language, rtl, t, formatPri
   const [open, setOpen] = useState(false)
   const [note, setNote] = useState('')
 
-  const lines = resolveLines(order.lines, items, t)
+  const lines = resolveLines(order.lines, items)
   const total = orderTotal(lines)
 
   /* The button floats over whichever design is running, and two of them anchor

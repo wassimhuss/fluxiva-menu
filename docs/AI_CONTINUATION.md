@@ -93,6 +93,8 @@ Migration `016_clear_gallery_images.sql` adds the protected bulk-reset RPC used 
 
 Migration `017_drop_opening_hours.sql` removes the unused English and Arabic opening-hours columns from restaurants. Apply it after `016`; the frontend no longer reads or writes either field.
 
+Migration `018_single_language_variants.sql` removes legacy Arabic labels from every stored size variant and adds a constraint preventing `name_ar` from being written back. Apply it after `017`; variant labels now use the single English `name_en` value in both public-menu languages.
+
 ## 4. Verification by risk
 
 ### Documentation-only

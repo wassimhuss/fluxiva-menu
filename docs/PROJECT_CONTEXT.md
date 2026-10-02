@@ -120,7 +120,7 @@ Belongs to both a restaurant and category. Contains paired English/Arabic names 
 
 ### `variants`
 
-Variants are stored as a JSON array on each menu item, shaped as `{ id?, name_en, name_ar, price_lbp }`. `cleanVariants` removes empty or zero-price draft variants before persistence.
+Variants are stored as a JSON array on each menu item, shaped as `{ id?, name_en, price }`. Size labels intentionally use one English value in both menu languages. `cleanVariants` removes empty or zero-price draft variants and strips the legacy `name_ar` key before persistence.
 
 ### Platform administrators
 

@@ -403,7 +403,7 @@ export function DashboardPage() {
     finally { setSaving(false) }
   }
 
-  function addVariant() { setItemDraft((current) => ({ ...current, variants: [...current.variants, { id: crypto.randomUUID(), name_en: '', name_ar: '', price: 0 }] })) }
+  function addVariant() { setItemDraft((current) => ({ ...current, variants: [...current.variants, { id: crypto.randomUUID(), name_en: '', price: 0 }] })) }
   function updateVariant(index: number, key: keyof Variant, value: string | number) { setItemDraft((current) => ({ ...current, variants: current.variants.map((variant, position) => position === index ? { ...variant, [key]: value } : variant) })) }
 
   if (loading) return <main className="dashboard-loading" dir={dashboardLanguage === 'ar' ? 'rtl' : 'ltr'}><Loading label={t('Loading your restaurant…')} /></main>

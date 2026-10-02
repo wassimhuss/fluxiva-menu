@@ -35,7 +35,7 @@ function Chapter({ item, index, active, t, formatPrice, ordering }: {
                 className={position === variantIndex ? styles.variantActive : ''}
                 onClick={() => setVariantIndex(position)}
               >
-                {t(choice.name_en, choice.name_ar)}
+                {choice.name_en}
               </button>
             ))}
           </div>

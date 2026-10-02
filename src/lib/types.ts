@@ -139,7 +139,8 @@ export interface Category {
 export interface Variant {
   id?: string
   name_en: string
-  name_ar: string
+  /** Legacy rows may still contain this until migration 018 is applied. */
+  name_ar?: string
   price: number
 }
 

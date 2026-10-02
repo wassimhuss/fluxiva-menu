@@ -176,7 +176,7 @@ export default function CarouselTemplate(props: MenuTemplateProps) {
                   className={position === activeVariantIndex ? styles.variantActive : ''}
                   onClick={() => setVariants((current) => ({ ...current, [activeItem.id]: position }))}
                 >
-                  {t(choice.name_en, choice.name_ar)}
+                  {choice.name_en}
                 </button>
               ))}
             </div>

@@ -44,7 +44,7 @@ function MenuCard({ item, index, t, formatPrice, color, unavailableLabel, orderi
                 style={index === variantIndex ? { backgroundColor: color, borderColor: color } : undefined}
                 onClick={() => setVariantIndex(index)}
               >
-                {t(choice.name_en, choice.name_ar)}
+                {choice.name_en}
               </button>
             ))}
           </div>

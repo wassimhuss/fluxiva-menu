@@ -59,7 +59,7 @@ function ReelSlide({ item, index, total, category, active, t, formatPrice, order
                 className={position === variantIndex ? styles.variantActive : ''}
                 onClick={() => setVariantIndex(position)}
               >
-                {t(choice.name_en, choice.name_ar)}
+                {choice.name_en}
               </button>
             ))}
           </div>

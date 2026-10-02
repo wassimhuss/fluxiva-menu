@@ -530,5 +530,7 @@ function galleryStoragePath(publicUrl?: string) {
 }
 
 export function cleanVariants(variants: Variant[]) {
-  return variants.filter((variant) => variant.name_en.trim() && variant.price > 0)
+  return variants
+    .filter((variant) => variant.name_en.trim() && variant.price > 0)
+    .map((variant) => ({ id: variant.id, name_en: variant.name_en.trim(), price: variant.price }))
 }
