@@ -591,10 +591,12 @@ export function DashboardPage() {
                       <input disabled={saving} type="file" accept="image/png,image/jpeg,image/webp" onChange={(e) => e.target.files?.[0] && uploadCover(e.target.files[0])} />
                     </label>
                   </div>
-                  <label className="brand-color-row">{t('Brand color')}<input className="settings-color" type="color" value={previewColor} onChange={(e) => setColorDraft(e.target.value)} /></label>
-                  {/* Presets, not "themes": each one only sets this colour, and
-                      the design beside it is the thing an owner calls a theme. */}
-                  <div className="theme-presets"><b>{t('Colour presets')}</b><div>{[['#173f35', 'Cedar'], ['#b84d2f', 'Oven'], ['#7b4f34', 'Earth'], ['#244c70', 'Coast']].map(([color, name]) => <button type="button" key={color} onClick={() => setColorDraft(color)} className={previewColor === color ? 'selected' : ''}><i style={{ backgroundColor: color }} />{t(name)}</button>)}</div></div>
+                  <div className="brand-color-settings">
+                    <label className="brand-color-row">{t('Brand color')}<input className="settings-color" type="color" value={previewColor} onChange={(e) => setColorDraft(e.target.value)} /></label>
+                    {/* Presets, not "themes": each one only sets this colour, and
+                        the design beside it is the thing an owner calls a theme. */}
+                    <div className="theme-presets"><b>{t('Colour presets')}</b><div>{[['#173f35', 'Cedar'], ['#b84d2f', 'Oven'], ['#7b4f34', 'Earth'], ['#244c70', 'Coast']].map(([color, name]) => <button type="button" key={color} onClick={() => setColorDraft(color)} className={previewColor === color ? 'selected' : ''}><i style={{ backgroundColor: color }} />{t(name)}</button>)}</div></div>
+                  </div>
                 </section>
 
                 <section className="dashboard-card menu-photo-setting">
