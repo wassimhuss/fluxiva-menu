@@ -529,7 +529,8 @@ export function DashboardPage() {
                 <button className="mobile-section-card" onClick={() => { setPanel('design'); setDesignStep(1) }}><span className="mobile-section-icon"><Palette /></span><span><b>{t('Menu design')}</b><small>{t('Layout, photos and brand')}</small></span><DirectionalChevron /></button>
                 <button className="mobile-section-card" onClick={() => { setPanel('settings'); setSettingsStep(1) }}><span className="mobile-section-icon"><Settings /></span><span><b>{t('Restaurant settings')}</b><small>{t('Details, status and contact')}</small></span><DirectionalChevron /></button>
                 <button className="mobile-section-card mobile-section-card-analysis" onClick={() => setPanel('analysis')}><span className="mobile-section-icon"><Eye /></span><span><b>{t('Analysis')}</b><small>{t('Menu performance and opens')}</small></span><DirectionalChevron /></button>
-                <button className="mobile-section-card mobile-section-card-final" onClick={openQr}><span className="mobile-section-icon"><QrCode /></span><span><b>{t('QR code')}</b><small>{t('Download or print your menu QR')}</small></span><DirectionalChevron /></button>
+                <button className="mobile-section-card mobile-section-card-qr" onClick={openQr}><span className="mobile-section-icon"><QrCode /></span><span><b>{t('QR code')}</b><small>{t('Download or print your menu QR')}</small></span><DirectionalChevron /></button>
+                <Link className="mobile-section-card mobile-section-card-live" to={`/m/${menu.restaurant.slug}`} target="_blank" rel="noreferrer"><span className="mobile-section-icon"><ExternalLink /></span><span><b>{t('Live menu')}</b><small>{t('See what your customers see')}</small></span><ExternalLink /></Link>
               </div>
             </section>
             <div className="overview-columns">

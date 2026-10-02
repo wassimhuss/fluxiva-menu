@@ -54,6 +54,8 @@ const arabic: Record<string, string> = {
   'Layout, photos and brand': 'التخطيط والصور والهوية',
   'Details, status and contact': 'التفاصيل والحالة وبيانات التواصل',
   'Download or print your menu QR': 'نزّل رمز QR الخاص بقائمتك أو اطبعه',
+  'Live menu': 'القائمة المباشرة',
+  'See what your customers see': 'شاهد القائمة كما يراها زبائنك',
   'Back to overview': 'العودة إلى النظرة العامة',
   'Add menu item': 'إضافة صنف للقائمة',
   'Menu items': 'أصناف القائمة',

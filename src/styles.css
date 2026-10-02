@@ -501,22 +501,20 @@ html.menu-preview-document::-webkit-scrollbar,body.menu-preview-document::-webki
   .mobile-section-card-primary{background:var(--green);border-color:var(--green);color:#fff}
   .mobile-section-card-primary .mobile-section-icon{background:rgba(255,255,255,.14);color:#fff}
   .mobile-section-card-primary small,.mobile-section-card-primary>svg{color:#b6d0c7}
-  .mobile-section-card-final{grid-column:1/-1;min-height:82px;flex-direction:row;align-items:center;gap:11px}
-  .mobile-section-card-final>svg{inset-block-start:50%;inset-block-end:auto;transform:translateY(-50%)}
 }
 
 /* Final mobile overrides keep the launcher simple and app-like on narrow
-   screens, with square touch targets and a centered final card. */
+   screens, with six balanced square touch targets. */
 @media(max-width:600px){
   .mobile-section-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
-  .mobile-section-card,.mobile-section-card-final{aspect-ratio:1;min-height:0;flex-direction:column;align-items:flex-start;justify-content:center;gap:17px;padding:17px;border-radius:15px}
+  .mobile-section-card{aspect-ratio:1;min-height:0;flex-direction:column;align-items:flex-start;justify-content:center;gap:17px;padding:17px;border-radius:15px}
   .mobile-section-card{overflow:hidden;border:0;background:linear-gradient(155deg,#fff 0%,#f2f7f4 100%);box-shadow:0 8px 22px rgba(27,57,49,.07)}
   .mobile-section-card:before{display:none}
   .mobile-section-card-primary{background:linear-gradient(145deg,#1c5b4b,#173f35);border:0;color:#fff}
   .mobile-section-card-primary:before{display:none}
   .mobile-section-card-primary .mobile-section-icon{background:rgba(255,255,255,.14);border:0;color:#fff}
   .mobile-section-card-primary small,.mobile-section-card-primary>svg{color:#c3ddd4}
-  .mobile-section-card>svg,.mobile-section-card-final>svg{inset-block-start:auto;inset-block-end:14px;inset-inline-end:14px;width:27px;height:27px;padding:6px;border-radius:50%;background:#e5f0eb;color:#3d6f60;transform:none}
+  .mobile-section-card>svg{inset-block-start:auto;inset-block-end:14px;inset-inline-end:14px;width:27px;height:27px;padding:6px;border-radius:50%;background:#e5f0eb;color:#3d6f60;transform:none}
   .mobile-section-card>span:nth-child(2){gap:7px;padding-inline-end:36px}
   .mobile-section-card b{font-size:15px;line-height:1.2;letter-spacing:-.1px}
   .mobile-section-card small{font-size:11px;line-height:1.45;color:#71817a}
@@ -528,11 +526,10 @@ html.menu-preview-document::-webkit-scrollbar,body.menu-preview-document::-webki
   .mobile-section-card:nth-child(3):before{background:#9a8fd0}
   .mobile-section-card:nth-child(4) .mobile-section-icon{background:#fff7df;border-color:#f0e1ae;color:#96731c}
   .mobile-section-card:nth-child(4):before{background:#d9b94d}
-  .mobile-section-card-final{grid-column:1/-1;width:calc(50% - 5px);justify-self:center}
   .mobile-section-card-analysis .mobile-section-icon{background:#e9e5f8;border:0;color:#685c9b}
-  .mobile-section-card-final .mobile-section-icon{background:#fff7df;border:0;color:#96731c}
+  .mobile-section-card-qr .mobile-section-icon{background:#fff7df;border:0;color:#96731c}
+  .mobile-section-card-live .mobile-section-icon{background:#e7eff9;border:0;color:#496f99}
   .mobile-section-card-analysis:before{display:none}
-  .mobile-section-card-final:before{display:none}
   .overview-add-item{display:none}
   .overview-page-heading{display:none}
 }
