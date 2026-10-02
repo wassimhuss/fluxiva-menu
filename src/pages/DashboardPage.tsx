@@ -49,6 +49,7 @@ export function DashboardPage() {
   const [loading, setLoading] = useState(true)
   const [panel, setPanel] = useState<Panel>('overview')
   const [designStep, setDesignStep] = useState(1)
+  const [settingsStep, setSettingsStep] = useState(1)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const [categoryModal, setCategoryModal] = useState(false)
@@ -109,6 +110,7 @@ export function DashboardPage() {
   const DirectionalChevron = dashboardLanguage === 'ar' ? ChevronLeft : ChevronRight
   const BackChevron = dashboardLanguage === 'ar' ? ChevronRight : ChevronLeft
   const designSteps: Array<[number, string]> = [[1, 'Brand'], [2, 'Menu style'], [3, 'Preview & save']]
+  const settingsSteps: Array<[number, string]> = [[1, 'Basic details'], [2, 'Contact & hours'], [3, 'Menu settings']]
 
   useEffect(() => {
     if (!itemDraft.image_file) { setItemFilePreviewUrl(''); return }
@@ -506,7 +508,7 @@ export function DashboardPage() {
           <button className={panel === 'analysis' ? 'selected' : ''} onClick={() => setPanel('analysis')}><Eye /> {t('Analysis')}</button>
           <button className={panel === 'menu' ? 'selected' : ''} onClick={() => setPanel('menu')}><Menu /> {t('Menu editor')}</button>
           <button className={panel === 'design' ? 'selected' : ''} onClick={() => { setPanel('design'); setDesignStep(1) }}><Palette /> {t('Menu design')}</button>
-          <button className={panel === 'settings' ? 'selected' : ''} onClick={() => setPanel('settings')}><Settings /> {t('Restaurant settings')}</button>
+          <button className={panel === 'settings' ? 'selected' : ''} onClick={() => { setPanel('settings'); setSettingsStep(1) }}><Settings /> {t('Restaurant settings')}</button>
         </nav>
         <div className="sidebar-bottom"><Link to={`/m/${menu.restaurant.slug}`} target="_blank"><ExternalLink /> {t('Open public menu')}</Link><button onClick={async () => { await signOut(); navigate('/') }}><LogOut /> {t('Sign out')}</button>{adminRole && <Link className="platform-link" to="/platform"><ShieldCheck /> {t('Operator console')}</Link>}</div>
       </aside>
@@ -525,7 +527,7 @@ export function DashboardPage() {
               <div className="mobile-section-grid">
                 <button className="mobile-section-card mobile-section-card-primary" onClick={() => setPanel('menu')}><span className="mobile-section-icon"><Menu /></span><span><b>{t('Menu editor')}</b><small>{menu.items.length} {t('items')} · {menu.categories.length} {t('Categories').toLowerCase()}</small></span><DirectionalChevron /></button>
                 <button className="mobile-section-card" onClick={() => { setPanel('design'); setDesignStep(1) }}><span className="mobile-section-icon"><Palette /></span><span><b>{t('Menu design')}</b><small>{t('Layout, photos and brand')}</small></span><DirectionalChevron /></button>
-                <button className="mobile-section-card" onClick={() => setPanel('settings')}><span className="mobile-section-icon"><Settings /></span><span><b>{t('Restaurant settings')}</b><small>{t('Details, status and contact')}</small></span><DirectionalChevron /></button>
+                <button className="mobile-section-card" onClick={() => { setPanel('settings'); setSettingsStep(1) }}><span className="mobile-section-icon"><Settings /></span><span><b>{t('Restaurant settings')}</b><small>{t('Details, status and contact')}</small></span><DirectionalChevron /></button>
                 <button className="mobile-section-card" onClick={openQr}><span className="mobile-section-icon"><QrCode /></span><span><b>{t('QR code')}</b><small>{t('Download or print your menu QR')}</small></span><DirectionalChevron /></button>
                 <button className="mobile-section-card mobile-section-card-analysis" onClick={() => setPanel('analysis')}><span className="mobile-section-icon"><Eye /></span><span><b>{t('Analysis')}</b><small>{t('Menu performance and opens')}</small></span><DirectionalChevron /></button>
               </div>
@@ -668,54 +670,75 @@ export function DashboardPage() {
           </>}
 
           {panel === 'settings' && <>
-            <div className="page-heading"><div><span className="eyebrow"><span /> {t('Settings')}</span><h1>{t('Restaurant details.')}</h1><p>{t('Your name, contact details and menu status. Logo and colour live in Menu design.')}</p></div></div>
-            <form className="dashboard-card restaurant-settings-form" onSubmit={saveRestaurant}>
-              <div className="form-grid">
-                <label>{t('English name')}<input required value={menu.restaurant.name_en} onChange={(e) => restaurantField('name_en', e.target.value)} /></label>
-                <label dir="rtl">{t('Arabic name')}<input required value={menu.restaurant.name_ar} onChange={(e) => restaurantField('name_ar', e.target.value)} /></label>
-                <label>{t('English tagline')}<input value={menu.restaurant.description_en ?? ''} onChange={(e) => restaurantField('description_en', e.target.value)} placeholder="Fresh from our oven" /></label>
-                <label dir="rtl">{t('Arabic tagline')}<input value={menu.restaurant.description_ar ?? ''} onChange={(e) => restaurantField('description_ar', e.target.value)} placeholder="طازج من فرننا" /></label>
-                <label>{t('WhatsApp number')}<input value={menu.restaurant.whatsapp ?? ''} onChange={(e) => restaurantField('whatsapp', e.target.value)} placeholder="+961 70 123 456" /></label>
-                <label>{t('Instagram')}<input value={menu.restaurant.instagram ?? ''} onChange={(e) => restaurantField('instagram', e.target.value)} placeholder="@restaurant" /></label>
-                <label>{t('English address')}<textarea value={menu.restaurant.address_en ?? ''} onChange={(e) => restaurantField('address_en', e.target.value)} /></label>
-                <label dir="rtl">{t('Arabic address')}<textarea value={menu.restaurant.address_ar ?? ''} onChange={(e) => restaurantField('address_ar', e.target.value)} /></label>
-                <label>{t('English opening hours')}<input value={menu.restaurant.opening_hours ?? ''} onChange={(e) => restaurantField('opening_hours', e.target.value)} placeholder="Every day · 07:00 – 23:00" /></label>
-                <label dir="rtl">{t('Arabic opening hours')}<input value={menu.restaurant.opening_hours_ar ?? ''} onChange={(e) => restaurantField('opening_hours_ar', e.target.value)} placeholder="كل يوم · ٠٧:٠٠ – ٢٣:٠٠" /></label>
-                <label>
-                  {t('Menu currency')}
-                  <select value={currency} onChange={(e) => restaurantField('currency', e.target.value)}>
-                    <option value="LBP">{t('Lebanese pound (LBP)')}</option>
-                    <option value="USD">{t('US dollar (USD)')}</option>
-                  </select>
-                  {/* No rate is applied on the way through: there is no honest
-                      one, and rewriting every price silently would be worse
-                      than asking the owner to look. */}
-                  <small className="field-hint">{t('Changes the currency shown on your menu. Existing prices are not converted — check them after switching.')}</small>
-                </label>
-                <label className="closed-toggle"><span>{t('Menu status')}</span><button type="button" className={`status-switch ${menu.restaurant.temporarily_closed ? 'on' : ''}`} onClick={() => restaurantField('temporarily_closed', !menu.restaurant.temporarily_closed)}><i />{menu.restaurant.temporarily_closed ? t('Temporarily closed') : t('Open for customers')}</button></label>
-                {/* Ordering needs somewhere for the order to arrive, so the
-                    switch is unavailable until a WhatsApp number exists. The
-                    public menu applies the same rule independently. */}
-                <label className="closed-toggle">
-                  <span>{t('Takeaway orders')}</span>
-                  <button
-                    type="button"
-                    className={`status-switch ${menu.restaurant.takeaway_enabled ? 'on' : ''}`}
-                    disabled={!menu.restaurant.whatsapp}
-                    onClick={() => restaurantField('takeaway_enabled', !menu.restaurant.takeaway_enabled)}
-                  >
-                    <i />{menu.restaurant.takeaway_enabled ? t('Diners can send an order') : t('Menu only, no ordering')}
-                  </button>
-                  <small className="field-hint">
-                    {menu.restaurant.whatsapp
-                      ? t('Adds an order button to your menu. Orders arrive as a WhatsApp message you confirm yourself.')
-                      : t('Add a WhatsApp number above to take takeaway orders.')}
-                  </small>
-                </label>
-                <label>{t('Default language')}<select value={menu.restaurant.default_language} onChange={(e) => restaurantField('default_language', e.target.value)}><option value="en">{t('English')}</option><option value="ar">{t('Arabic')}</option></select></label>
+            <div className="page-heading restaurant-settings-page-heading"><div><span className="eyebrow"><span /> {t('Settings')}</span><h1>{t('Restaurant details.')}</h1><p>{t('Your name, contact details and menu status. Logo and colour live in Menu design.')}</p></div></div>
+            <form className="dashboard-card restaurant-settings-form" data-step={settingsStep} onSubmit={saveRestaurant}>
+              <div className="mobile-design-wizard mobile-settings-wizard" aria-label={t('Restaurant settings steps')}>
+                <div className="mobile-design-wizard-row">
+                  <button type="button" className="mobile-design-wizard-action" disabled={settingsStep === 1 || saving} onClick={() => setSettingsStep((step) => Math.max(1, step - 1))}><BackChevron />{t('Back')}</button>
+                  <div className="mobile-design-wizard-copy"><span>{t('Step')} {settingsStep} {t('of')} {settingsSteps.length}</span><b>{t(settingsSteps[settingsStep - 1][1])}</b></div>
+                  {settingsStep === settingsSteps.length
+                    ? <button key="save-settings" type="submit" className="mobile-design-wizard-action primary" disabled={saving}>{saving ? t('Saving…') : t('Save')}</button>
+                    : <button key="continue-settings" type="button" className="mobile-design-wizard-action primary" disabled={saving || (settingsStep === 1 && (!menu.restaurant.name_en.trim() || !menu.restaurant.name_ar.trim()))} onClick={() => setSettingsStep((step) => step + 1)}>{t('Continue')}<DirectionalChevron /></button>}
+                </div>
+                <div className="mobile-design-wizard-footer"><div className="mobile-design-wizard-track" aria-hidden="true"><span style={{ width: `${(settingsStep / settingsSteps.length) * 100}%` }} /></div></div>
               </div>
-              <div className="bilingual-preview"><div><span>{t('English preview')}</span><b style={{ color: menu.restaurant.primary_color }}>{menu.restaurant.name_en}</b><small>{menu.restaurant.description_en || 'Fresh from our oven.'}</small></div><div dir="rtl"><span>{t('Arabic preview')}</span><b style={{ color: menu.restaurant.primary_color }}>{menu.restaurant.name_ar}</b><small>{menu.restaurant.description_ar || 'طازج من فرننا.'}</small></div></div>
-              <button className="button button-primary" disabled={saving}>{saving ? t('Saving…') : t('Save restaurant details')}</button>
+              <div className="form-grid">
+                <section className={`settings-step settings-step-basic ${settingsStep === 1 ? 'active' : ''}`}>
+                  <div className="settings-step-heading"><h2>{t('Basic details')}</h2><p>{t('Names and short descriptions shown on your menu.')}</p></div>
+                  <label>{t('English name')}<input required value={menu.restaurant.name_en} onChange={(e) => restaurantField('name_en', e.target.value)} /></label>
+                  <label dir="rtl">{t('Arabic name')}<input required value={menu.restaurant.name_ar} onChange={(e) => restaurantField('name_ar', e.target.value)} /></label>
+                  <label>{t('English tagline')}<input value={menu.restaurant.description_en ?? ''} onChange={(e) => restaurantField('description_en', e.target.value)} placeholder="Fresh from our oven" /></label>
+                  <label dir="rtl">{t('Arabic tagline')}<input value={menu.restaurant.description_ar ?? ''} onChange={(e) => restaurantField('description_ar', e.target.value)} placeholder="طازج من فرننا" /></label>
+                  <div className="bilingual-preview settings-basic-preview"><div><span>{t('English preview')}</span><b style={{ color: menu.restaurant.primary_color }}>{menu.restaurant.name_en}</b><small>{menu.restaurant.description_en || 'Fresh from our oven.'}</small></div><div dir="rtl"><span>{t('Arabic preview')}</span><b style={{ color: menu.restaurant.primary_color }}>{menu.restaurant.name_ar}</b><small>{menu.restaurant.description_ar || 'طازج من فرننا.'}</small></div></div>
+                </section>
+
+                <section className={`settings-step settings-step-contact ${settingsStep === 2 ? 'active' : ''}`}>
+                  <div className="settings-step-heading"><h2>{t('Contact & hours')}</h2><p>{t('How customers find and contact your restaurant.')}</p></div>
+                  <label>{t('WhatsApp number')}<input value={menu.restaurant.whatsapp ?? ''} onChange={(e) => restaurantField('whatsapp', e.target.value)} placeholder="+961 70 123 456" /></label>
+                  <label>{t('Instagram')}<input value={menu.restaurant.instagram ?? ''} onChange={(e) => restaurantField('instagram', e.target.value)} placeholder="@restaurant" /></label>
+                  <label>{t('English address')}<textarea value={menu.restaurant.address_en ?? ''} onChange={(e) => restaurantField('address_en', e.target.value)} /></label>
+                  <label dir="rtl">{t('Arabic address')}<textarea value={menu.restaurant.address_ar ?? ''} onChange={(e) => restaurantField('address_ar', e.target.value)} /></label>
+                  <label>{t('English opening hours')}<input value={menu.restaurant.opening_hours ?? ''} onChange={(e) => restaurantField('opening_hours', e.target.value)} placeholder="Every day · 07:00 – 23:00" /></label>
+                  <label dir="rtl">{t('Arabic opening hours')}<input value={menu.restaurant.opening_hours_ar ?? ''} onChange={(e) => restaurantField('opening_hours_ar', e.target.value)} placeholder="كل يوم · ٠٧:٠٠ – ٢٣:٠٠" /></label>
+                </section>
+
+                <section className={`settings-step settings-step-menu ${settingsStep === 3 ? 'active' : ''}`}>
+                  <div className="settings-step-heading"><h2>{t('Menu settings')}</h2><p>{t('Currency, availability, ordering and language.')}</p></div>
+                  <label>
+                    {t('Menu currency')}
+                    <select value={currency} onChange={(e) => restaurantField('currency', e.target.value)}>
+                      <option value="LBP">{t('Lebanese pound (LBP)')}</option>
+                      <option value="USD">{t('US dollar (USD)')}</option>
+                    </select>
+                    {/* No rate is applied on the way through: there is no honest
+                        one, and rewriting every price silently would be worse
+                        than asking the owner to look. */}
+                    <small className="field-hint">{t('Changes the currency shown on your menu. Existing prices are not converted — check them after switching.')}</small>
+                  </label>
+                  <label className="closed-toggle"><span>{t('Menu status')}</span><button type="button" className={`status-switch ${menu.restaurant.temporarily_closed ? 'danger' : 'positive'}`} onClick={() => restaurantField('temporarily_closed', !menu.restaurant.temporarily_closed)}><i />{menu.restaurant.temporarily_closed ? t('Temporarily closed') : t('Open for customers')}</button></label>
+                  {/* Ordering needs somewhere for the order to arrive, so the
+                      switch is unavailable until a WhatsApp number exists. The
+                      public menu applies the same rule independently. */}
+                  <label className="closed-toggle">
+                    <span>{t('Takeaway orders')}</span>
+                    <button
+                      type="button"
+                      className={`status-switch ${menu.restaurant.takeaway_enabled ? 'positive' : ''}`}
+                      disabled={!menu.restaurant.whatsapp}
+                      onClick={() => restaurantField('takeaway_enabled', !menu.restaurant.takeaway_enabled)}
+                    >
+                      <i />{menu.restaurant.takeaway_enabled ? t('Diners can send an order') : t('Menu only, no ordering')}
+                    </button>
+                    <small className="field-hint">
+                      {menu.restaurant.whatsapp
+                        ? t('Adds an order button to your menu. Orders arrive as a WhatsApp message you confirm yourself.')
+                        : t('Add a WhatsApp number in Contact & hours to take takeaway orders.')}
+                    </small>
+                  </label>
+                  <label>{t('Default language')}<select value={menu.restaurant.default_language} onChange={(e) => restaurantField('default_language', e.target.value)}><option value="en">{t('English')}</option><option value="ar">{t('Arabic')}</option></select></label>
+                </section>
+              </div>
+              <button className="button button-primary restaurant-settings-save" disabled={saving}>{saving ? t('Saving…') : t('Save restaurant details')}</button>
             </form>
           </>}
         </div>
