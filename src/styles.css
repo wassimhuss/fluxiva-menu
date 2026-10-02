@@ -400,7 +400,12 @@ html.menu-preview-document::-webkit-scrollbar,body.menu-preview-document::-webki
 .analysis-card{overflow:hidden;margin-bottom:18px}
 .analysis-body{padding:16px}
 .analysis-body .overview-grid{gap:12px}
-.analysis-body .overview-views{margin:16px 0 0}
+.analysis-body .overview-views{margin:0 0 18px}
+.analysis-summary-heading{margin:2px 2px 12px}
+.analysis-summary-heading h2{margin:0;font-size:15px}
+.analysis-summary-heading p{margin:4px 0 0;color:var(--muted);font-size:10px}
+.analysis-subscription{background:#fff8f3;border-color:#efd8ca}
+.analysis-subscription>span,.analysis-subscription small{color:#966047}
 
 @media(max-width:900px){.dashboard-layout[dir="rtl"] .dashboard-sidebar{left:auto;right:-270px}.dashboard-layout[dir="rtl"] .dashboard-sidebar.open{left:auto;right:0}.dashboard-layout[dir="rtl"] .mobile-menu{margin-left:12px;margin-right:0}}
 /* Out of the flow on purpose. These cards are a fixed height and the content column is a flex box, so an ordering row in normal flow did not overflow — it shrank the description to a 7px sliver and sliced the text through the middle. Positioned in the corner it already occupied, it costs no height. */
@@ -465,8 +470,22 @@ html.menu-preview-document::-webkit-scrollbar,body.menu-preview-document::-webki
   .dashboard-header>div:first-of-type b{max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .dashboard-header>div:first-of-type span{font-size:8px}
   .overview-columns{display:none}
-  .analysis-body{padding:12px}
-  .analysis-body .stat-card{padding:14px}
+  .analysis-page-heading{margin-bottom:18px}
+  .analysis-page-heading .eyebrow{margin-bottom:7px}
+  .analysis-page-heading h1{margin-top:0;font-size:27px;line-height:1.12}
+  .analysis-page-heading p{max-width:32ch;font-size:11px;line-height:1.5}
+  .analysis-card{overflow:visible;border:0;background:transparent}
+  .analysis-body{padding:0}
+  .analysis-body .overview-views{margin-bottom:18px}
+  .analysis-summary-heading{margin:0 1px 10px}
+  .analysis-summary-heading h2{font-size:14px}
+  .analysis-summary-grid{gap:9px}
+  .analysis-body .stat-card{min-height:112px;padding:15px;border-radius:14px}
+  .analysis-body .stat-card strong{font-size:30px;margin-top:auto}
+  .analysis-body .analysis-subscription{grid-column:1/-1;min-height:88px;display:grid;grid-template-columns:1fr auto;align-items:center;gap:3px 16px}
+  .analysis-body .analysis-subscription>span{grid-column:1}
+  .analysis-body .analysis-subscription>strong{grid-column:2;grid-row:1/3;margin:0;font-size:25px;text-align:end}
+  .analysis-body .analysis-subscription>small{grid-column:1;margin:0}
   .mobile-section-hub{display:block;margin:7px 0 22px}
   .mobile-section-hub-heading{margin-bottom:13px}
   .mobile-section-hub-heading h2{font-family:'Playfair Display',serif;font-size:23px;line-height:1.15;margin:8px 0 5px}
@@ -482,22 +501,22 @@ html.menu-preview-document::-webkit-scrollbar,body.menu-preview-document::-webki
   .mobile-section-card-primary{background:var(--green);border-color:var(--green);color:#fff}
   .mobile-section-card-primary .mobile-section-icon{background:rgba(255,255,255,.14);color:#fff}
   .mobile-section-card-primary small,.mobile-section-card-primary>svg{color:#b6d0c7}
-  .mobile-section-card-analysis{grid-column:1/-1;min-height:82px;flex-direction:row;align-items:center;gap:11px}
-  .mobile-section-card-analysis>svg{inset-block-start:50%;inset-block-end:auto;transform:translateY(-50%)}
+  .mobile-section-card-final{grid-column:1/-1;min-height:82px;flex-direction:row;align-items:center;gap:11px}
+  .mobile-section-card-final>svg{inset-block-start:50%;inset-block-end:auto;transform:translateY(-50%)}
 }
 
 /* Final mobile overrides keep the launcher simple and app-like on narrow
    screens, with square touch targets and a centered final card. */
 @media(max-width:600px){
   .mobile-section-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
-  .mobile-section-card,.mobile-section-card-analysis{aspect-ratio:1;min-height:0;flex-direction:column;align-items:flex-start;justify-content:center;gap:17px;padding:17px;border-radius:15px}
+  .mobile-section-card,.mobile-section-card-final{aspect-ratio:1;min-height:0;flex-direction:column;align-items:flex-start;justify-content:center;gap:17px;padding:17px;border-radius:15px}
   .mobile-section-card{overflow:hidden;border:0;background:linear-gradient(155deg,#fff 0%,#f2f7f4 100%);box-shadow:0 8px 22px rgba(27,57,49,.07)}
   .mobile-section-card:before{display:none}
   .mobile-section-card-primary{background:linear-gradient(145deg,#1c5b4b,#173f35);border:0;color:#fff}
   .mobile-section-card-primary:before{display:none}
   .mobile-section-card-primary .mobile-section-icon{background:rgba(255,255,255,.14);border:0;color:#fff}
   .mobile-section-card-primary small,.mobile-section-card-primary>svg{color:#c3ddd4}
-  .mobile-section-card>svg,.mobile-section-card-analysis>svg{inset-block-start:auto;inset-block-end:14px;inset-inline-end:14px;width:27px;height:27px;padding:6px;border-radius:50%;background:#e5f0eb;color:#3d6f60;transform:none}
+  .mobile-section-card>svg,.mobile-section-card-final>svg{inset-block-start:auto;inset-block-end:14px;inset-inline-end:14px;width:27px;height:27px;padding:6px;border-radius:50%;background:#e5f0eb;color:#3d6f60;transform:none}
   .mobile-section-card>span:nth-child(2){gap:7px;padding-inline-end:36px}
   .mobile-section-card b{font-size:15px;line-height:1.2;letter-spacing:-.1px}
   .mobile-section-card small{font-size:11px;line-height:1.45;color:#71817a}
@@ -509,9 +528,11 @@ html.menu-preview-document::-webkit-scrollbar,body.menu-preview-document::-webki
   .mobile-section-card:nth-child(3):before{background:#9a8fd0}
   .mobile-section-card:nth-child(4) .mobile-section-icon{background:#fff7df;border-color:#f0e1ae;color:#96731c}
   .mobile-section-card:nth-child(4):before{background:#d9b94d}
-  .mobile-section-card-analysis{grid-column:1/-1;width:calc(50% - 5px);justify-self:center}
+  .mobile-section-card-final{grid-column:1/-1;width:calc(50% - 5px);justify-self:center}
   .mobile-section-card-analysis .mobile-section-icon{background:#e9e5f8;border:0;color:#685c9b}
+  .mobile-section-card-final .mobile-section-icon{background:#fff7df;border:0;color:#96731c}
   .mobile-section-card-analysis:before{display:none}
+  .mobile-section-card-final:before{display:none}
   .overview-add-item{display:none}
   .overview-page-heading{display:none}
 }

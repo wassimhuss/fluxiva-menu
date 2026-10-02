@@ -528,8 +528,8 @@ export function DashboardPage() {
                 <button className="mobile-section-card mobile-section-card-primary" onClick={() => setPanel('menu')}><span className="mobile-section-icon"><Menu /></span><span><b>{t('Menu editor')}</b><small>{menu.items.length} {t('items')} · {menu.categories.length} {t('Categories').toLowerCase()}</small></span><DirectionalChevron /></button>
                 <button className="mobile-section-card" onClick={() => { setPanel('design'); setDesignStep(1) }}><span className="mobile-section-icon"><Palette /></span><span><b>{t('Menu design')}</b><small>{t('Layout, photos and brand')}</small></span><DirectionalChevron /></button>
                 <button className="mobile-section-card" onClick={() => { setPanel('settings'); setSettingsStep(1) }}><span className="mobile-section-icon"><Settings /></span><span><b>{t('Restaurant settings')}</b><small>{t('Details, status and contact')}</small></span><DirectionalChevron /></button>
-                <button className="mobile-section-card" onClick={openQr}><span className="mobile-section-icon"><QrCode /></span><span><b>{t('QR code')}</b><small>{t('Download or print your menu QR')}</small></span><DirectionalChevron /></button>
                 <button className="mobile-section-card mobile-section-card-analysis" onClick={() => setPanel('analysis')}><span className="mobile-section-icon"><Eye /></span><span><b>{t('Analysis')}</b><small>{t('Menu performance and opens')}</small></span><DirectionalChevron /></button>
+                <button className="mobile-section-card mobile-section-card-final" onClick={openQr}><span className="mobile-section-icon"><QrCode /></span><span><b>{t('QR code')}</b><small>{t('Download or print your menu QR')}</small></span><DirectionalChevron /></button>
               </div>
             </section>
             <div className="overview-columns">
@@ -539,15 +539,19 @@ export function DashboardPage() {
           </>}
 
           {panel === 'analysis' && <>
-            <div className="page-heading"><div><span className="eyebrow"><span /> {t('Analysis')}</span><h1>{t('Your menu performance at a glance.')}</h1><p>{t('Track your menu size, availability, subscription and customer opens.')}</p></div></div>
+            <div className="page-heading analysis-page-heading"><div><span className="eyebrow"><span /> {t('Analysis')}</span><h1>{t('Customer activity.')}</h1><p>{t('See how often customers open your menu and what they can see.')}</p></div></div>
             <section className="analysis-card dashboard-card" aria-labelledby="analysis-title">
               <div className="analysis-body">
-                <div className="overview-grid">
-                  <article className="stat-card"><span>{t('Menu items')}</span><strong>{menu.items.length}</strong><small>{menu.items.filter((item) => item.available).length} {t('currently visible')}</small></article>
-                  <article className="stat-card"><span>{t('Categories')}</span><strong>{menu.categories.length}</strong><small>{t('Organize your menu')}</small></article>
-                  <article className="stat-card accent"><span>{subscriptionLabel}</span><strong>{subscriptionValue}</strong><small>{subscriptionNote}</small></article>
-                </div>
                 {viewStats && <div className="overview-views"><MenuViews stats={viewStats} language={dashboardLanguage} /></div>}
+                <div className="analysis-summary-heading">
+                  <h2 id="analysis-title">{t('Menu summary')}</h2>
+                  <p>{t('What customers can see right now.')}</p>
+                </div>
+                <div className="overview-grid analysis-summary-grid">
+                  <article className="stat-card"><span>{t('Visible items')}</span><strong>{menu.items.filter((item) => item.available).length}</strong><small>{menu.items.length} {t('total items')}</small></article>
+                  <article className="stat-card"><span>{t('Categories')}</span><strong>{menu.categories.length}</strong><small>{t('Menu sections')}</small></article>
+                  <article className="stat-card analysis-subscription"><span>{subscriptionLabel}</span><strong>{subscriptionValue}</strong><small>{subscriptionNote}</small></article>
+                </div>
               </div>
             </section>
           </>}
