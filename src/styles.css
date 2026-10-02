@@ -511,6 +511,13 @@ html.menu-preview-document::-webkit-scrollbar,body.menu-preview-document::-webki
   .dashboard-layout[dir="rtl"] .mobile-section-card>span:nth-child(2){padding-inline-end:8px;padding-inline-start:36px}
 }
 
+@media(max-width:600px){
+  .menu-design-page-heading{display:flex;flex-direction:column;align-items:stretch;gap:12px;margin-bottom:16px}
+  .menu-design-page-heading h1{max-width:none;font-size:28px;line-height:1.12}
+  .menu-design-page-heading p{max-width:300px}
+  .page-heading>.design-save-button{align-self:stretch;width:100%;min-height:42px;padding:10px 13px;font-size:11px;white-space:nowrap}
+}
+
 /* The menu editor is the most frequent mobile workflow. Keep its hierarchy
    calm: one compact heading, three clear actions, and focused item rows. */
 @media(max-width:600px){

@@ -513,9 +513,9 @@ export function DashboardPage() {
           </>}
 
           {panel === 'design' && <>
-            <div className="page-heading">
+            <div className="page-heading menu-design-page-heading">
               <div><span className="eyebrow"><span /> {t('Menu design')}</span><h1>{t('Choose how your menu looks.')}</h1><p>{t('Layout, photos, logo and colour. Every design shows the same items.')}</p></div>
-              <button className="button button-primary" disabled={saving || !designDirty} onClick={() => saveDesign(previewTemplate, previewColor, previewShowItemImages)}>
+              <button className="button button-primary design-save-button" disabled={saving || !designDirty} onClick={() => saveDesign(previewTemplate, previewColor, previewShowItemImages)}>
                 {!designDirty ? t('Design in use') : saving ? t('Saving…') : t('Save design')}
               </button>
             </div>
