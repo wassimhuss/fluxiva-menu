@@ -106,6 +106,7 @@ export function DashboardPage() {
   useEffect(() => () => window.clearTimeout(successTimer.current), [])
 
   const DirectionalChevron = dashboardLanguage === 'ar' ? ChevronLeft : ChevronRight
+  const BackChevron = dashboardLanguage === 'ar' ? ChevronRight : ChevronLeft
   const designSteps: Array<[number, string]> = [[1, 'Brand'], [2, 'Menu style'], [3, 'Preview & save']]
 
   useEffect(() => {
@@ -521,12 +522,13 @@ export function DashboardPage() {
                 {!designDirty ? t('Design in use') : saving ? t('Saving…') : t('Save design')}
               </button>
             </div>
-            <div className="mobile-design-progress" aria-label={t('Menu design steps')}>
-              {designSteps.map(([step, label]) => <div key={step} className={designStep === step ? 'current' : designStep > step ? 'complete' : ''} aria-current={designStep === step ? 'step' : undefined}><span>{step}</span><b>{t(label)}</b></div>)}
-            </div>
-            <div className="mobile-design-navigation">
-              <button type="button" className="button button-outline" disabled={designStep === 1} onClick={() => setDesignStep((step) => Math.max(1, step - 1))}>{t('Back')}</button>
-              <button type="button" className="button button-primary" disabled={saving || (designStep === 3 && !designDirty)} onClick={() => designStep < 3 ? setDesignStep((step) => step + 1) : void saveDesign(previewTemplate, previewColor, previewShowItemImages)}>{designStep === 3 ? (saving ? t('Saving…') : designDirty ? t('Save design') : t('Design in use')) : t('Continue')}</button>
+            <div className="mobile-design-wizard" aria-label={t('Menu design steps')}>
+              <div className="mobile-design-wizard-row">
+                <button type="button" className="mobile-design-wizard-action" disabled={designStep === 1} onClick={() => setDesignStep((step) => Math.max(1, step - 1))}><BackChevron />{t('Back')}</button>
+                <div className="mobile-design-wizard-copy"><span>{t('Step')} {designStep} {t('of')} {designSteps.length}</span><b>{t(designSteps[designStep - 1][1])}</b></div>
+                <button type="button" className="mobile-design-wizard-action primary" disabled={saving || (designStep === 3 && !designDirty)} onClick={() => designStep < 3 ? setDesignStep((step) => step + 1) : void saveDesign(previewTemplate, previewColor, previewShowItemImages)}>{designStep === 3 ? (saving ? t('Saving…') : designDirty ? t('Save design') : t('Saved')) : t('Continue')}<DirectionalChevron /></button>
+              </div>
+              <div className="mobile-design-wizard-track" aria-hidden="true"><span style={{ width: `${(designStep / designSteps.length) * 100}%` }} /></div>
             </div>
             <div className="design-layout" data-step={designStep}>
               <div className="design-choices">

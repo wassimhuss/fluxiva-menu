@@ -353,7 +353,7 @@
 .template-card small{font-size:12.5px;line-height:1.5;color:var(--muted)}
 .template-scroll{font-size:11px;font-weight:600;color:var(--green-2);background:#edf3f0;border-radius:999px;padding:5px 10px}
 .template-photo-note{font-size:10px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:#9a6048}
-.mobile-design-progress,.mobile-design-navigation{display:none}
+.mobile-design-wizard{display:none}
 .menu-photo-setting{display:flex;align-items:center;justify-content:space-between;gap:22px;padding:20px 22px}
 .menu-photo-setting-copy{display:flex;align-items:center;gap:14px;min-width:0}
 .menu-photo-setting-icon{width:42px;height:42px;flex:none;display:grid;place-items:center;border-radius:12px;background:#edf3f0;color:var(--green)}
@@ -513,30 +513,47 @@ html.menu-preview-document::-webkit-scrollbar,body.menu-preview-document::-webki
 }
 
 @media(max-width:600px){
-  .menu-design-page-heading{display:flex;flex-direction:column;align-items:stretch;gap:12px;margin-bottom:16px}
-  .menu-design-page-heading h1{max-width:none;font-size:28px;line-height:1.12}
-  .menu-design-page-heading p{max-width:300px}
+  .menu-design-page-heading{display:flex;flex-direction:column;align-items:stretch;gap:10px;margin-bottom:14px}
+  .menu-design-page-heading h1{max-width:none;font-size:26px;line-height:1.12}
+  .menu-design-page-heading p{display:none}
   .page-heading>.design-save-button{display:none}
-  .mobile-design-progress{position:relative;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0;margin:0 0 10px}
-  .mobile-design-progress:before{content:"";position:absolute;inset-inline:16%;top:13px;height:2px;background:#dfe7e2}
-  .mobile-design-progress>div{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:6px;min-width:0;color:#87948e;text-align:center}
-  .mobile-design-progress>div span{display:grid;place-items:center;width:27px;height:27px;border:2px solid #dfe7e2;border-radius:50%;background:#f7f8f5;color:#7d8b84;font-size:11px;font-weight:800}
-  .mobile-design-progress>div b{font-size:10px;line-height:1.25;font-weight:700}
-  .mobile-design-progress>div.current{color:var(--green)}
-  .mobile-design-progress>div.current span,.mobile-design-progress>div.complete span{border-color:var(--green);background:var(--green);color:#fff}
-  .mobile-design-progress>div.complete{color:#426b60}
+  .mobile-design-wizard{position:sticky;top:70px;z-index:8;display:block;margin:0 0 14px;padding:11px 12px 10px;border:1px solid rgba(23,63,53,.1);border-radius:15px;background:rgba(255,255,255,.96);box-shadow:0 10px 26px rgba(23,63,53,.09);backdrop-filter:blur(14px)}
+  .mobile-design-wizard-row{display:grid;grid-template-columns:minmax(74px,auto) minmax(0,1fr) minmax(82px,auto);align-items:center;gap:8px}
+  .mobile-design-wizard-action{min-width:0;height:36px;padding:0 9px;border:0;border-radius:10px;background:#eef3f0;color:#426b60;display:flex;align-items:center;justify-content:center;gap:4px;font-size:10px;font-weight:800;white-space:nowrap}
+  .mobile-design-wizard-action svg{width:14px;height:14px}
+  .mobile-design-wizard-action.primary{background:var(--green);color:#fff}
+  .mobile-design-wizard-action:disabled{opacity:.42}
+  .mobile-design-wizard-copy{display:flex;min-width:0;flex-direction:column;align-items:center;text-align:center}
+  .mobile-design-wizard-copy span{color:#8a9892;font-size:8px;font-weight:800;letter-spacing:.65px;text-transform:uppercase}
+  .mobile-design-wizard-copy b{max-width:100%;margin-top:2px;overflow:hidden;color:var(--ink);font-size:11px;text-overflow:ellipsis;white-space:nowrap}
+  .mobile-design-wizard-track{height:4px;margin-top:10px;overflow:hidden;border-radius:999px;background:#e6ece8}
+  .mobile-design-wizard-track span{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,var(--green),#5c917f);transition:width .25s ease}
   .design-layout{display:flex;flex-direction:column;gap:14px}
   .design-layout[data-step="1"] .menu-photo-setting,.design-layout[data-step="1"] .template-grid,.design-layout[data-step="1"] .template-preview{display:none}
   .design-layout[data-step="2"] .brand-card,.design-layout[data-step="2"] .template-preview{display:none}
   .design-layout[data-step="3"] .brand-card,.design-layout[data-step="3"] .menu-photo-setting,.design-layout[data-step="3"] .template-grid{display:none}
-  .template-preview{order:-1;padding:14px;border-radius:16px}
+  .brand-card{overflow:visible;border:0;background:transparent;padding:0}
+  .brand-card>.card-heading{display:none}
+  .brand-card .settings-brand,.brand-card .cover-setting,.brand-card .brand-color-row,.brand-card .theme-presets{border:1px solid #e3e8e4;border-radius:16px;background:#fff;box-shadow:0 7px 20px rgba(23,63,53,.055)}
+  .brand-card .settings-brand{padding:14px}
+  .brand-card .cover-setting{gap:12px;margin-top:10px;padding:14px}
+  .brand-card .brand-color-row{margin-top:10px;padding:13px 14px}
+  .brand-card .theme-presets{margin-top:10px;padding:14px}
+  .brand-card .theme-presets>div{gap:7px}
+  .brand-card .theme-presets button{padding:7px 9px}
+  .template-grid{gap:9px}
+  .template-card{gap:6px;padding:13px 14px;border:0;border-radius:14px;box-shadow:0 7px 20px rgba(23,63,53,.065)}
+  .template-card.selected{box-shadow:0 0 0 2px var(--green),0 10px 25px rgba(23,63,53,.12)}
+  .template-card-head b{font-size:14px}
+  .template-card small{display:-webkit-box;overflow:hidden;font-size:11px;line-height:1.4;-webkit-box-orient:vertical;-webkit-line-clamp:2}
+  .template-scroll{max-width:100%;overflow:hidden;padding:4px 8px;font-size:9px;text-overflow:ellipsis;white-space:nowrap}
+  .template-photo-note{font-size:9px}
+  .template-preview{order:-1;padding:14px;border:0;border-radius:16px;box-shadow:0 8px 24px rgba(23,63,53,.08)}
   .template-preview .card-heading{padding:2px 0 11px;margin-bottom:12px}
   .template-preview .card-heading h2{font-size:14px}
   .template-preview .card-heading p{font-size:10px;margin-top:4px}
   .preview-phone{width:min(100%,210px);aspect-ratio:9/17;border-width:6px;border-radius:22px}
   .template-preview .button{margin-top:12px}
-  .mobile-design-navigation{display:grid;grid-template-columns:minmax(0,.75fr) minmax(0,1.25fr);gap:8px;margin-top:14px}
-  .mobile-design-navigation .button{min-height:44px;padding:10px 12px;justify-content:center;font-size:11px}
 }
 
 /* The menu editor is the most frequent mobile workflow. Keep its hierarchy
