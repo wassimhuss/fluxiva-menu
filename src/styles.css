@@ -606,3 +606,10 @@ html.menu-preview-document::-webkit-scrollbar,body.menu-preview-document::-webki
 .language-toggle button:active,
 .footer-contact-item:active{transform:scale(.96);opacity:.82}
 @media (prefers-reduced-motion: reduce){.category-tabs button:active,.variant-buttons button:active,.language-toggle button:active,.footer-contact-item:active{transform:none}}
+
+.preview-save-modal>p{line-height:1.65}
+.preview-save-actions .button{flex:1}
+@media(max-width:600px){
+  .preview-save-actions{flex-direction:column}
+  .preview-save-actions .button{width:100%}
+}

@@ -77,6 +77,7 @@ export function DashboardPage() {
   // Null means the saved preference is still the source of truth.
   const [imageVisibilityDraft, setImageVisibilityDraft] = useState<boolean | null>(null)
   const [imageVisibilityConfirmation, setImageVisibilityConfirmation] = useState<boolean | null>(null)
+  const [previewConfirmationOpen, setPreviewConfirmationOpen] = useState(false)
   const [qrData, setQrData] = useState('')
   const [qrSvg, setQrSvg] = useState('')
   const [saving, setSaving] = useState(false)
@@ -240,15 +241,19 @@ export function DashboardPage() {
    * Saves the layout, brand colour and photo preference atomically because the
    * owner experiences them as one menu-design choice.
    */
-  async function saveDesign(templateId: string, color: string, showItemImages: boolean) {
-    if (!menu) return
+  async function saveDesign(templateId: string, color: string, showItemImages: boolean): Promise<boolean> {
+    if (!menu) return false
     setSaving(true); setError('')
     try {
       await updateRestaurant(menu.restaurant.id, { template_id: templateId, primary_color: color, show_item_images: showItemImages })
       setMenu({ ...menu, restaurant: { ...menu.restaurant, template_id: templateId, primary_color: color, show_item_images: showItemImages } })
       setTemplateDraft(''); setColorDraft(''); setImageVisibilityDraft(null)
       showSuccess(dashboardText(dashboardLanguage, 'Menu design updated.'))
-    } catch (caught) { setError(caught instanceof Error ? caught.message : dashboardText(dashboardLanguage, 'Could not save the design')) }
+      return true
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : dashboardText(dashboardLanguage, 'Could not save the design'))
+      return false
+    }
     finally { setSaving(false) }
   }
 
@@ -429,6 +434,7 @@ export function DashboardPage() {
   const liveShowItemImages = menu.restaurant.show_item_images !== false
   const previewShowItemImages = imageVisibilityDraft ?? liveShowItemImages
   const designDirty = previewTemplate !== liveTemplate || previewColor !== menu.restaurant.primary_color || previewShowItemImages !== liveShowItemImages
+  const fullPreviewUrl = `/m/${menu.restaurant.slug}?template=${previewTemplate}&color=${encodeURIComponent(previewColor)}&images=${previewShowItemImages ? '1' : '0'}&preview=1`
   const availableTemplates = previewShowItemImages ? TEMPLATES : TEMPLATES.filter((template) => !template.requiresItemImages)
   const selectedTemplate = TEMPLATES.find((template) => template.id === previewTemplate) ?? TEMPLATES[0]
   const currentDesignStepDirty = designStep === 1
@@ -441,6 +447,28 @@ export function DashboardPage() {
     if (designStep === 1) setColorDraft('')
     else if (designStep === 2) { setTemplateDraft(''); setImageVisibilityDraft(null) }
     else { setTemplateDraft(''); setColorDraft(''); setImageVisibilityDraft(null) }
+  }
+
+  function continueToPreview() {
+    setPreviewConfirmationOpen(false)
+    window.open(fullPreviewUrl, '_blank', 'noopener,noreferrer')
+  }
+
+  async function saveAndOpenPreview() {
+    // Open the tab during the click itself so browsers do not block it after
+    // the asynchronous save finishes.
+    const previewWindow = window.open('about:blank', '_blank')
+    if (previewWindow) previewWindow.opener = null
+
+    const saved = await saveDesign(previewTemplate, previewColor, previewShowItemImages)
+    if (!saved) {
+      previewWindow?.close()
+      return
+    }
+
+    setPreviewConfirmationOpen(false)
+    if (previewWindow) previewWindow.location.href = fullPreviewUrl
+    else window.location.assign(fullPreviewUrl)
   }
   const imageConfirmationCopy = {
     eyebrow: localText(dashboardLanguage, 'Confirm menu change', 'تأكيد تغيير القائمة'),
@@ -618,9 +646,19 @@ export function DashboardPage() {
                 </div>
                 <div className="preview-phone">
                   {/* Keyed so switching design reloads the frame rather than leaving the old one. */}
-                  <iframe key={`${previewTemplate}|${previewColor}|${previewShowItemImages}`} title={t('Menu design preview')} scrolling="no" src={`/m/${menu.restaurant.slug}?template=${previewTemplate}&color=${encodeURIComponent(previewColor)}&images=${previewShowItemImages ? '1' : '0'}&preview=1`} />
+                  <iframe key={`${previewTemplate}|${previewColor}|${previewShowItemImages}`} title={t('Menu design preview')} scrolling="no" src={fullPreviewUrl} />
                 </div>
-                <Link className="button button-small button-outline full mobile-preview-launch" to={`/m/${menu.restaurant.slug}?template=${previewTemplate}&color=${encodeURIComponent(previewColor)}&images=${previewShowItemImages ? '1' : '0'}&preview=1`} target="_blank">
+                <Link
+                  className="button button-small button-outline full mobile-preview-launch"
+                  to={fullPreviewUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={(event) => {
+                    if (!designDirty) return
+                    event.preventDefault()
+                    setPreviewConfirmationOpen(true)
+                  }}
+                >
                   {t('Open full preview')} <ExternalLink />
                 </Link>
               </aside>
@@ -682,6 +720,8 @@ export function DashboardPage() {
       </section>
 
       {imageVisibilityConfirmation !== null && <div className="modal-backdrop"><div className="modal-card image-toggle-modal" role="dialog" aria-modal="true" aria-labelledby="image-toggle-title" dir={dashboardLanguage === 'ar' ? 'rtl' : 'ltr'}><button type="button" className="modal-close" aria-label={imageConfirmationCopy.close} onClick={() => setImageVisibilityConfirmation(null)}><X /></button><span className="eyebrow"><span /> {imageConfirmationCopy.eyebrow}</span><h2 id="image-toggle-title">{imageVisibilityConfirmation ? imageConfirmationCopy.showTitle : imageConfirmationCopy.hideTitle}</h2><p>{imageVisibilityConfirmation ? imageConfirmationCopy.showDescription : imageConfirmationCopy.hideDescription}</p><div className="button-row modal-actions"><button type="button" className="button button-outline" onClick={() => setImageVisibilityConfirmation(null)}>{imageConfirmationCopy.cancel}</button><button type="button" className="button button-primary" onClick={confirmItemImages}>{imageVisibilityConfirmation ? imageConfirmationCopy.showAction : imageConfirmationCopy.hideAction}</button></div></div></div>}
+
+      {previewConfirmationOpen && <div className="modal-backdrop"><div className="modal-card preview-save-modal" role="dialog" aria-modal="true" aria-labelledby="preview-save-title" dir={dashboardLanguage === 'ar' ? 'rtl' : 'ltr'}><button type="button" className="modal-close" aria-label={t('Close preview confirmation')} onClick={() => setPreviewConfirmationOpen(false)}><X /></button><span className="eyebrow"><span /> {t('Preview changes')}</span><h2 id="preview-save-title">{t('Save before previewing?')}</h2><p>{t('You have unsaved design changes. Save them first so your public menu uses this design, or preview without saving.')}</p><div className="button-row modal-actions preview-save-actions"><button type="button" className="button button-outline" disabled={saving} onClick={continueToPreview}>{t('Continue without saving')}</button><button type="button" className="button button-primary" disabled={saving} onClick={() => void saveAndOpenPreview()}>{saving ? t('Saving…') : t('Save and preview')}</button></div></div></div>}
 
       {categoryModal && <div className="modal-backdrop"><form className="modal-card" onSubmit={saveCategory}><button type="button" className="modal-close" onClick={() => { setCategoryModal(false); setEditingCategory(null) }}><X /></button><span className="eyebrow"><span /> {editingCategory ? t('Edit section') : t('New section')}</span><h2>{editingCategory ? t('Edit category') : t('Add a category')}</h2><p>{t('Give it a name in both menu languages.')}</p><label>{t('English name')}<input required autoFocus value={categoryDraft.name_en} onChange={(e) => setCategoryDraft({ ...categoryDraft, name_en: e.target.value })} placeholder="Pizza" /></label><label dir="rtl">{t('Arabic name')}<input required value={categoryDraft.name_ar} onChange={(e) => setCategoryDraft({ ...categoryDraft, name_ar: e.target.value })} placeholder="بيتزا" /></label><button className="button button-primary full" disabled={saving}>{saving ? t('Saving…') : editingCategory ? t('Save category') : t('Add category')}</button></form></div>}
 
