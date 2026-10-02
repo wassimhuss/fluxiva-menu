@@ -1,4 +1,4 @@
-import { ChevronUp, Clock, Instagram, MapPin, MessageCircle } from 'lucide-react'
+import { ChevronUp, Instagram, MapPin, MessageCircle } from 'lucide-react'
 import { useState } from 'react'
 import { AddToOrder } from '../../components/AddToOrder'
 import type { Category, MenuItem } from '../../lib/types'
@@ -86,7 +86,6 @@ export default function ReelTemplate(props: MenuTemplateProps) {
 
   const activeCategoryEntry = categories.find((category) => category.id === activeCategory)
   const instagramHandle = restaurant.instagram?.replace(/^@/, '')
-  const hours = t(restaurant.opening_hours ?? '', restaurant.opening_hours_ar ?? '')
   const address = t(restaurant.address_en ?? '', restaurant.address_ar ?? '')
 
   return (
@@ -167,7 +166,6 @@ export default function ReelTemplate(props: MenuTemplateProps) {
                   ? <a className={styles.endContact} href={restaurant.maps_url} target="_blank" rel="noreferrer"><MapPin /> {address}</a>
                   : <span className={styles.endContact}><MapPin /> {address}</span>
               )}
-              {hours && <span className={styles.endContact}><Clock /> {hours}</span>}
               {restaurant.instagram && (
                 <a className={styles.endContact} href={`https://instagram.com/${instagramHandle}`} target="_blank" rel="noreferrer">
                   <Instagram /> {restaurant.instagram}

@@ -110,7 +110,7 @@ export function DashboardPage() {
   const DirectionalChevron = dashboardLanguage === 'ar' ? ChevronLeft : ChevronRight
   const BackChevron = dashboardLanguage === 'ar' ? ChevronRight : ChevronLeft
   const designSteps: Array<[number, string]> = [[1, 'Brand'], [2, 'Menu style'], [3, 'Preview & save']]
-  const settingsSteps: Array<[number, string]> = [[1, 'Basic details'], [2, 'Contact & hours'], [3, 'Menu settings']]
+  const settingsSteps: Array<[number, string]> = [[1, 'Basic details'], [2, 'Contact details'], [3, 'Menu settings']]
 
   useEffect(() => {
     if (!itemDraft.image_file) { setItemFilePreviewUrl(''); return }
@@ -232,8 +232,8 @@ export function DashboardPage() {
       // `primary_color` is deliberately absent: it belongs to the design panel,
       // and saving it from here too would persist a colour the owner is still
       // only previewing over there.
-      const { name_en, name_ar, description_en, description_ar, whatsapp, instagram, address_en, address_ar, opening_hours, opening_hours_ar, currency: currencyValue, temporarily_closed, takeaway_enabled, default_language } = menu.restaurant
-      await updateRestaurant(menu.restaurant.id, { name_en, name_ar, description_en, description_ar, whatsapp, instagram, address_en, address_ar, opening_hours, opening_hours_ar, currency: currencyValue, temporarily_closed, takeaway_enabled, default_language })
+      const { name_en, name_ar, description_en, description_ar, whatsapp, instagram, address_en, address_ar, currency: currencyValue, temporarily_closed, takeaway_enabled, default_language } = menu.restaurant
+      await updateRestaurant(menu.restaurant.id, { name_en, name_ar, description_en, description_ar, whatsapp, instagram, address_en, address_ar, currency: currencyValue, temporarily_closed, takeaway_enabled, default_language })
       showSuccess(dashboardText(dashboardLanguage, 'Restaurant details saved.'))
     } catch (caught) { setError(caught instanceof Error ? caught.message : dashboardText(dashboardLanguage, 'Could not save restaurant')) }
     finally { setSaving(false) }
@@ -693,13 +693,11 @@ export function DashboardPage() {
                 </section>
 
                 <section className={`settings-step settings-step-contact ${settingsStep === 2 ? 'active' : ''}`}>
-                  <div className="settings-step-heading"><h2>{t('Contact & hours')}</h2><p>{t('How customers find and contact your restaurant.')}</p></div>
+                  <div className="settings-step-heading"><h2>{t('Contact details')}</h2><p>{t('How customers find and contact your restaurant.')}</p></div>
                   <label>{t('WhatsApp number')}<input value={menu.restaurant.whatsapp ?? ''} onChange={(e) => restaurantField('whatsapp', e.target.value)} placeholder="+961 70 123 456" /></label>
                   <label>{t('Instagram')}<input value={menu.restaurant.instagram ?? ''} onChange={(e) => restaurantField('instagram', e.target.value)} placeholder="@restaurant" /></label>
                   <label>{t('English address')}<textarea value={menu.restaurant.address_en ?? ''} onChange={(e) => restaurantField('address_en', e.target.value)} /></label>
                   <label dir="rtl">{t('Arabic address')}<textarea value={menu.restaurant.address_ar ?? ''} onChange={(e) => restaurantField('address_ar', e.target.value)} /></label>
-                  <label>{t('English opening hours')}<input value={menu.restaurant.opening_hours ?? ''} onChange={(e) => restaurantField('opening_hours', e.target.value)} placeholder="Every day · 07:00 – 23:00" /></label>
-                  <label dir="rtl">{t('Arabic opening hours')}<input value={menu.restaurant.opening_hours_ar ?? ''} onChange={(e) => restaurantField('opening_hours_ar', e.target.value)} placeholder="كل يوم · ٠٧:٠٠ – ٢٣:٠٠" /></label>
                 </section>
 
                 <section className={`settings-step settings-step-menu ${settingsStep === 3 ? 'active' : ''}`}>
@@ -732,7 +730,7 @@ export function DashboardPage() {
                     <small className="field-hint">
                       {menu.restaurant.whatsapp
                         ? t('Adds an order button to your menu. Orders arrive as a WhatsApp message you confirm yourself.')
-                        : t('Add a WhatsApp number in Contact & hours to take takeaway orders.')}
+                        : t('Add a WhatsApp number in Contact details to take takeaway orders.')}
                     </small>
                   </label>
                   <label>{t('Default language')}<select value={menu.restaurant.default_language} onChange={(e) => restaurantField('default_language', e.target.value)}><option value="en">{t('English')}</option><option value="ar">{t('Arabic')}</option></select></label>

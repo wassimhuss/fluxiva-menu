@@ -91,6 +91,8 @@ Migration `015_gallery_categories.sql` upgrades the gallery's repeated category 
 
 Migration `016_clear_gallery_images.sql` adds the protected bulk-reset RPC used by the super-admin console's **Clear gallery** action. It clears shared-gallery references and image URLs from every menu item before deleting all gallery records; the client then removes the matching `gallery-assets` files. It deliberately preserves the bilingual folders for replacement photos. Apply it after `015` before using that action in a configured Supabase project.
 
+Migration `017_drop_opening_hours.sql` removes the unused English and Arabic opening-hours columns from restaurants. Apply it after `016`; the frontend no longer reads or writes either field.
+
 ## 4. Verification by risk
 
 ### Documentation-only

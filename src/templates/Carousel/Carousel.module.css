@@ -116,16 +116,6 @@
   color: rgba(242, 239, 233, .42);
 }
 
-/* Opening hours are information rather than a label, and they are long. The
-   tracked-out uppercase that suits the word "menu" would run them into the
-   language toggle, so they drop it and read a little brighter instead. */
-.venueHours {
-  letter-spacing: .2px;
-  text-transform: none;
-  font-size: 11px;
-  color: rgba(242, 239, 233, .56);
-}
-
 .langToggle {
   display: flex;
   gap: 2px;

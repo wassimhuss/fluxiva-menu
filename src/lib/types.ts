@@ -113,9 +113,6 @@ export interface Restaurant {
   maps_url?: string
   address_en?: string
   address_ar?: string
-  /** Free text, shown to diners. Paired with `opening_hours_ar` below. */
-  opening_hours?: string
-  opening_hours_ar?: string
   /** Which currency the restaurant prices in. Defaults to Lebanese pounds. */
   currency?: Currency
   temporarily_closed?: boolean

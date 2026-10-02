@@ -246,7 +246,7 @@ export function LandingPage() {
               <span className="lp-step-number">01</span>
               <div className="lp-step-icon"><UtensilsCrossed /></div>
               <h3>Tell us about your place</h3>
-              <p>Add your restaurant name, brand colors, contact details and opening hours.</p>
+              <p>Add your restaurant name, brand colors and contact details.</p>
               <small>About 2 minutes</small>
             </article>
             <article data-reveal style={{ '--delay': '100ms' } as CSSProperties}>
