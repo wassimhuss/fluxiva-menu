@@ -517,13 +517,14 @@ html.menu-preview-document::-webkit-scrollbar,body.menu-preview-document::-webki
   .menu-design-page-heading h1{max-width:none;font-size:28px;line-height:1.12}
   .menu-design-page-heading p{max-width:300px}
   .page-heading>.design-save-button{display:none}
-  .mobile-design-progress{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin:0 0 14px}
-  .mobile-design-progress button{display:flex;flex-direction:column;align-items:flex-start;gap:7px;min-width:0;padding:10px;border:1px solid #dfe5e1;border-radius:12px;background:#fff;color:#7c8983;text-align:start}
-  .mobile-design-progress button span{display:grid;place-items:center;width:24px;height:24px;border-radius:50%;background:#edf2ef;color:#668077;font-size:11px;font-weight:800}
-  .mobile-design-progress button b{font-size:10px;line-height:1.25}
-  .mobile-design-progress button.current{border-color:var(--green);background:#edf5f1;color:var(--green)}
-  .mobile-design-progress button.current span,.mobile-design-progress button.complete span{background:var(--green);color:#fff}
-  .mobile-design-progress button.complete{border-color:#b9d0c7;color:#426b60}
+  .mobile-design-progress{position:relative;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0;margin:0 0 10px}
+  .mobile-design-progress:before{content:"";position:absolute;inset-inline:16%;top:13px;height:2px;background:#dfe7e2}
+  .mobile-design-progress>div{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:6px;min-width:0;color:#87948e;text-align:center}
+  .mobile-design-progress>div span{display:grid;place-items:center;width:27px;height:27px;border:2px solid #dfe7e2;border-radius:50%;background:#f7f8f5;color:#7d8b84;font-size:11px;font-weight:800}
+  .mobile-design-progress>div b{font-size:10px;line-height:1.25;font-weight:700}
+  .mobile-design-progress>div.current{color:var(--green)}
+  .mobile-design-progress>div.current span,.mobile-design-progress>div.complete span{border-color:var(--green);background:var(--green);color:#fff}
+  .mobile-design-progress>div.complete{color:#426b60}
   .design-layout{display:flex;flex-direction:column;gap:14px}
   .design-layout[data-step="1"] .menu-photo-setting,.design-layout[data-step="1"] .template-grid,.design-layout[data-step="1"] .template-preview{display:none}
   .design-layout[data-step="2"] .brand-card,.design-layout[data-step="2"] .template-preview{display:none}

@@ -522,7 +522,11 @@ export function DashboardPage() {
               </button>
             </div>
             <div className="mobile-design-progress" aria-label={t('Menu design steps')}>
-              {designSteps.map(([step, label]) => <button type="button" key={step} className={designStep === step ? 'current' : designStep > step ? 'complete' : ''} onClick={() => setDesignStep(step)}><span>{step}</span><b>{t(label)}</b></button>)}
+              {designSteps.map(([step, label]) => <div key={step} className={designStep === step ? 'current' : designStep > step ? 'complete' : ''} aria-current={designStep === step ? 'step' : undefined}><span>{step}</span><b>{t(label)}</b></div>)}
+            </div>
+            <div className="mobile-design-navigation">
+              <button type="button" className="button button-outline" disabled={designStep === 1} onClick={() => setDesignStep((step) => Math.max(1, step - 1))}>{t('Back')}</button>
+              <button type="button" className="button button-primary" disabled={saving || (designStep === 3 && !designDirty)} onClick={() => designStep < 3 ? setDesignStep((step) => step + 1) : void saveDesign(previewTemplate, previewColor, previewShowItemImages)}>{designStep === 3 ? (saving ? t('Saving…') : designDirty ? t('Save design') : t('Design in use')) : t('Continue')}</button>
             </div>
             <div className="design-layout" data-step={designStep}>
               <div className="design-choices">
@@ -598,10 +602,6 @@ export function DashboardPage() {
                   {t('Open full size')} <ExternalLink />
                 </Link>
               </aside>
-            </div>
-            <div className="mobile-design-navigation">
-              <button type="button" className="button button-outline" disabled={designStep === 1} onClick={() => setDesignStep((step) => Math.max(1, step - 1))}>{t('Back')}</button>
-              <button type="button" className="button button-primary" disabled={saving || (designStep === 3 && !designDirty)} onClick={() => designStep < 3 ? setDesignStep((step) => step + 1) : void saveDesign(previewTemplate, previewColor, previewShowItemImages)}>{designStep === 3 ? (saving ? t('Saving…') : designDirty ? t('Save design') : t('Design in use')) : t('Continue')}</button>
             </div>
           </>}
 
