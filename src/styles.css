@@ -489,7 +489,7 @@ html.menu-preview-document::-webkit-scrollbar,body.menu-preview-document::-webki
   .mobile-section-card-primary .mobile-section-icon{background:rgba(255,255,255,.14);border:0;color:#fff}
   .mobile-section-card-primary small,.mobile-section-card-primary>svg{color:#c3ddd4}
   .mobile-section-card>svg,.mobile-section-card-analysis>svg{inset-block-start:auto;inset-block-end:14px;inset-inline-end:14px;width:27px;height:27px;padding:6px;border-radius:50%;background:#e5f0eb;color:#3d6f60;transform:none}
-  .mobile-section-card>span:nth-child(2){gap:7px;padding-inline-end:8px}
+  .mobile-section-card>span:nth-child(2){gap:7px;padding-inline-end:36px}
   .mobile-section-card b{font-size:15px;line-height:1.2;letter-spacing:-.1px}
   .mobile-section-card small{font-size:11px;line-height:1.45;color:#71817a}
   .mobile-section-icon{width:48px;height:48px;border-radius:50%;flex:none;background:#dceee6;color:#1f5b49;border:0;box-shadow:inset 0 1px 0 rgba(255,255,255,.8)}
@@ -505,6 +505,10 @@ html.menu-preview-document::-webkit-scrollbar,body.menu-preview-document::-webki
   .mobile-section-card-analysis:before{display:none}
   .overview-add-item{display:none}
   .overview-page-heading{display:none}
+}
+
+@media(max-width:600px){
+  .dashboard-layout[dir="rtl"] .mobile-section-card>span:nth-child(2){padding-inline-end:8px;padding-inline-start:36px}
 }
 
 /* The menu editor is the most frequent mobile workflow. Keep its hierarchy
