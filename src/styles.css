@@ -507,6 +507,38 @@ html.menu-preview-document::-webkit-scrollbar,body.menu-preview-document::-webki
   .overview-page-heading{display:none}
 }
 
+/* The menu editor is the most frequent mobile workflow. Keep its hierarchy
+   calm: one compact heading, three clear actions, and focused item rows. */
+@media(max-width:600px){
+  .menu-editor-page-heading{display:flex;flex-direction:column;align-items:stretch;gap:14px;margin-bottom:16px}
+  .menu-editor-page-heading h1{font-size:25px;line-height:1.12;letter-spacing:-.45px;margin-top:7px;white-space:nowrap}
+  .menu-editor-page-heading p{display:none}
+  .menu-editor-actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;width:100%}
+  .menu-editor-actions .button{min-width:0;min-height:42px;padding:8px 5px;justify-content:center;gap:5px;font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .menu-editor-actions .button svg{width:15px;height:15px;flex:none}
+
+  .category-list{gap:12px}
+  .category-card{border-radius:15px;overflow:hidden}
+  .category-heading{flex-wrap:wrap;align-items:center;gap:12px;padding:14px}
+  .category-heading>div:first-child{min-width:0;flex:1}
+  .category-heading h2{font-size:15px;line-height:1.2}
+  .category-heading h2 small{font-size:11px;line-height:1.3}
+  .category-heading span{font-size:9px;padding:4px 7px;white-space:nowrap}
+  .category-heading>.category-actions{display:grid;grid-template-columns:32px 32px minmax(0,1fr);align-items:center;width:100%;gap:7px}
+  .category-actions .icon-button{width:32px;height:32px}
+  .category-actions .button{width:100%;min-height:34px;padding:7px 10px;justify-content:center;font-size:10px}
+
+  .dashboard-items article{grid-template-columns:48px minmax(0,1fr) 34px auto;gap:8px;padding:12px 14px}
+  .item-icon{width:48px;height:48px;border-radius:10px}
+  .dashboard-item-info{min-width:0}
+  .dashboard-item-info b{font-size:12px;line-height:1.25;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .dashboard-item-info b small{display:block;margin:3px 0 0;font-size:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .dashboard-item-info span{font-size:10px;margin-top:5px}
+  .visibility{width:34px;height:32px;padding:0;justify-content:center;border-radius:9px}
+  .item-actions{gap:5px}
+  .item-actions .icon-button{width:32px;height:32px;border-radius:9px}
+}
+
 /* Touch has no hover, so the feedback a finger gets is the press itself.
    Classic predates the CSS Modules templates and shares this sheet, so its
    press states live here alongside them. */
