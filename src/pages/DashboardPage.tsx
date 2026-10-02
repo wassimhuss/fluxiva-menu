@@ -1,4 +1,4 @@
-import { ArrowDown, ArrowLeft, ArrowUp, ChevronRight, ExternalLink, Eye, EyeOff, ImagePlus, Images, LayoutDashboard, LogOut, Menu, Palette, Pencil, Plus, QrCode, Settings, ShieldCheck, Store, Trash2, Upload, X } from 'lucide-react'
+import { ArrowDown, ArrowLeft, ArrowUp, ChevronLeft, ChevronRight, ExternalLink, Eye, EyeOff, ImagePlus, Images, LayoutDashboard, LogOut, Menu, Palette, Pencil, Plus, QrCode, Settings, ShieldCheck, Store, Trash2, Upload, X } from 'lucide-react'
 import QRCode from 'qrcode'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
@@ -103,6 +103,8 @@ export function DashboardPage() {
   }, [session, demoMode, navigate])
 
   useEffect(() => () => window.clearTimeout(successTimer.current), [])
+
+  const DirectionalChevron = dashboardLanguage === 'ar' ? ChevronLeft : ChevronRight
 
   useEffect(() => {
     if (!itemDraft.image_file) { setItemFilePreviewUrl(''); return }
@@ -455,7 +457,7 @@ export function DashboardPage() {
     <main className="dashboard-layout" dir={dashboardLanguage === 'ar' ? 'rtl' : 'ltr'}>
       <aside className="dashboard-sidebar">
         <div className="sidebar-top"><Brand light /></div>
-        <div className="restaurant-switcher"><span className="mini-monogram" style={{ backgroundColor: menu.restaurant.primary_color }}>{menu.restaurant.name_en.slice(0, 2).toUpperCase()}</span><span><b>{menu.restaurant.name_en}</b><small>{t('Owner workspace')}</small></span><ChevronRight /></div>
+        <div className="restaurant-switcher"><span className="mini-monogram" style={{ backgroundColor: menu.restaurant.primary_color }}>{menu.restaurant.name_en.slice(0, 2).toUpperCase()}</span><span><b>{menu.restaurant.name_en}</b><small>{t('Owner workspace')}</small></span><DirectionalChevron /></div>
         <nav>
           <button className={panel === 'overview' ? 'selected' : ''} onClick={() => setPanel('overview')}><LayoutDashboard /> {t('Overview')}</button>
           <button className={panel === 'analysis' ? 'selected' : ''} onClick={() => setPanel('analysis')}><Eye /> {t('Analysis')}</button>
@@ -478,15 +480,15 @@ export function DashboardPage() {
             <section className="mobile-section-hub" aria-labelledby="mobile-section-hub-title">
               <div className="mobile-section-hub-heading"><div><span className="eyebrow"><span /> {t('Workspace')}</span><h2 id="mobile-section-hub-title">{t('What would you like to manage?')}</h2><p>{t('Choose an area to continue.')}</p></div></div>
               <div className="mobile-section-grid">
-                <button className="mobile-section-card mobile-section-card-primary" onClick={() => setPanel('menu')}><span className="mobile-section-icon"><Menu /></span><span><b>{t('Menu editor')}</b><small>{menu.items.length} {t('items')} · {menu.categories.length} {t('Categories').toLowerCase()}</small></span><ChevronRight /></button>
-                <button className="mobile-section-card" onClick={() => setPanel('design')}><span className="mobile-section-icon"><Palette /></span><span><b>{t('Menu design')}</b><small>{t('Layout, photos and brand')}</small></span><ChevronRight /></button>
-                <button className="mobile-section-card" onClick={() => setPanel('settings')}><span className="mobile-section-icon"><Settings /></span><span><b>{t('Restaurant settings')}</b><small>{t('Details, status and contact')}</small></span><ChevronRight /></button>
-                <button className="mobile-section-card" onClick={openQr}><span className="mobile-section-icon"><QrCode /></span><span><b>{t('QR code')}</b><small>{t('Download or print your menu QR')}</small></span><ChevronRight /></button>
-                <button className="mobile-section-card mobile-section-card-analysis" onClick={() => setPanel('analysis')}><span className="mobile-section-icon"><Eye /></span><span><b>{t('Analysis')}</b><small>{t('Menu performance and opens')}</small></span><ChevronRight /></button>
+                <button className="mobile-section-card mobile-section-card-primary" onClick={() => setPanel('menu')}><span className="mobile-section-icon"><Menu /></span><span><b>{t('Menu editor')}</b><small>{menu.items.length} {t('items')} · {menu.categories.length} {t('Categories').toLowerCase()}</small></span><DirectionalChevron /></button>
+                <button className="mobile-section-card" onClick={() => setPanel('design')}><span className="mobile-section-icon"><Palette /></span><span><b>{t('Menu design')}</b><small>{t('Layout, photos and brand')}</small></span><DirectionalChevron /></button>
+                <button className="mobile-section-card" onClick={() => setPanel('settings')}><span className="mobile-section-icon"><Settings /></span><span><b>{t('Restaurant settings')}</b><small>{t('Details, status and contact')}</small></span><DirectionalChevron /></button>
+                <button className="mobile-section-card" onClick={openQr}><span className="mobile-section-icon"><QrCode /></span><span><b>{t('QR code')}</b><small>{t('Download or print your menu QR')}</small></span><DirectionalChevron /></button>
+                <button className="mobile-section-card mobile-section-card-analysis" onClick={() => setPanel('analysis')}><span className="mobile-section-icon"><Eye /></span><span><b>{t('Analysis')}</b><small>{t('Menu performance and opens')}</small></span><DirectionalChevron /></button>
               </div>
             </section>
             <div className="overview-columns">
-              <article className="dashboard-card"><div className="card-heading"><div><h2>{t('Quick actions')}</h2><p>{t('The most common menu tasks.')}</p></div></div><div className="quick-actions"><button onClick={() => { setPanel('menu'); openItem() }}><span><Plus /></span><div><b>{t('Add an item')}</b><small>{t('Name, price and size options')}</small></div><ChevronRight /></button><button onClick={() => { setPanel('menu'); openCategory() }}><span><Menu /></span><div><b>{t('Add a category')}</b><small>{t('Group your menu items')}</small></div><ChevronRight /></button><button onClick={openQr}><span><QrCode /></span><div><b>{t('Download QR code')}</b><small>{t('Ready to print and share')}</small></div><ChevronRight /></button></div></article>
+              <article className="dashboard-card"><div className="card-heading"><div><h2>{t('Quick actions')}</h2><p>{t('The most common menu tasks.')}</p></div></div><div className="quick-actions"><button onClick={() => { setPanel('menu'); openItem() }}><span><Plus /></span><div><b>{t('Add an item')}</b><small>{t('Name, price and size options')}</small></div><DirectionalChevron /></button><button onClick={() => { setPanel('menu'); openCategory() }}><span><Menu /></span><div><b>{t('Add a category')}</b><small>{t('Group your menu items')}</small></div><DirectionalChevron /></button><button onClick={openQr}><span><QrCode /></span><div><b>{t('Download QR code')}</b><small>{t('Ready to print and share')}</small></div><DirectionalChevron /></button></div></article>
               <article className="dashboard-card qr-preview"><div className="card-heading"><div><h2>{t('Your menu link')}</h2><p>{t('Share this link anywhere.')}</p></div></div><div className="link-preview"><span>{menuUrl.replace(/^https?:\/\//, '')}</span><Link to={`/m/${menu.restaurant.slug}`} target="_blank"><ExternalLink /></Link></div><div className="phone-mini"><div className="phone-mini-cover" style={{ backgroundColor: menu.restaurant.primary_color }}><span>{menu.restaurant.name_en.slice(0, 2).toUpperCase()}</span><b>{menu.restaurant.name_en}</b></div><div><i /><i /><i /></div></div></article>
             </div>
           </>}
