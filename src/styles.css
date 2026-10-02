@@ -435,6 +435,23 @@ html.menu-preview-document::-webkit-scrollbar,body.menu-preview-document::-webki
 /* Mobile dashboard hub: replace the hidden sidebar navigation with a small,
    card-based launcher. Desktop keeps the sidebar and overview composition. */
 @media(max-width:600px){
+  .dashboard-layout{display:block;min-height:100dvh;background:#f7f8f5}
+  .dashboard-sidebar{display:none}
+  .dashboard-header{position:sticky;top:0;height:62px;padding:0 14px;background:rgba(255,255,255,.96);backdrop-filter:blur(14px);box-shadow:0 1px 0 rgba(23,63,53,.06)}
+  .dashboard-header>div:first-of-type{flex:1}
+  .dashboard-header>div:first-of-type b{font-size:13px}
+  .dashboard-header .header-actions{gap:7px}
+  .dashboard-header .header-actions .button-primary{width:38px;min-width:38px;padding:0;font-size:0;box-shadow:none}
+  .dashboard-header .header-actions .button-primary svg{margin:0;width:17px}
+  .dashboard-header .language-switch{height:36px;min-width:42px;padding:0 8px}
+  .dashboard-content{padding:18px 14px 32px}
+  .mobile-section-grid{grid-template-columns:1fr;gap:8px}
+  .mobile-section-card,.mobile-section-card-analysis{min-height:76px;flex-direction:row;align-items:center;gap:12px;padding:12px 14px;border-radius:13px}
+  .mobile-section-card>svg,.mobile-section-card-analysis>svg{inset-block-start:50%;inset-block-end:auto;transform:translateY(-50%)}
+  .mobile-section-card>span:nth-child(2){gap:3px;padding-inline-end:24px}
+  .mobile-section-card b{font-size:13px}
+  .mobile-section-card small{font-size:10px}
+  .mobile-section-icon{width:38px;height:38px;flex:none}
   .dashboard-header>div:first-of-type{display:flex;min-width:0;flex-direction:column;gap:3px}
   .dashboard-header>div:first-of-type b{max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .dashboard-header>div:first-of-type span{font-size:8px}
@@ -458,6 +475,17 @@ html.menu-preview-document::-webkit-scrollbar,body.menu-preview-document::-webki
   .mobile-section-card-primary small,.mobile-section-card-primary>svg{color:#b6d0c7}
   .mobile-section-card-analysis{grid-column:1/-1;min-height:82px;flex-direction:row;align-items:center;gap:11px}
   .mobile-section-card-analysis>svg{inset-block-start:50%;inset-block-end:auto;transform:translateY(-50%)}
+}
+
+/* Final mobile overrides keep the launcher intentionally list-like on narrow
+   screens, where two-column cards make labels feel cramped. */
+@media(max-width:600px){
+  .mobile-section-grid{grid-template-columns:1fr;gap:8px}
+  .mobile-section-card,.mobile-section-card-analysis{min-height:76px;flex-direction:row;align-items:center;gap:12px;padding:12px 14px;border-radius:13px}
+  .mobile-section-card>svg,.mobile-section-card-analysis>svg{inset-block-start:50%;inset-block-end:auto;transform:translateY(-50%)}
+  .mobile-section-card>span:nth-child(2){gap:3px;padding-inline-end:24px}
+  .mobile-section-icon{width:38px;height:38px;flex:none}
+  .mobile-section-card-analysis{grid-column:auto}
 }
 
 /* Touch has no hover, so the feedback a finger gets is the press itself.
