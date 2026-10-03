@@ -403,7 +403,7 @@
   opacity: 0;
 }
 
-.itemWithImage {
+.itemWithMedia {
   grid-template-columns: 34px 88px minmax(0, 1fr);
   align-items: start;
 }
@@ -416,6 +416,21 @@
   object-fit: cover;
   object-position: center;
   box-shadow: 8px 8px 0 var(--maison-tint);
+}
+
+.itemPlaceholder {
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background: var(--maison-brand);
+  color: var(--maison-brand-ink);
+  font-family: 'Playfair Display', 'Tajawal', serif;
+  font-size: 29px;
+  font-weight: 600;
+  letter-spacing: -1.4px;
+  line-height: 1;
+  padding: 10px;
+  text-align: center;
 }
 
 .list[data-shown='true'] .item {
@@ -660,8 +675,9 @@
   .categoryNumber { font-size: 48px; }
   .sectionIntro h2 { font-size: 33px; }
   .item { grid-template-columns: 28px minmax(0, 1fr); gap: 8px; }
-  .itemWithImage { grid-template-columns: 28px 72px minmax(0, 1fr); }
+  .itemWithMedia { grid-template-columns: 28px 72px minmax(0, 1fr); }
   .itemImage { inline-size: 72px; block-size: 82px; box-shadow: 5px 5px 0 var(--maison-tint); }
+  .itemPlaceholder { font-size: 24px; }
   .itemHeading h3 { font-size: 19px; }
   .itemHeading strong { font-size: 10px; }
   .footer { padding-inline: 15px; }

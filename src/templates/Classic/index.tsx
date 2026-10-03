@@ -20,12 +20,16 @@ function MenuCard({ item, index, t, formatPrice, color, unavailableLabel, orderi
   const [variantIndex, setVariantIndex] = useState(0)
   const variant = item.variants?.[variantIndex]
   const price = variant?.price ?? item.price
+  const name = t(item.name_en, item.name_ar)
+  const placeholderMark = Array.from(name.trim()).slice(0, 2).join('').toUpperCase()
   return (
     <article className={`public-item ${item.available ? '' : 'sold-out'}`} style={{ '--i': index } as React.CSSProperties}>
-      {item.image_url && <img src={item.image_url} alt="" loading="lazy" />}
+      {item.image_url
+        ? <img src={item.image_url} alt="" loading="lazy" />
+        : <div className="public-item-placeholder" aria-hidden="true"><span>{placeholderMark}</span></div>}
       <div className="public-item-content">
         <div className="item-heading">
-          <h3>{t(item.name_en, item.name_ar)}</h3>
+          <h3>{name}</h3>
           <strong style={{ color }}>{formatPrice(price)}</strong>
         </div>
         {(item.description_en || item.description_ar) && <p>{t(item.description_en ?? '', item.description_ar ?? '')}</p>}
@@ -66,7 +70,11 @@ export default function ClassicTemplate(props: MenuTemplateProps) {
     <main
       className="public-menu"
       dir={rtl ? 'rtl' : 'ltr'}
-      style={{ '--restaurant-color': restaurant.primary_color, '--cover-image': coverUrl ? `url(${coverUrl})` : 'none' } as React.CSSProperties}
+      style={{
+        '--restaurant-color': restaurant.primary_color,
+        '--classic-placeholder-ink': theme.brandInk,
+        '--cover-image': coverUrl ? `url(${coverUrl})` : 'none',
+      } as React.CSSProperties}
     >
       <header className="menu-cover">
         <div className="menu-cover-pattern" />

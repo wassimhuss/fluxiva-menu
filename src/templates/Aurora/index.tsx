@@ -15,9 +15,10 @@ function AuroraCard({ item, index, t, formatPrice, ordering }: {
   ordering?: MenuTemplateProps['ordering']
 }) {
   const [variantIndex, setVariantIndex] = useState(0)
-  const [cardRef, inView] = useInView<HTMLElement>()
+  const [cardRef, inView] = useInView<HTMLElement>('0px 0px -12% 0px', { once: false })
   const variant = item.variants?.[variantIndex]
   const price = variant?.price ?? item.price
+  const name = t(item.name_en, item.name_ar)
   const description = t(item.description_en ?? '', item.description_ar ?? '')
 
   return (
@@ -25,21 +26,19 @@ function AuroraCard({ item, index, t, formatPrice, ordering }: {
       ref={cardRef}
       className={`${styles.card} ${item.available ? '' : styles.cardSoldOut}`}
       style={{ '--i': index } as React.CSSProperties}
-      /* Scrolling to the dish is the gesture a phone has; it drives the
-         photograph the way pointing at it does on a desktop. */
+      /* On touch screens, scrolling drives the photo interaction. This one is
+         reversible, so the photo settles back as the card leaves view. */
       data-inview={inView}
     >
-      {item.image_url && (
-        <div className={styles.imageWrap}>
-          <img className={styles.image} src={item.image_url} alt="" loading="lazy" />
-          <span className={styles.priceBadge}>{formatPrice(price)}</span>
-        </div>
-      )}
+      <div className={`${styles.imageWrap} ${item.image_url ? '' : styles.imagePlaceholder}`}>
+        {item.image_url
+          ? <img className={styles.image} src={item.image_url} alt="" loading="lazy" />
+          : <span className={styles.placeholderMark}>{name.slice(0, 2).toUpperCase()}</span>}
+        <span className={styles.priceBadge}>{formatPrice(price)}</span>
+      </div>
       <div className={styles.cardBody}>
-        <h3 className={styles.itemName}>{t(item.name_en, item.name_ar)}</h3>
+        <h3 className={styles.itemName}>{name}</h3>
         {description && <p className={styles.desc}>{description}</p>}
-        {/* Without a photo there is no badge, so the price needs an inline home. */}
-        {!item.image_url && <span className={styles.inlinePrice}>{formatPrice(price)}</span>}
         {!item.available && <span className={styles.soldOutLabel}>{t('Currently unavailable', 'غير متوفر حالياً')}</span>}
         {ordering && (
           <div className={styles.cardOrder}>

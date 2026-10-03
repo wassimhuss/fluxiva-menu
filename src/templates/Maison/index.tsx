@@ -16,18 +16,25 @@ function MaisonItem({ item, index, t, formatPrice, ordering }: {
   const [variantIndex, setVariantIndex] = useState(0)
   const variant = item.variants?.[variantIndex]
   const price = variant?.price ?? item.price
+  const name = t(item.name_en, item.name_ar)
   const description = t(item.description_en ?? '', item.description_ar ?? '')
 
   return (
     <article
-      className={`${styles.item} ${item.image_url ? styles.itemWithImage : ''} ${item.available ? '' : styles.itemSoldOut}`}
+      className={`${styles.item} ${styles.itemWithMedia} ${item.available ? '' : styles.itemSoldOut}`}
       style={{ '--i': index } as React.CSSProperties}
     >
       <div className={styles.itemCode}>M{String(index + 1).padStart(2, '0')}</div>
-      {item.image_url && <img className={styles.itemImage} src={item.image_url} alt="" loading="lazy" />}
+      {item.image_url
+        ? <img className={styles.itemImage} src={item.image_url} alt="" loading="lazy" />
+        : (
+            <div className={`${styles.itemImage} ${styles.itemPlaceholder}`} aria-hidden="true">
+              <span>{Array.from(name.trim()).slice(0, 2).join('').toUpperCase()}</span>
+            </div>
+          )}
       <div className={styles.itemContent}>
         <div className={styles.itemHeading}>
-          <h3>{t(item.name_en, item.name_ar)}</h3>
+          <h3>{name}</h3>
           <span className={styles.leader} aria-hidden="true" />
           <strong>{formatPrice(price)}</strong>
         </div>

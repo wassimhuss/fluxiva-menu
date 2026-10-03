@@ -148,6 +148,10 @@
 /* Keep every menu item the same height regardless of the uploaded photo ratio. */
 .public-item{height:136px;min-height:136px}
 .public-item>img{display:block;width:110px;height:100%;flex:0 0 110px;object-fit:cover;object-position:center}
+/* Dishes without a photo still retain Classic's compact media column. The
+   initials are decorative — the localized dish name remains the card heading. */
+.public-item-placeholder{display:grid;place-items:center;width:110px;height:100%;flex:0 0 110px;overflow:hidden;background:var(--restaurant-color);color:var(--classic-placeholder-ink,#fff);text-align:center}
+.public-item-placeholder span{font-family:'Playfair Display','Tajawal',serif;font-size:32px;font-weight:600;line-height:1;letter-spacing:-1px;opacity:.38}
 .public-item-content{min-width:0;overflow:hidden;display:flex;flex-direction:column}
 .item-heading h3,.public-item-content>p{display:-webkit-box;-webkit-box-orient:vertical;overflow:hidden}
 .item-heading h3{-webkit-line-clamp:2}
@@ -157,6 +161,8 @@
 @media(max-width:600px){
   .public-item{height:128px;min-height:128px}
   .public-item>img{width:88px;flex-basis:88px}
+  .public-item-placeholder{width:88px;flex-basis:88px}
+  .public-item-placeholder span{font-size:26px}
   .public-item-content{padding:12px}
   .item-heading h3{font-size:16px;-webkit-line-clamp:1}
   .public-item-content>p{-webkit-line-clamp:1;margin-bottom:7px}

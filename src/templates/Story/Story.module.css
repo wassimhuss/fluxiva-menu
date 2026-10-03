@@ -83,7 +83,7 @@
   border-radius: 999px;
 }
 
-.langToggle button.langActive { background: var(--story-accent); color: #0c0f0e; }
+.langToggle button.langActive { background: var(--story-accent); color: var(--story-accent-ink); }
 
 .introInner { max-width: 620px; animation: rise .9s cubic-bezier(.22, 1, .36, 1) both; }
 
@@ -179,7 +179,7 @@
 .chip.chipActive {
   background: var(--story-accent);
   border-color: var(--story-accent);
-  color: #0c0f0e;
+  color: var(--story-accent-ink);
 }
 
 .closed {
@@ -307,7 +307,9 @@
   font-family: 'Cormorant Garamond', 'Playfair Display', serif;
   font-size: 46px;
   line-height: 1;
-  color: var(--story-accent);
+  /* The numeral sits directly on changing food photography. Keep its ink
+     independent of the image, and reserve the brand colour for the rule. */
+  color: #ece7de;
   display: flex;
   align-items: center;
   gap: 11px;
@@ -320,8 +322,8 @@
   content: '';
   inline-size: 34px;
   block-size: 1px;
-  background: currentColor;
-  opacity: .7;
+  background: var(--story-accent);
+  opacity: .92;
   transform: scaleX(0);
   transform-origin: inline-start;
 }
@@ -380,7 +382,7 @@
 .variants button.variantActive {
   background: var(--story-accent);
   border-color: var(--story-accent);
-  color: #0c0f0e;
+  color: var(--story-accent-ink);
 }
 
 .priceRow {
@@ -393,10 +395,19 @@
 }
 
 .price {
+  display: inline-flex;
+  align-items: center;
+  min-block-size: 31px;
+  padding: 6px 11px;
+  border-radius: 999px;
+  background: var(--story-accent);
+  color: var(--story-accent-ink);
   font-size: 15px;
   font-weight: 700;
+  line-height: 1;
   letter-spacing: 1px;
-  color: var(--story-accent);
+  white-space: nowrap;
+  box-shadow: 0 5px 16px rgba(0, 0, 0, .2);
 }
 
 .soldOut {
@@ -529,7 +540,7 @@
 /* Ordering control. Dark page, so the resting outline is drawn in light ink. */
 .addToOrder {
   --add-active-bg: var(--story-accent);
-  --add-active-fg: #0c0f0e;
+  --add-active-fg: var(--story-accent-ink);
   --add-bg: rgba(12, 15, 14, .42);
   --add-border: rgba(236, 231, 222, .34);
   --add-fg: rgba(236, 231, 222, .9);

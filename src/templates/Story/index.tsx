@@ -65,7 +65,8 @@ export default function StoryTemplate(props: MenuTemplateProps) {
       className={styles.root}
       dir={rtl ? 'rtl' : 'ltr'}
       style={{
-        '--story-accent': theme.accent,
+        '--story-accent': theme.brand,
+        '--story-accent-ink': theme.brandInk,
         '--story-strong': theme.brandStrong,
         '--story-cover': coverUrl ? `url(${coverUrl})` : `linear-gradient(150deg, ${theme.brandStrong}, #0c0f0e)`,
       } as React.CSSProperties}

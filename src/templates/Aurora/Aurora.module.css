@@ -244,6 +244,24 @@
   transition: transform .6s cubic-bezier(.22, 1, .36, 1);
 }
 
+/* Photo-less dishes keep Kiosk's branded initial placeholder, so every
+   Aurora card preserves the same media silhouette. */
+.imagePlaceholder {
+  display: grid;
+  place-items: center;
+  padding: 22px;
+  background: var(--aurora-brand);
+  color: var(--aurora-ink);
+  text-align: center;
+}
+
+.placeholderMark {
+  font-size: 46px;
+  font-weight: 700;
+  letter-spacing: -2px;
+  line-height: 1;
+}
+
 .priceBadge {
   position: absolute;
   inset-block-end: 12px;
@@ -277,14 +295,6 @@
   line-height: 1.6;
   color: rgba(27, 36, 34, .55);
   margin: 0;
-}
-
-/* Shown when an item has no photo, so the price still has a home. */
-.inlinePrice {
-  margin-top: 14px;
-  font-size: 17px;
-  font-weight: 700;
-  color: var(--aurora-strong);
 }
 
 .soldOutLabel {

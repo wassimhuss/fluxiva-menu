@@ -15,10 +15,13 @@ const REDUCED_MOTION = '(prefers-reduced-motion: reduce)'
  * *is* the transition, so nothing is short-circuited: an item on screen at load
  * still eases in rather than starting already finished.
  *
- * One-shot. A photograph that zoomed back out every time it left the screen
- * would flicker through a long menu.
+ * One-shot by default. Templates that want a reversible scroll response can
+ * opt out, so their image settles back when the card leaves the viewport.
  */
-export function useInView<T extends HTMLElement>(rootMargin = '0px 0px -12% 0px') {
+export function useInView<T extends HTMLElement>(
+  rootMargin = '0px 0px -12% 0px',
+  { once = true }: { once?: boolean } = {},
+) {
   const ref = useRef<T>(null)
   const [inView, setInView] = useState(false)
 
@@ -28,17 +31,15 @@ export function useInView<T extends HTMLElement>(rootMargin = '0px 0px -12% 0px'
     // Asked for less motion: hand over the settled state with no transition.
     if (window.matchMedia(REDUCED_MOTION).matches) { setInView(true); return }
 
-    const observer = new IntersectionObserver((entries) => {
-      for (const entry of entries) {
-        if (!entry.isIntersecting) continue
-        setInView(true)
-        observer.disconnect()
-      }
+    const observer = new IntersectionObserver(([entry]) => {
+      if (!entry) return
+      setInView(entry.isIntersecting)
+      if (once && entry.isIntersecting) observer.disconnect()
     }, { rootMargin, threshold: 0.2 })
 
     observer.observe(element)
     return () => observer.disconnect()
-  }, [rootMargin])
+  }, [rootMargin, once])
 
   return [ref, inView] as const
 }

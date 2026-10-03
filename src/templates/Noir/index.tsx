@@ -18,6 +18,8 @@ function NoirItem({ item, index, t, formatPrice, ordering }: {
   const [cardRef, inView] = useInView<HTMLElement>()
   const variant = item.variants?.[variantIndex]
   const price = variant?.price ?? item.price
+  const name = t(item.name_en, item.name_ar)
+  const initials = Array.from(name).slice(0, 2).join('').toUpperCase()
   const description = t(item.description_en ?? '', item.description_ar ?? '')
 
   return (
@@ -28,8 +30,10 @@ function NoirItem({ item, index, t, formatPrice, ordering }: {
       data-inview={inView}
     >
       <div className={styles.priceLine}>
-        {item.image_url && <img className={styles.thumb} src={item.image_url} alt="" loading="lazy" />}
-        <h3 className={styles.itemName}>{t(item.name_en, item.name_ar)}</h3>
+        {item.image_url
+          ? <img className={styles.thumb} src={item.image_url} alt="" loading="lazy" />
+          : <span className={`${styles.thumb} ${styles.thumbPlaceholder}`} aria-hidden="true">{initials}</span>}
+        <h3 className={styles.itemName}>{name}</h3>
         <span className={styles.dots} aria-hidden="true" />
         <strong className={styles.price}>{formatPrice(price)}</strong>
       </div>
@@ -69,8 +73,9 @@ export default function NoirTemplate(props: MenuTemplateProps) {
       className={styles.root}
       dir={rtl ? 'rtl' : 'ltr'}
       style={{
-        '--noir-accent': theme.accent,
+        '--noir-accent': theme.brand,
         '--noir-brand': theme.brand,
+        '--noir-ink': theme.brandInk,
         '--noir-cover': coverUrl ? `url(${coverUrl})` : `linear-gradient(150deg, ${theme.brandStrong}, #0a0c0b)`,
       } as React.CSSProperties}
     >

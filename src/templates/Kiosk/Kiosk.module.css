@@ -133,43 +133,55 @@
   position: sticky;
   inset-block-start: 0;
   z-index: 20;
-  background: rgba(244, 244, 242, .93);
-  backdrop-filter: blur(12px);
-  border-block-end: 1px solid rgba(22, 32, 30, .09);
+  padding: 2px 0;
+  background: rgba(255, 255, 255, .54);
+  border-block: 1px solid rgba(255, 255, 255, .78);
+  box-shadow: 0 8px 24px rgba(22, 32, 30, .06);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
 }
 
 .categoryScroll {
   display: flex;
-  gap: 8px;
+  gap: 9px;
   overflow-x: auto;
-  padding: 12px 20px;
+  padding: 11px 20px 15px;
   max-width: 1240px;
   margin-inline: auto;
   scroll-snap-type: x proximity;
   scrollbar-width: none;
 }
 
+.categoryScroll { justify-content: flex-start; }
+@media (min-width: 760px) { .categoryScroll { justify-content: center; } }
+
 .categoryScroll::-webkit-scrollbar { display: none; }
 
 .categoryButton {
   scroll-snap-align: start;
-  border: 0;
-  background: #e6e6e3;
-  color: rgba(22, 32, 30, .7);
-  font-size: 14px;
+  flex: 0 0 auto;
+  border: 1px solid rgba(255, 255, 255, .82);
+  background: rgba(255, 255, 255, .62);
+  color: rgba(22, 32, 30, .66);
+  font-size: 13px;
   font-weight: 600;
-  padding: 12px 21px;
-  border-radius: 12px;
+  padding: 11px 20px;
+  border-radius: 999px;
   white-space: nowrap;
-  transition: transform .2s ease, background .2s ease, color .2s ease;
+  box-shadow: 0 4px 14px rgba(22, 32, 30, .05);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  transition: transform .3s cubic-bezier(.34, 1.56, .64, 1), background .25s ease, border-color .25s ease, color .25s ease;
 }
 
 .categoryButton:active { transform: scale(.96); }
 
 .categoryButton.categoryActive {
   background: var(--kiosk-brand);
+  border-color: var(--kiosk-brand);
   color: var(--kiosk-ink);
-  box-shadow: 0 8px 20px var(--kiosk-glow);
+  box-shadow: 0 10px 24px var(--kiosk-glow);
+  transform: translateY(-2px);
 }
 
 /* ---------- Items ---------- */
@@ -361,53 +373,6 @@
   padding: 60px 0;
 }
 
-/* ---------- Footer ---------- */
-
-.footer {
-  margin-top: 40px;
-  background: #16201e;
-  color: #e7eae9;
-  padding: 44px 20px 36px;
-}
-
-.footerInner {
-  max-width: 1240px;
-  margin-inline: auto;
-  text-align: center;
-}
-
-.contacts {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 10px;
-  margin-bottom: 32px;
-}
-
-.contact {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  background: rgba(255, 255, 255, .08);
-  border-radius: 12px;
-  padding: 13px 20px;
-  font-size: 13px;
-  font-weight: 500;
-  transition: background .22s ease, transform .22s ease;
-}
-
-.contact svg { width: 17px; color: var(--kiosk-accent); }
-
-.footerBottom {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  font-size: 12px;
-  color: rgba(231, 234, 233, .5);
-}
-
-.footerBottom b { color: rgba(231, 234, 233, .85); }
-
 /* ---------- Motion ---------- */
 
 @keyframes rise {
@@ -429,7 +394,7 @@
   .headerGlow, .identity { animation: none; }
   .card, .grid[data-shown='true'] .card { animation: none; opacity: 1; }
   .cardSoldOut { opacity: .5; }
-  .card:hover, .card:active, .contact:hover, .categoryButton:active, .variants button:active { transform: none; }
+  .card:hover, .card:active, .categoryButton:active, .variants button:active { transform: none; }
   .card:hover .image { transform: none; }
 }
 
@@ -462,7 +427,6 @@
 @media (hover: hover) and (pointer: fine) {
   .card:hover { transform: translateY(-4px); box-shadow: 0 18px 40px rgba(22, 32, 30, .16); }
   .card:hover .image { transform: scale(1.07); }
-  .contact:hover { background: rgba(255, 255, 255, .15); transform: translateY(-2px); }
 }
 
 /* The photograph eases larger as the dish is scrolled to — the hover effect
