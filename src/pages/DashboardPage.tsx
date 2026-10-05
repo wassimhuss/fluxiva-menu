@@ -79,6 +79,7 @@ export function DashboardPage() {
   const [imageVisibilityDraft, setImageVisibilityDraft] = useState<boolean | null>(null)
   const [imageVisibilityConfirmation, setImageVisibilityConfirmation] = useState<boolean | null>(null)
   const [previewConfirmationOpen, setPreviewConfirmationOpen] = useState(false)
+  const [designExitConfirmationOpen, setDesignExitConfirmationOpen] = useState(false)
   const [qrData, setQrData] = useState('')
   const [qrSvg, setQrSvg] = useState('')
   const [saving, setSaving] = useState(false)
@@ -451,6 +452,31 @@ export function DashboardPage() {
     else { setTemplateDraft(''); setColorDraft(''); setImageVisibilityDraft(null) }
   }
 
+  function leaveDesignWithoutSaving() {
+    setTemplateDraft('')
+    setColorDraft('')
+    setImageVisibilityDraft(null)
+    setImageVisibilityConfirmation(null)
+    setDesignExitConfirmationOpen(false)
+    setPanel('overview')
+  }
+
+  function requestBackToOverview() {
+    if (saving) return
+    if (panel === 'design' && designDirty) {
+      setDesignExitConfirmationOpen(true)
+      return
+    }
+    setPanel('overview')
+  }
+
+  async function saveAndLeaveDesign() {
+    const saved = await saveDesign(previewTemplate, previewColor, previewShowItemImages)
+    if (!saved) return
+    setDesignExitConfirmationOpen(false)
+    setPanel('overview')
+  }
+
   function continueToPreview() {
     setPreviewConfirmationOpen(false)
     window.open(fullPreviewUrl, '_blank', 'noopener,noreferrer')
@@ -513,7 +539,7 @@ export function DashboardPage() {
         <div className="sidebar-bottom"><Link to={`/m/${menu.restaurant.slug}`} target="_blank"><ExternalLink /> {t('Open public menu')}</Link><button onClick={async () => { await signOut(); navigate('/') }}><LogOut /> {t('Sign out')}</button>{adminRole && <Link className="platform-link" to="/platform"><ShieldCheck /> {t('Operator console')}</Link>}</div>
       </aside>
       <section className="dashboard-main">
-        <header className="dashboard-header">{panel !== 'overview' && <button className="mobile-menu" aria-label={t('Back to overview')} onClick={() => setPanel('overview')}><ArrowLeft /></button>}<div><span>{t('Restaurant dashboard')}</span><b>{menu.restaurant.name_en}</b></div><div className="header-actions"><button type="button" className="language-switch" onClick={() => changeDashboardLanguage(dashboardLanguage === 'ar' ? 'en' : 'ar')} aria-label={dashboardLanguage === 'ar' ? 'Switch to English' : 'التبديل إلى العربية'}>{dashboardLanguage === 'ar' ? 'EN' : 'عربي'}</button><Link className="button button-small button-outline" to={`/m/${menu.restaurant.slug}`} target="_blank">{t('View menu')} <ExternalLink /></Link></div></header>
+        <header className="dashboard-header">{panel !== 'overview' && <button className="mobile-menu" aria-label={t('Back to overview')} onClick={requestBackToOverview}><ArrowLeft /></button>}<div><span>{t('Restaurant dashboard')}</span><b>{menu.restaurant.name_en}</b></div><div className="header-actions"><button type="button" className="language-switch" onClick={() => changeDashboardLanguage(dashboardLanguage === 'ar' ? 'en' : 'ar')} aria-label={dashboardLanguage === 'ar' ? 'Switch to English' : 'التبديل إلى العربية'}>{dashboardLanguage === 'ar' ? 'EN' : 'عربي'}</button><Link className="button button-small button-outline" to={`/m/${menu.restaurant.slug}`} target="_blank">{t('View menu')} <ExternalLink /></Link></div></header>
         <div className="dashboard-content">
           {error && <Notice tone="error">{error}</Notice>}
           {success && <div className="dashboard-toast" role="status"><Notice tone="success">{success}</Notice></div>}
@@ -767,6 +793,8 @@ export function DashboardPage() {
       {imageVisibilityConfirmation !== null && <div className="modal-backdrop"><div className="modal-card image-toggle-modal" role="dialog" aria-modal="true" aria-labelledby="image-toggle-title" dir={dashboardLanguage === 'ar' ? 'rtl' : 'ltr'}><button type="button" className="modal-close" aria-label={imageConfirmationCopy.close} onClick={() => setImageVisibilityConfirmation(null)}><X /></button><span className="eyebrow"><span /> {imageConfirmationCopy.eyebrow}</span><h2 id="image-toggle-title">{imageVisibilityConfirmation ? imageConfirmationCopy.showTitle : imageConfirmationCopy.hideTitle}</h2><p>{imageVisibilityConfirmation ? imageConfirmationCopy.showDescription : imageConfirmationCopy.hideDescription}</p><div className="button-row modal-actions"><button type="button" className="button button-outline" onClick={() => setImageVisibilityConfirmation(null)}>{imageConfirmationCopy.cancel}</button><button type="button" className="button button-primary" onClick={confirmItemImages}>{imageVisibilityConfirmation ? imageConfirmationCopy.showAction : imageConfirmationCopy.hideAction}</button></div></div></div>}
 
       {previewConfirmationOpen && <div className="modal-backdrop"><div className="modal-card preview-save-modal" role="dialog" aria-modal="true" aria-labelledby="preview-save-title" dir={dashboardLanguage === 'ar' ? 'rtl' : 'ltr'}><button type="button" className="modal-close" aria-label={t('Close preview confirmation')} onClick={() => setPreviewConfirmationOpen(false)}><X /></button><span className="eyebrow"><span /> {t('Preview changes')}</span><h2 id="preview-save-title">{t('Save before previewing?')}</h2><p>{t('You have unsaved design changes. Save them first so your public menu uses this design, or preview without saving.')}</p><div className="button-row modal-actions preview-save-actions"><button type="button" className="button button-outline" disabled={saving} onClick={continueToPreview}>{t('Continue without saving')}</button><button type="button" className="button button-primary" disabled={saving} onClick={() => void saveAndOpenPreview()}>{saving ? t('Saving…') : t('Save and preview')}</button></div></div></div>}
+
+      {designExitConfirmationOpen && <div className="modal-backdrop"><div className="modal-card design-exit-modal" role="dialog" aria-modal="true" aria-labelledby="design-exit-title" dir={dashboardLanguage === 'ar' ? 'rtl' : 'ltr'}><button type="button" className="modal-close" aria-label={t('Keep editing')} disabled={saving} onClick={() => setDesignExitConfirmationOpen(false)}><X /></button><span className="eyebrow"><span /> {t('Unsaved changes')}</span><h2 id="design-exit-title">{t('Save your menu design?')}</h2><p>{t('You changed your menu design. Save it to make it live, or leave without saving and keep your current design.')}</p><div className="design-exit-actions"><button type="button" className="button button-primary" disabled={saving} onClick={() => void saveAndLeaveDesign()}>{saving ? t('Saving…') : t('Save changes')}</button><button type="button" className="button button-outline" disabled={saving} onClick={leaveDesignWithoutSaving}>{t('Leave without saving')}</button><button type="button" className="button button-ghost" disabled={saving} onClick={() => setDesignExitConfirmationOpen(false)}>{t('Keep editing')}</button></div></div></div>}
 
       {categoryModal && <div className="modal-backdrop"><form className="modal-card" onSubmit={saveCategory}><button type="button" className="modal-close" onClick={() => { setCategoryModal(false); setEditingCategory(null) }}><X /></button><span className="eyebrow"><span /> {editingCategory ? t('Edit section') : t('New section')}</span><h2>{editingCategory ? t('Edit category') : t('Add a category')}</h2><p>{t('Give it a name in both menu languages.')}</p><label>{t('English name')}<input required autoFocus value={categoryDraft.name_en} onChange={(e) => setCategoryDraft({ ...categoryDraft, name_en: e.target.value })} placeholder="Pizza" /></label><label>{t('Arabic name')}<input dir="rtl" required value={categoryDraft.name_ar} onChange={(e) => setCategoryDraft({ ...categoryDraft, name_ar: e.target.value })} placeholder="بيتزا" /></label><button className="button button-primary full" disabled={saving}>{saving ? t('Saving…') : editingCategory ? t('Save category') : t('Add category')}</button></form></div>}
 

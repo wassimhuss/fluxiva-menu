@@ -680,7 +680,15 @@ html.menu-preview-document::-webkit-scrollbar,body.menu-preview-document::-webki
 
 .preview-save-modal>p{line-height:1.65}
 .preview-save-actions .button{flex:1}
+.design-exit-modal>p{line-height:1.65}
+.design-exit-actions{display:grid;gap:9px}
+.design-exit-actions .button{width:100%;justify-content:center}
+.design-exit-actions .button-ghost{color:#59736a}
 @media(max-width:600px){
   .preview-save-actions{flex-direction:column}
   .preview-save-actions .button{width:100%}
+  .design-exit-modal{padding:27px 19px 20px}
+  .design-exit-modal h2{font-size:26px;line-height:1.16}
+  .design-exit-actions{gap:8px}
+  .design-exit-actions .button{min-height:44px}
 }
