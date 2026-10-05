@@ -95,6 +95,8 @@ Migration `017_drop_opening_hours.sql` removes the unused English and Arabic ope
 
 Migration `018_single_language_variants.sql` removes legacy Arabic labels from every stored size variant and adds a constraint preventing `name_ar` from being written back. Apply it after `017`; variant labels now use the single English `name_en` value in both public-menu languages.
 
+Migration `019_platform_gallery_folder_loading.sql` adds the super-admin RPC overload used by `/platform` to fetch gallery images for one folder at a time. Apply it after `018`; the original no-argument RPC remains available only for deliberate bulk operations such as **Clear gallery**.
+
 ## 4. Verification by risk
 
 ### Documentation-only

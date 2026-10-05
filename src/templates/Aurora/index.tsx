@@ -69,6 +69,7 @@ export default function AuroraTemplate(props: MenuTemplateProps) {
 
   const activeCategoryEntry = categories.find((category) => category.id === activeCategory)
   const instagramHandle = restaurant.instagram?.replace(/^@/, '')
+  const footerContactCount = [restaurant.whatsapp, restaurant.address_en || restaurant.address_ar, restaurant.instagram].filter(Boolean).length
 
   return (
     <main
@@ -141,27 +142,43 @@ export default function AuroraTemplate(props: MenuTemplateProps) {
           {!visibleItems.length && <p className={styles.empty}>{t('No items found here.', 'لا توجد أصناف هنا.')}</p>}
         </div>
 
-        <footer className={styles.footer}>
-          <div className={styles.contacts}>
-            {restaurant.whatsapp && (
-              <a className={styles.contact} href={`https://wa.me/${restaurant.whatsapp.replace(/\D/g, '')}`} target="_blank" rel="noreferrer">
-                <MessageCircle /> {t('Message us', 'راسلنا')}
-              </a>
+        <footer
+          className="menu-footer"
+          style={{
+            '--restaurant-color': theme.brand,
+            '--footer-ink': theme.brandInk,
+            '--footer-muted': theme.inkAlpha(0.7),
+            '--footer-soft': theme.inkAlpha(0.11),
+            '--footer-line': theme.inkAlpha(0.16),
+          } as React.CSSProperties}
+        >
+          <div className="footer-shell">
+            {footerContactCount > 0 && (
+              <div className="footer-contact-grid" style={{ '--footer-contact-count': footerContactCount } as React.CSSProperties}>
+                {restaurant.whatsapp && (
+                  <a className="footer-contact-item footer-contact-item-accent" href={`https://wa.me/${restaurant.whatsapp.replace(/\D/g, '')}`} target="_blank" rel="noreferrer">
+                    <span className="footer-contact-icon"><MessageCircle /></span>
+                    <span className="footer-contact-copy"><small>WhatsApp</small><strong>{t('Message us', 'راسلنا الآن')}</strong></span>
+                  </a>
+                )}
+                {(restaurant.address_en || restaurant.address_ar) && (
+                  <div className="footer-contact-item footer-contact-item-wide">
+                    <span className="footer-contact-icon"><MapPin /></span>
+                    <span className="footer-contact-copy"><small>{t('Visit us', 'زورونا')}</small><strong>{t(restaurant.address_en ?? '', restaurant.address_ar ?? '')}</strong></span>
+                  </div>
+                )}
+                {restaurant.instagram && (
+                  <a className="footer-contact-item" href={`https://instagram.com/${instagramHandle}`} target="_blank" rel="noreferrer">
+                    <span className="footer-contact-icon"><Instagram /></span>
+                    <span className="footer-contact-copy"><small>{t('Follow us', 'تابعونا')}</small><strong>{restaurant.instagram}</strong></span>
+                  </a>
+                )}
+              </div>
             )}
-            {(restaurant.address_en || restaurant.address_ar) && (
-              <span className={styles.contact}>
-                <MapPin /> {t(restaurant.address_en ?? '', restaurant.address_ar ?? '')}
-              </span>
-            )}
-            {restaurant.instagram && (
-              <a className={styles.contact} href={`https://instagram.com/${instagramHandle}`} target="_blank" rel="noreferrer">
-                <Instagram /> {restaurant.instagram}
-              </a>
-            )}
-          </div>
-          <div className={styles.footerBottom}>
-            <span>{t('Made for good food.', 'صحة وهنا')}</span>
-            <span>Menu by <b>fluxiva</b></span>
+            <div className="footer-bottom">
+              <span>{t('Made for good food.', 'صحة وهنا')}</span>
+              <span>Menu by <b>fluxiva</b></span>
+            </div>
           </div>
         </footer>
       </div>

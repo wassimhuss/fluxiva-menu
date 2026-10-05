@@ -338,52 +338,6 @@
   padding: 60px 0;
 }
 
-/* ---------- Footer ---------- */
-
-.footer {
-  margin-top: 56px;
-  padding: 46px 20px 40px;
-  background: rgba(255, 255, 255, .5);
-  border-block-start: 1px solid rgba(255, 255, 255, .9);
-  backdrop-filter: blur(12px);
-  text-align: center;
-}
-
-.contacts {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 11px;
-  margin-bottom: 34px;
-}
-
-.contact {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  background: rgba(255, 255, 255, .78);
-  border: 1px solid rgba(255, 255, 255, .95);
-  border-radius: 999px;
-  padding: 12px 20px;
-  font-size: 13px;
-  font-weight: 500;
-  color: rgba(27, 36, 34, .74);
-  box-shadow: 0 6px 18px rgba(27, 36, 34, .06);
-  transition: transform .3s cubic-bezier(.34, 1.56, .64, 1);
-}
-
-.contact svg { width: 17px; color: var(--aurora-strong); }
-
-.footerBottom {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  font-size: 12px;
-  color: rgba(27, 36, 34, .45);
-}
-
-.footerBottom b { color: rgba(27, 36, 34, .7); }
-
 /* ---------- Motion ---------- */
 
 @keyframes drift {
@@ -406,7 +360,7 @@
   .identity { animation: none; }
   .card, .grid[data-shown='true'] .card { animation: none; opacity: 1; }
   .cardSoldOut { opacity: .55; }
-  .card:hover, .contact:hover, .categoryButton:hover { transform: none; }
+  .card:hover, .categoryButton:hover { transform: none; }
   .card:hover .image { transform: none; }
 }
 
@@ -430,18 +384,16 @@
   .card:hover { transform: translateY(-5px); box-shadow: 0 24px 56px rgba(27, 36, 34, .14); }
   .card:hover .image { transform: scale(1.06); }
   .variants button:hover { transform: translateY(-1px); }
-  .contact:hover { transform: translateY(-3px); }
 }
 
 /* Touch has no hover, so the feedback a finger gets is the press itself.
    Transform and opacity only, so it stays on the compositor. */
 .categoryButton:active,
 .variants button:active,
-.langToggle button:active,
-.contact:active { transform: scale(.96); opacity: .82; }
+.langToggle button:active { transform: scale(.96); opacity: .82; }
 
 @media (prefers-reduced-motion: reduce) {
-  .categoryButton:active, .variants button:active, .langToggle button:active, .contact:active { transform: none; }
+  .categoryButton:active, .variants button:active, .langToggle button:active { transform: none; }
 }
 
 /* The photograph eases larger as the dish is scrolled to. This is the same

@@ -344,9 +344,15 @@ export async function listGalleryCategories(): Promise<GalleryCategory[]> {
   return (data ?? []) as GalleryCategory[]
 }
 
-export async function listPlatformGalleryImages(): Promise<GalleryImage[]> {
-  if (!supabase) return structuredClone(demoGalleryImages)
-  const { data, error } = await supabase.rpc('platform_list_gallery_images')
+export async function listPlatformGalleryImages(categoryId?: string): Promise<GalleryImage[]> {
+  if (!supabase) {
+    const images = categoryId ? demoGalleryImages.filter((image) => image.category_id === categoryId) : demoGalleryImages
+    return structuredClone(images)
+  }
+  const result = categoryId
+    ? await supabase.rpc('platform_list_gallery_images', { category_id_input: categoryId })
+    : await supabase.rpc('platform_list_gallery_images')
+  const { data, error } = result
   if (error) throw error
   return (data ?? []) as GalleryImage[]
 }
