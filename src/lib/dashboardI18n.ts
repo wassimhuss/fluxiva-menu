@@ -139,6 +139,8 @@ const arabic: Record<string, string> = {
   'Save changes': 'حفظ التغييرات',
   'Leave without saving': 'الخروج من دون حفظ',
   'Keep editing': 'متابعة التعديل',
+  'Save your restaurant details?': 'هل تريد حفظ تفاصيل مطعمك؟',
+  'You changed your restaurant details. Save them to update your menu, or leave without saving and keep the current details.': 'لقد غيّرت تفاصيل مطعمك. احفظها لتحديث قائمتك، أو اخرج من دون حفظ للاحتفاظ بالتفاصيل الحالية.',
   'Restaurant details.': 'تفاصيل المطعم.',
   'Your name, contact details and menu status. Logo and colour live in Menu design.': 'اسمك وبيانات التواصل وحالة القائمة. الشعار واللون موجودان في تصميم القائمة.',
   'English name': 'الاسم بالإنجليزية',

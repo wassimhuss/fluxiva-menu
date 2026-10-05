@@ -15,12 +15,18 @@ import { formatMoney, localText } from '../lib/format'
 import { dashboardText } from '../lib/dashboardI18n'
 import { subscriptionState } from '../lib/subscription'
 import { DEFAULT_TEMPLATE, TEMPLATES, resolveTemplateId } from '../templates/registry'
-import type { Category, GalleryCategory, GalleryImage, Language, MenuItem, MenuViewStats, RestaurantMenu, Variant } from '../lib/types'
+import type { Category, GalleryCategory, GalleryImage, Language, MenuItem, MenuViewStats, Restaurant, RestaurantMenu, Variant } from '../lib/types'
 
 type Panel = 'overview' | 'analysis' | 'menu' | 'design' | 'settings'
 type ItemDraft = { category_id: string; name_en: string; name_ar: string; description_en: string; description_ar: string; price: string; variants: Variant[]; image_file: File | null; image_url?: string | null; gallery_image_id?: string | null }
+type RestaurantSettings = Pick<Restaurant, 'name_en' | 'name_ar' | 'description_en' | 'description_ar' | 'whatsapp' | 'instagram' | 'address_en' | 'address_ar' | 'currency' | 'temporarily_closed' | 'takeaway_enabled' | 'default_language'>
 const DASHBOARD_LANGUAGE_KEY = 'fluxiva-dashboard-language'
 const emptyItem = (categoryId = ''): ItemDraft => ({ category_id: categoryId, name_en: '', name_ar: '', description_en: '', description_ar: '', price: '', variants: [], image_file: null })
+
+function restaurantSettingsSnapshot(restaurant: Restaurant): RestaurantSettings {
+  const { name_en, name_ar, description_en, description_ar, whatsapp, instagram, address_en, address_ar, currency, temporarily_closed, takeaway_enabled, default_language } = restaurant
+  return { name_en, name_ar, description_en, description_ar, whatsapp, instagram, address_en, address_ar, currency, temporarily_closed, takeaway_enabled, default_language }
+}
 
 async function discardAsset(restaurantId: string, url?: string | null) {
   try { await deleteRestaurantAsset(restaurantId, url) } catch { /* Cleanup must not undo a successful menu change. */ }
@@ -80,6 +86,8 @@ export function DashboardPage() {
   const [imageVisibilityConfirmation, setImageVisibilityConfirmation] = useState<boolean | null>(null)
   const [previewConfirmationOpen, setPreviewConfirmationOpen] = useState(false)
   const [designExitConfirmationOpen, setDesignExitConfirmationOpen] = useState(false)
+  const [savedSettings, setSavedSettings] = useState<RestaurantSettings | null>(null)
+  const [settingsExitConfirmationOpen, setSettingsExitConfirmationOpen] = useState(false)
   const [qrData, setQrData] = useState('')
   const [qrSvg, setQrSvg] = useState('')
   const [saving, setSaving] = useState(false)
@@ -91,7 +99,9 @@ export function DashboardPage() {
 
   useEffect(() => {
     if (demoMode) {
-      setMenu(structuredClone(demoMenu))
+      const demo = structuredClone(demoMenu)
+      setMenu(demo)
+      setSavedSettings(restaurantSettingsSnapshot(demo.restaurant))
       getMenuViewStats(demoMenu.restaurant.id).then(setViewStats).catch(() => undefined)
       setLoading(false)
       return
@@ -100,6 +110,7 @@ export function DashboardPage() {
     getOwnerMenu(session).then((data) => {
       if (!data) { navigate('/onboarding'); return }
       setMenu(data)
+      setSavedSettings(restaurantSettingsSnapshot(data.restaurant))
       // Loaded separately so a slow or failed analytics query never delays the
       // editor, which is what the owner actually came here for.
       getMenuViewStats(data.restaurant.id).then(setViewStats).catch(() => undefined)
@@ -226,8 +237,8 @@ export function DashboardPage() {
     catch (caught) { setMenu(menu); setError(caught instanceof Error ? caught.message : dashboardText(dashboardLanguage, 'Could not update item visibility')) }
   }
 
-  async function saveRestaurant(event: React.FormEvent) {
-    event.preventDefault(); if (!menu) return
+  async function saveRestaurantDetails(): Promise<boolean> {
+    if (!menu) return false
     setSaving(true); setError('')
     try {
       // `primary_color` is deliberately absent: it belongs to the design panel,
@@ -235,9 +246,18 @@ export function DashboardPage() {
       // only previewing over there.
       const { name_en, name_ar, description_en, description_ar, whatsapp, instagram, address_en, address_ar, currency: currencyValue, temporarily_closed, takeaway_enabled, default_language } = menu.restaurant
       await updateRestaurant(menu.restaurant.id, { name_en, name_ar, description_en, description_ar, whatsapp, instagram, address_en, address_ar, currency: currencyValue, temporarily_closed, takeaway_enabled, default_language })
+      setSavedSettings(restaurantSettingsSnapshot(menu.restaurant))
       showSuccess(dashboardText(dashboardLanguage, 'Restaurant details saved.'))
-    } catch (caught) { setError(caught instanceof Error ? caught.message : dashboardText(dashboardLanguage, 'Could not save restaurant')) }
-    finally { setSaving(false) }
+      return true
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : dashboardText(dashboardLanguage, 'Could not save restaurant'))
+      return false
+    } finally { setSaving(false) }
+  }
+
+  async function saveRestaurant(event: React.FormEvent) {
+    event.preventDefault()
+    await saveRestaurantDetails()
   }
 
   /**
@@ -437,6 +457,7 @@ export function DashboardPage() {
   const liveShowItemImages = menu.restaurant.show_item_images !== false
   const previewShowItemImages = imageVisibilityDraft ?? liveShowItemImages
   const designDirty = previewTemplate !== liveTemplate || previewColor !== menu.restaurant.primary_color || previewShowItemImages !== liveShowItemImages
+  const settingsDirty = savedSettings !== null && JSON.stringify(restaurantSettingsSnapshot(menu.restaurant)) !== JSON.stringify(savedSettings)
   const fullPreviewUrl = `/m/${menu.restaurant.slug}?template=${previewTemplate}&color=${encodeURIComponent(previewColor)}&images=${previewShowItemImages ? '1' : '0'}&preview=1`
   const availableTemplates = previewShowItemImages ? TEMPLATES : TEMPLATES.filter((template) => !template.requiresItemImages)
   const selectedTemplate = TEMPLATES.find((template) => template.id === previewTemplate) ?? TEMPLATES[0]
@@ -467,6 +488,10 @@ export function DashboardPage() {
       setDesignExitConfirmationOpen(true)
       return
     }
+    if (panel === 'settings' && settingsDirty) {
+      setSettingsExitConfirmationOpen(true)
+      return
+    }
     setPanel('overview')
   }
 
@@ -475,6 +500,28 @@ export function DashboardPage() {
     if (!saved) return
     setDesignExitConfirmationOpen(false)
     setPanel('overview')
+  }
+
+  function leaveSettingsWithoutSaving() {
+    if (!menu) return
+    if (savedSettings) setMenu({ ...menu, restaurant: { ...menu.restaurant, ...savedSettings } })
+    setSettingsExitConfirmationOpen(false)
+    setPanel('overview')
+  }
+
+  async function saveAndLeaveSettings() {
+    const saved = await saveRestaurantDetails()
+    if (!saved) return
+    setSettingsExitConfirmationOpen(false)
+    setPanel('overview')
+  }
+
+  function openSettings() {
+    if (!menu) return
+    setSavedSettings(restaurantSettingsSnapshot(menu.restaurant))
+    setSettingsExitConfirmationOpen(false)
+    setPanel('settings')
+    setSettingsStep(1)
   }
 
   function continueToPreview() {
@@ -534,7 +581,7 @@ export function DashboardPage() {
           <button className={panel === 'analysis' ? 'selected' : ''} onClick={() => setPanel('analysis')}><Eye /> {t('Analysis')}</button>
           <button className={panel === 'menu' ? 'selected' : ''} onClick={() => setPanel('menu')}><Menu /> {t('Menu editor')}</button>
           <button className={panel === 'design' ? 'selected' : ''} onClick={() => { setPanel('design'); setDesignStep(1) }}><Palette /> {t('Menu design')}</button>
-          <button className={panel === 'settings' ? 'selected' : ''} onClick={() => { setPanel('settings'); setSettingsStep(1) }}><Settings /> {t('Restaurant settings')}</button>
+          <button className={panel === 'settings' ? 'selected' : ''} onClick={openSettings}><Settings /> {t('Restaurant settings')}</button>
         </nav>
         <div className="sidebar-bottom"><Link to={`/m/${menu.restaurant.slug}`} target="_blank"><ExternalLink /> {t('Open public menu')}</Link><button onClick={async () => { await signOut(); navigate('/') }}><LogOut /> {t('Sign out')}</button>{adminRole && <Link className="platform-link" to="/platform"><ShieldCheck /> {t('Operator console')}</Link>}</div>
       </aside>
@@ -553,7 +600,7 @@ export function DashboardPage() {
               <div className="mobile-section-grid">
                 <button className="mobile-section-card mobile-section-card-primary" onClick={() => setPanel('menu')}><span className="mobile-section-icon"><Menu /></span><span><b>{t('Menu editor')}</b><small>{menu.items.length} {t('items')} · {menu.categories.length} {t('Categories').toLowerCase()}</small></span><DirectionalChevron /></button>
                 <button className="mobile-section-card" onClick={() => { setPanel('design'); setDesignStep(1) }}><span className="mobile-section-icon"><Palette /></span><span><b>{t('Menu design')}</b><small>{t('Layout, photos and brand')}</small></span><DirectionalChevron /></button>
-                <button className="mobile-section-card" onClick={() => { setPanel('settings'); setSettingsStep(1) }}><span className="mobile-section-icon"><Settings /></span><span><b>{t('Restaurant settings')}</b><small>{t('Details, status and contact')}</small></span><DirectionalChevron /></button>
+                <button className="mobile-section-card" onClick={openSettings}><span className="mobile-section-icon"><Settings /></span><span><b>{t('Restaurant settings')}</b><small>{t('Details, status and contact')}</small></span><DirectionalChevron /></button>
                 <button className="mobile-section-card mobile-section-card-analysis" onClick={() => setPanel('analysis')}><span className="mobile-section-icon"><Eye /></span><span><b>{t('Analysis')}</b><small>{t('Menu performance and opens')}</small></span><DirectionalChevron /></button>
                 <button className="mobile-section-card mobile-section-card-qr" onClick={openQr}><span className="mobile-section-icon"><QrCode /></span><span><b>{t('QR code')}</b><small>{t('Download or print your menu QR')}</small></span><DirectionalChevron /></button>
                 <Link className="mobile-section-card mobile-section-card-live" to={`/m/${menu.restaurant.slug}`} target="_blank" rel="noreferrer"><span className="mobile-section-icon"><ExternalLink /></span><span><b>{t('Live menu')}</b><small>{t('See what your customers see')}</small></span><ExternalLink /></Link>
@@ -795,6 +842,8 @@ export function DashboardPage() {
       {previewConfirmationOpen && <div className="modal-backdrop"><div className="modal-card preview-save-modal" role="dialog" aria-modal="true" aria-labelledby="preview-save-title" dir={dashboardLanguage === 'ar' ? 'rtl' : 'ltr'}><button type="button" className="modal-close" aria-label={t('Close preview confirmation')} onClick={() => setPreviewConfirmationOpen(false)}><X /></button><span className="eyebrow"><span /> {t('Preview changes')}</span><h2 id="preview-save-title">{t('Save before previewing?')}</h2><p>{t('You have unsaved design changes. Save them first so your public menu uses this design, or preview without saving.')}</p><div className="button-row modal-actions preview-save-actions"><button type="button" className="button button-outline" disabled={saving} onClick={continueToPreview}>{t('Continue without saving')}</button><button type="button" className="button button-primary" disabled={saving} onClick={() => void saveAndOpenPreview()}>{saving ? t('Saving…') : t('Save and preview')}</button></div></div></div>}
 
       {designExitConfirmationOpen && <div className="modal-backdrop"><div className="modal-card design-exit-modal" role="dialog" aria-modal="true" aria-labelledby="design-exit-title" dir={dashboardLanguage === 'ar' ? 'rtl' : 'ltr'}><button type="button" className="modal-close" aria-label={t('Keep editing')} disabled={saving} onClick={() => setDesignExitConfirmationOpen(false)}><X /></button><span className="eyebrow"><span /> {t('Unsaved changes')}</span><h2 id="design-exit-title">{t('Save your menu design?')}</h2><p>{t('You changed your menu design. Save it to make it live, or leave without saving and keep your current design.')}</p><div className="design-exit-actions"><button type="button" className="button button-primary" disabled={saving} onClick={() => void saveAndLeaveDesign()}>{saving ? t('Saving…') : t('Save changes')}</button><button type="button" className="button button-outline" disabled={saving} onClick={leaveDesignWithoutSaving}>{t('Leave without saving')}</button><button type="button" className="button button-ghost" disabled={saving} onClick={() => setDesignExitConfirmationOpen(false)}>{t('Keep editing')}</button></div></div></div>}
+
+      {settingsExitConfirmationOpen && <div className="modal-backdrop"><div className="modal-card design-exit-modal" role="dialog" aria-modal="true" aria-labelledby="settings-exit-title" dir={dashboardLanguage === 'ar' ? 'rtl' : 'ltr'}><button type="button" className="modal-close" aria-label={t('Keep editing')} disabled={saving} onClick={() => setSettingsExitConfirmationOpen(false)}><X /></button><span className="eyebrow"><span /> {t('Unsaved changes')}</span><h2 id="settings-exit-title">{t('Save your restaurant details?')}</h2><p>{t('You changed your restaurant details. Save them to update your menu, or leave without saving and keep the current details.')}</p><div className="design-exit-actions"><button type="button" className="button button-primary" disabled={saving} onClick={() => void saveAndLeaveSettings()}>{saving ? t('Saving…') : t('Save changes')}</button><button type="button" className="button button-outline" disabled={saving} onClick={leaveSettingsWithoutSaving}>{t('Leave without saving')}</button><button type="button" className="button button-ghost" disabled={saving} onClick={() => setSettingsExitConfirmationOpen(false)}>{t('Keep editing')}</button></div></div></div>}
 
       {categoryModal && <div className="modal-backdrop"><form className="modal-card" onSubmit={saveCategory}><button type="button" className="modal-close" onClick={() => { setCategoryModal(false); setEditingCategory(null) }}><X /></button><span className="eyebrow"><span /> {editingCategory ? t('Edit section') : t('New section')}</span><h2>{editingCategory ? t('Edit category') : t('Add a category')}</h2><p>{t('Give it a name in both menu languages.')}</p><label>{t('English name')}<input required autoFocus value={categoryDraft.name_en} onChange={(e) => setCategoryDraft({ ...categoryDraft, name_en: e.target.value })} placeholder="Pizza" /></label><label>{t('Arabic name')}<input dir="rtl" required value={categoryDraft.name_ar} onChange={(e) => setCategoryDraft({ ...categoryDraft, name_ar: e.target.value })} placeholder="بيتزا" /></label><button className="button button-primary full" disabled={saving}>{saving ? t('Saving…') : editingCategory ? t('Save category') : t('Add category')}</button></form></div>}
 
