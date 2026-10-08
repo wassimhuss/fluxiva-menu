@@ -94,6 +94,7 @@ Build a curated **Fluxiva Gallery** that lets every restaurant owner either sele
 
 ## Completed product improvements
 
+- [x] Autofill empty English and Arabic item names from a selected Fluxiva Gallery photo without overwriting owner-entered names (2026-10-08).
 - [x] Add a drag-and-zoom cropper that produces exact `1200 × 1500` 4:5 portrait super-admin gallery uploads (2026-09-29).
 - [x] Reuse the `1200 × 1500` portrait cropper for owners replacing personal item photos, including an immediate cropped preview (2026-09-29).
 - [x] Show immediate loading feedback while switching templates in the public demo menu (2026-09-25).

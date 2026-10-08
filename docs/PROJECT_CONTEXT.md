@@ -160,6 +160,7 @@ The owner dashboard supports:
 - Item availability toggles and sold-out presentation.
 - Item variants, optional priced extras, and photos.
 - A bilingual searchable Fluxiva Gallery alongside personal uploads. Owners browse curated folders such as Cold Mezza or Hot Mezza before selecting a shared photo. Shared photos are reused by URL, while personal uploads stay in the restaurant's own Storage folder.
+  - Selecting a gallery photo fills any empty English and Arabic item-name fields from the photo's curated bilingual metadata. Names the owner already entered are never overwritten and remain editable.
 - Restaurant logo, cover, theme, contact details, opening state, and default language.
   - A restaurant-wide food-photo visibility switch. Hiding photos preserves the uploaded files, limits the design picker to the photo-optional Classic, Noir, and Maison templates, and safely falls back to Classic when a photo-based design had been selected. Maison adds editorial thumbnails when photos are enabled and collapses cleanly to a text-only layout when they are hidden.
 - The owner dashboard has an English/Arabic UI switch in the header. It persists in local storage, applies RTL layout, and translates the dashboard panels, analytics card, subscription warning, forms, dialogs, and action feedback without changing the restaurant's public-menu language setting.
