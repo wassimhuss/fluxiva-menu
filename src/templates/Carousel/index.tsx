@@ -186,7 +186,7 @@ export default function CarouselTemplate(props: MenuTemplateProps) {
             {activeItem.available
               ? <span className={styles.price}>{formatPrice(activePrice)}</span>
               : <span className={styles.unavailable}>{t('Currently unavailable', 'غير متوفر حالياً')}</span>}
-            {ordering && <AddToOrder item={activeItem} variantIndex={activeVariantIndex} ordering={ordering} t={t} className={styles.addToOrder} />}
+            {ordering && <AddToOrder item={activeItem} variantIndex={activeVariantIndex} ordering={ordering} t={t} formatPrice={formatPrice} rtl={rtl} className={styles.addToOrder} />}
           </div>
         </section>
       )}

@@ -1,4 +1,4 @@
-import type { Language, MenuItem } from './types'
+import type { ItemExtra, Language, MenuItem } from './types'
 
 /**
  * A takeaway order, held only in the diner's browser.
@@ -12,6 +12,8 @@ export interface OrderLine {
   itemId: string
   /** Which size was chosen; 0 when the dish has no sizes. */
   variantIndex: number
+  /** Stable ids of the optional add-ons selected for this line. */
+  extraIds: string[]
   quantity: number
 }
 
@@ -19,14 +21,19 @@ export interface OrderLine {
 export interface ResolvedLine extends OrderLine {
   item: MenuItem
   variantName: string
+  extras: ItemExtra[]
   unitPrice: number
   lineTotal: number
 }
 
 export const MAX_QUANTITY = 99
 
-export function lineKey(itemId: string, variantIndex: number) {
-  return `${itemId}::${variantIndex}`
+export function normalizeExtraIds(extraIds: string[] = []) {
+  return [...new Set(extraIds.filter(Boolean))].sort()
+}
+
+export function lineKey(itemId: string, variantIndex: number, extraIds: string[] = []) {
+  return `${itemId}::${variantIndex}::${normalizeExtraIds(extraIds).join(',')}`
 }
 
 /**
@@ -43,11 +50,18 @@ export function resolveLines(lines: OrderLine[], items: MenuItem[]): ResolvedLin
     const variant = item.variants?.[line.variantIndex]
     // A size that has since been removed falls back to the base price rather
     // than sending a price nobody offers.
-    const unitPrice = variant?.price ?? item.price
+    const selectedIds = new Set(normalizeExtraIds(line.extraIds))
+    const extras = (item.extras ?? []).filter((extra) => extra.id && selectedIds.has(extra.id))
+    const unitPrice = (variant?.price ?? item.price) + extras.reduce((sum, extra) => sum + extra.price, 0)
     resolved.push({
       ...line,
+      // Keep the stored key stable even if the owner removes an extra while a
+      // diner has the menu open. Removed extras stop affecting price/text, but
+      // the remaining line can still be increased or removed correctly.
+      extraIds: normalizeExtraIds(line.extraIds),
       item,
       variantName: variant?.name_en ?? '',
+      extras,
       unitPrice,
       lineTotal: unitPrice * line.quantity,
     })
@@ -91,7 +105,10 @@ export function buildOrderMessage({ restaurantName, lines, language, formatPrice
   const rendered = lines.map((line) => {
     const name = ar ? line.item.name_ar : line.item.name_en
     const size = line.variantName ? ` (${line.variantName})` : ''
-    return `${line.quantity} × ${name}${size} — ${formatPrice(line.lineTotal)}`
+    const extras = line.extras.length
+      ? ` + ${line.extras.map((extra) => ar ? extra.name_ar : extra.name_en).join(', ')}`
+      : ''
+    return `${line.quantity} × ${name}${size}${extras} — ${formatPrice(line.lineTotal)}`
   })
 
   const tail = () => {

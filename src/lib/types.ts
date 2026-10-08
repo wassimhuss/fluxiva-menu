@@ -144,6 +144,14 @@ export interface Variant {
   price: number
 }
 
+/** An optional add-on whose price is added to the item's base or size price. */
+export interface ItemExtra {
+  id?: string
+  name_en: string
+  name_ar: string
+  price: number
+}
+
 export interface MenuItem {
   id: string
   restaurant_id: string
@@ -160,6 +168,8 @@ export interface MenuItem {
   /** Set only when image_url points at the shared Fluxiva Gallery. */
   gallery_image_id?: string | null
   variants: Variant[]
+  /** Optional add-ons. Diners may choose more than one. */
+  extras: ItemExtra[]
   available: boolean
   sort_order: number
 }

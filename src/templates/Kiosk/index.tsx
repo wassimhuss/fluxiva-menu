@@ -7,11 +7,12 @@ import { useInView } from '../useInView'
 import { useReveal } from '../useReveal'
 import styles from './Kiosk.module.css'
 
-function KioskCard({ item, index, t, formatPrice, ordering }: {
+function KioskCard({ item, index, t, formatPrice, rtl, ordering }: {
   item: MenuItem
   index: number
   t: MenuTemplateProps['t']
   formatPrice: MenuTemplateProps['formatPrice']
+  rtl: boolean
   ordering?: MenuTemplateProps['ordering']
 }) {
   const [variantIndex, setVariantIndex] = useState(0)
@@ -37,7 +38,7 @@ function KioskCard({ item, index, t, formatPrice, ordering }: {
         {!item.available && <span className={styles.soldOutTag}>{t('Sold out', 'نفد')}</span>}
         {ordering && (
           <div className={styles.cardOrder}>
-            <AddToOrder item={item} variantIndex={variantIndex} ordering={ordering} t={t} />
+            <AddToOrder item={item} variantIndex={variantIndex} ordering={ordering} t={t} formatPrice={formatPrice} rtl={rtl} />
           </div>
         )}
         {item.image_url && (
@@ -142,7 +143,7 @@ export default function KioskTemplate(props: MenuTemplateProps) {
 
         <div className={styles.grid} ref={gridRef} data-shown={gridShown} key={activeCategory}>
           {visibleItems.map((item, index) => (
-            <KioskCard key={item.id} item={item} index={index} t={t} formatPrice={formatPrice} ordering={ordering} />
+            <KioskCard key={item.id} item={item} index={index} t={t} formatPrice={formatPrice} rtl={rtl} ordering={ordering} />
           ))}
         </div>
         {!visibleItems.length && <p className={styles.empty}>{t('No items found here.', 'لا توجد أصناف هنا.')}</p>}

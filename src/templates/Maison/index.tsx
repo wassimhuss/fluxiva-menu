@@ -6,11 +6,12 @@ import type { MenuTemplateProps } from '../types'
 import { useReveal } from '../useReveal'
 import styles from './Maison.module.css'
 
-function MaisonItem({ item, index, t, formatPrice, ordering }: {
+function MaisonItem({ item, index, t, formatPrice, rtl, ordering }: {
   item: MenuItem
   index: number
   t: MenuTemplateProps['t']
   formatPrice: MenuTemplateProps['formatPrice']
+  rtl: boolean
   ordering?: MenuTemplateProps['ordering']
 }) {
   const [variantIndex, setVariantIndex] = useState(0)
@@ -42,7 +43,7 @@ function MaisonItem({ item, index, t, formatPrice, ordering }: {
         {!item.available && <span className={styles.soldOut}>{t('Currently unavailable', 'غير متوفر حالياً')}</span>}
         {ordering && (
           <div className={styles.itemOrder}>
-            <AddToOrder item={item} variantIndex={variantIndex} ordering={ordering} t={t} />
+            <AddToOrder item={item} variantIndex={variantIndex} ordering={ordering} t={t} formatPrice={formatPrice} rtl={rtl} />
           </div>
         )}
         {item.available && item.variants?.length > 0 && (
@@ -150,7 +151,7 @@ export default function MaisonTemplate(props: MenuTemplateProps) {
 
         <div className={styles.list} ref={listRef} data-shown={listShown} key={activeCategory}>
           {visibleItems.map((item, index) => (
-            <MaisonItem key={item.id} item={item} index={index} t={t} formatPrice={formatPrice} ordering={ordering} />
+            <MaisonItem key={item.id} item={item} index={index} t={t} formatPrice={formatPrice} rtl={rtl} ordering={ordering} />
           ))}
         </div>
         {!visibleItems.length && <p className={styles.empty}>{t('No items found here.', 'لا توجد أصناف هنا.')}</p>}

@@ -1,6 +1,6 @@
 import { Minus, Plus, ShoppingBag, Trash2, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { buildOrderMessage, orderTotal, resolveLines, whatsappOrderLink, MAX_QUANTITY } from '../lib/order'
+import { buildOrderMessage, lineKey, orderTotal, resolveLines, whatsappOrderLink, MAX_QUANTITY } from '../lib/order'
 import type { Language, MenuItem, Restaurant } from '../lib/types'
 import type { OrderApi } from '../lib/useOrder'
 import styles from './OrderBar.module.css'
@@ -90,15 +90,16 @@ export function OrderBar({ restaurant, items, order, language, rtl, t, formatPri
               <>
                 <div className={styles.lines}>
                   {lines.map((line) => (
-                    <div className={styles.line} key={`${line.itemId}::${line.variantIndex}`}>
+                    <div className={styles.line} key={lineKey(line.itemId, line.variantIndex, line.extraIds)}>
                       <span className={styles.lineName}>{t(line.item.name_en, line.item.name_ar)}</span>
                       <span className={styles.lineTotal}>{formatPrice(line.lineTotal)}</span>
                       <span className={styles.lineMeta}>
-                        {line.variantName ? `${line.variantName} · ` : ''}{formatPrice(line.unitPrice)}
+                        {[line.variantName, ...line.extras.map((extra) => t(extra.name_en, extra.name_ar))].filter(Boolean).join(' · ')}
+                        {(line.variantName || line.extras.length) ? ' · ' : ''}{formatPrice(line.unitPrice)}
                       </span>
                       <span className={styles.stepper}>
                         <button
-                          onClick={() => order.setQuantity(line.itemId, line.variantIndex, line.quantity - 1)}
+                          onClick={() => order.setQuantity(line.itemId, line.variantIndex, line.quantity - 1, line.extraIds)}
                           aria-label={line.quantity === 1
                             ? t('Remove from order', 'إزالة من الطلب')
                             : t('Reduce quantity', 'تقليل الكمية')}
@@ -107,7 +108,7 @@ export function OrderBar({ restaurant, items, order, language, rtl, t, formatPri
                         </button>
                         <span>{line.quantity}</span>
                         <button
-                          onClick={() => order.setQuantity(line.itemId, line.variantIndex, line.quantity + 1)}
+                          onClick={() => order.setQuantity(line.itemId, line.variantIndex, line.quantity + 1, line.extraIds)}
                           disabled={line.quantity >= MAX_QUANTITY}
                           aria-label={t('Increase quantity', 'زيادة الكمية')}
                         >

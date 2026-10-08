@@ -7,11 +7,12 @@ import { useInView } from '../useInView'
 import { useReveal } from '../useReveal'
 import styles from './Noir.module.css'
 
-function NoirItem({ item, index, t, formatPrice, ordering }: {
+function NoirItem({ item, index, t, formatPrice, rtl, ordering }: {
   item: MenuItem
   index: number
   t: MenuTemplateProps['t']
   formatPrice: MenuTemplateProps['formatPrice']
+  rtl: boolean
   ordering?: MenuTemplateProps['ordering']
 }) {
   const [variantIndex, setVariantIndex] = useState(0)
@@ -41,7 +42,7 @@ function NoirItem({ item, index, t, formatPrice, ordering }: {
       {!item.available && <span className={styles.soldOutLabel}>{t('Unavailable', 'غير متوفر')}</span>}
       {ordering && (
         <div className={styles.itemOrder}>
-          <AddToOrder item={item} variantIndex={variantIndex} ordering={ordering} t={t} />
+          <AddToOrder item={item} variantIndex={variantIndex} ordering={ordering} t={t} formatPrice={formatPrice} rtl={rtl} />
         </div>
       )}
       {item.available && item.variants?.length > 0 && (
@@ -132,7 +133,7 @@ export default function NoirTemplate(props: MenuTemplateProps) {
         {/* Keyed on the category so the stagger replays when the diner switches. */}
         <div className={styles.grid} ref={gridRef} data-shown={gridShown} key={activeCategory}>
           {visibleItems.map((item, index) => (
-            <NoirItem key={item.id} item={item} index={index} t={t} formatPrice={formatPrice} ordering={ordering} />
+            <NoirItem key={item.id} item={item} index={index} t={t} formatPrice={formatPrice} rtl={rtl} ordering={ordering} />
           ))}
         </div>
         {!visibleItems.length && <p className={styles.empty}>{t('No items found here.', 'لا توجد أصناف هنا.')}</p>}

@@ -80,6 +80,18 @@ Build a curated **Fluxiva Gallery** that lets every restaurant owner either sele
 - [ ] Make CSV import transactional or provide a row-level failure report.
 - [ ] Add a documented Supabase migration and deployment pipeline.
 
+## Item extras
+
+**Status:** `[x]` Complete; migration `020_item_extras.sql` was applied to the configured production project on 2026-10-08.
+
+- [x] Let owners add paired English/Arabic extras with an added price to any item.
+- [x] Keep extras separate from sizes: one size may be selected, then multiple extras may be added.
+- [x] Use one bilingual customization sheet across all eight order-enabled menu templates.
+- [x] Keep differently customized copies of the same item as separate basket lines.
+- [x] Include selected extras in totals, the basket, restored session orders, and WhatsApp messages.
+- [x] Preserve the complete workflow in demo mode.
+- [x] Verify English and Arabic customer flows, distinct customized lines, lint, and production build.
+
 ## Completed product improvements
 
 - [x] Add a drag-and-zoom cropper that produces exact `1200 × 1500` 4:5 portrait super-admin gallery uploads (2026-09-29).

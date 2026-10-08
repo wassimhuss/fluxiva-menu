@@ -44,7 +44,7 @@ Unknown routes redirect to `/`.
 
 Demo mode is active when `VITE_SUPABASE_URL` or `VITE_SUPABASE_PUBLISHABLE_KEY` is missing or still contains the placeholder project URL.
 
-- `src/lib/demo.ts` supplies the Hilal Oven restaurant, categories, items, variants, and local image paths.
+- `src/lib/demo.ts` supplies the Hilal Oven restaurant, categories, items, variants, extras, and local image paths.
 - Authentication forms navigate into the owner experience without remote authentication.
 - API mutations generally return local/demo results or no-op; the dashboard maintains the interactive state in memory.
 - The public demo is always `/m/demo`.
@@ -116,11 +116,15 @@ Belongs to a restaurant and contains paired English/Arabic names plus `sort_orde
 
 ### `menu_items`
 
-Belongs to both a restaurant and category. Contains paired English/Arabic names and descriptions, an LBP base price, optional image, JSON variants, availability, and `sort_order`.
+Belongs to both a restaurant and category. Contains paired English/Arabic names and descriptions, a base price in the restaurant's currency, optional image, JSON variants, JSON extras, availability, and `sort_order`.
 
 ### `variants`
 
 Variants are stored as a JSON array on each menu item, shaped as `{ id?, name_en, price }`. Size labels intentionally use one English value in both menu languages. `cleanVariants` removes empty or zero-price draft variants and strips the legacy `name_ar` key before persistence.
+
+### `extras`
+
+Extras are optional bilingual add-ons stored as a JSON array on each menu item, shaped as `{ id, name_en, name_ar, price }`. A size replaces the base item price; every selected extra is then added to that price. Diners may choose multiple extras, and each distinct size/extra combination remains a separate order line. `cleanExtras` trims paired labels and preserves a stable ID for order matching.
 
 ### Platform administrators
 
@@ -154,7 +158,7 @@ The owner dashboard supports:
 - Overview counts and trial/subscription state.
 - Category/item creation, editing, deletion, and ordering.
 - Item availability toggles and sold-out presentation.
-- Item variants and photos.
+- Item variants, optional priced extras, and photos.
 - A bilingual searchable Fluxiva Gallery alongside personal uploads. Owners browse curated folders such as Cold Mezza or Hot Mezza before selecting a shared photo. Shared photos are reused by URL, while personal uploads stay in the restaurant's own Storage folder.
 - Restaurant logo, cover, theme, contact details, opening state, and default language.
   - A restaurant-wide food-photo visibility switch. Hiding photos preserves the uploaded files, limits the design picker to the photo-optional Classic, Noir, and Maison templates, and safely falls back to Classic when a photo-based design had been selected. Maison adds editorial thumbnails when photos are enabled and collapses cleanly to a text-only layout when they are hidden.
@@ -166,7 +170,7 @@ Image files are validated as JPG, PNG, or WebP and limited to 8 MB. A personal i
 
 ### Public menu
 
-The public page loads restaurant data by slug, applies the restaurant color as a CSS variable, supports English/Arabic direction changes, groups ordered items by category, presents size variants, shows sold-out states, and exposes configured contact/location links.
+The public page loads restaurant data by slug, applies the restaurant color as a CSS variable, supports English/Arabic direction changes, groups ordered items by category, presents size variants, shows sold-out states, and exposes configured contact/location links. In takeaway mode, items with extras open one shared bilingual customization sheet across every template. Selected extras update the displayed total and are included in the basket and WhatsApp message.
 
 ## Design system and recent landing-page work
 

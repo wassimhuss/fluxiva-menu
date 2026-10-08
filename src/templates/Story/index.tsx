@@ -6,12 +6,13 @@ import type { MenuTemplateProps } from '../types'
 import { useActiveSlide } from '../useActiveSlide'
 import styles from './Story.module.css'
 
-function Chapter({ item, index, active, t, formatPrice, ordering }: {
+function Chapter({ item, index, active, t, formatPrice, rtl, ordering }: {
   item: MenuItem
   index: number
   active: boolean
   t: MenuTemplateProps['t']
   formatPrice: MenuTemplateProps['formatPrice']
+  rtl: boolean
   ordering?: MenuTemplateProps['ordering']
 }) {
   const [variantIndex, setVariantIndex] = useState(0)
@@ -45,7 +46,7 @@ function Chapter({ item, index, active, t, formatPrice, ordering }: {
           {item.available
             ? <span className={styles.price}>{formatPrice(price)}</span>
             : <span className={styles.soldOut}>{t('Unavailable', 'غير متوفر')}</span>}
-          {ordering && <AddToOrder item={item} variantIndex={variantIndex} ordering={ordering} t={t} className={styles.addToOrder} />}
+          {ordering && <AddToOrder item={item} variantIndex={variantIndex} ordering={ordering} t={t} formatPrice={formatPrice} rtl={rtl} className={styles.addToOrder} />}
         </div>
       </div>
     </section>
@@ -138,6 +139,7 @@ export default function StoryTemplate(props: MenuTemplateProps) {
                   active={active === index}
                   t={t}
                   formatPrice={formatPrice}
+                  rtl={rtl}
                   ordering={ordering}
                 />
               ))}

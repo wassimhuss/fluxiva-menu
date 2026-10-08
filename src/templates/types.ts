@@ -43,9 +43,9 @@ export interface MenuTemplateProps {
  */
 export interface MenuOrdering {
   /** Units of this dish and size already in the order. */
-  quantityOf: (itemId: string, variantIndex: number) => number
-  add: (itemId: string, variantIndex: number) => void
-  setQuantity: (itemId: string, variantIndex: number, quantity: number) => void
+  quantityOf: (itemId: string, variantIndex: number, extraIds?: string[]) => number
+  add: (itemId: string, variantIndex: number, extraIds?: string[]) => void
+  setQuantity: (itemId: string, variantIndex: number, quantity: number, extraIds?: string[]) => void
 }
 
 export type MenuTemplate = ComponentType<MenuTemplateProps>

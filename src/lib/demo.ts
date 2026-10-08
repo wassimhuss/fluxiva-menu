@@ -1,4 +1,4 @@
-import type { Category, GalleryCategory, GalleryImage, MenuContactCard, MenuItem, MenuViewDay, MenuViewStats, PlatformAuditEntry, PlatformRestaurant, RestaurantMenu, Variant } from './types'
+import type { Category, GalleryCategory, GalleryImage, ItemExtra, MenuContactCard, MenuItem, MenuViewDay, MenuViewStats, PlatformAuditEntry, PlatformRestaurant, RestaurantMenu, Variant } from './types'
 
 const categories: Category[] = [
   ['manakish', 'Manakish', 'مناقيش'], ['croissants', 'Croissants', 'كرواسون'], ['soiree', 'Soiree', 'سوارية'],
@@ -30,13 +30,14 @@ export const demoGalleryImages: GalleryImage[] = [
 ]
 const categoryImageCounts: Record<string, number> = {}
 const variant = (id: string, name_en: string, price: number): Variant => ({ id, name_en, price })
+const extra = (id: string, name_en: string, name_ar: string, price: number): ItemExtra => ({ id, name_en, name_ar, price })
 let itemNumber = 0
-function item(category: string, name_en: string, name_ar: string, description_en: string, description_ar: string, price: number, variants: Variant[] = []): MenuItem {
+function item(category: string, name_en: string, name_ar: string, description_en: string, description_ar: string, price: number, variants: Variant[] = [], extras: ItemExtra[] = []): MenuItem {
   itemNumber += 1
   const images = categoryImages[category] ?? []
   const imageIndex = categoryImageCounts[category] ?? 0
   categoryImageCounts[category] = imageIndex + 1
-  return { id: `demo-item-${itemNumber}`, restaurant_id: 'demo-restaurant', category_id: categoryId(category), name_en, name_ar, description_en, description_ar, price, image_url: images[imageIndex % images.length], variants, available: true, sort_order: itemNumber }
+  return { id: `demo-item-${itemNumber}`, restaurant_id: 'demo-restaurant', category_id: categoryId(category), name_en, name_ar, description_en, description_ar, price, image_url: images[imageIndex % images.length], variants, extras, available: true, sort_order: itemNumber }
 }
 
 export const demoMenu: RestaurantMenu = {
@@ -50,7 +51,10 @@ export const demoMenu: RestaurantMenu = {
   categories,
   items: [
     item('Manakish', 'Zaatar Manoushe', 'مناقيش زعتر', 'Traditional zaatar, sesame and olive oil', 'زعتر بلدي، سمسم وزيت زيتون', 100000),
-    item('Manakish', 'Cheese Manoushe', 'مناقيش جبنة', 'Melted akkawi cheese', 'جبنة عكاوي ذائبة', 180000),
+    item('Manakish', 'Cheese Manoushe', 'مناقيش جبنة', 'Melted akkawi cheese', 'جبنة عكاوي ذائبة', 180000, [], [
+      extra('cheese-extra', 'Extra cheese', 'جبنة إضافية', 50000),
+      extra('vegetables-extra', 'Fresh vegetables', 'خضار طازجة', 30000),
+    ]),
     item('Manakish', 'Zaatar & Cheese', 'مناقيش زعتر وجبنة', 'Zaatar blend with melted cheese', 'خلطة زعتر مع جبنة ذائبة', 220000),
     item('Manakish', 'Lahm bi Ajeen', 'لحم بعجين', 'Seasoned beef, tomato, onion and herbs', 'لحم متبّل، طماطم، بصل وأعشاب', 250000),
     item('Manakish', 'Labneh & Vegetables', 'مناقيش لبنة وخضار', 'Labneh, cucumber, tomato, mint and olives', 'لبنة، خيار، طماطم، نعنع وزيتون', 250000),
@@ -65,7 +69,9 @@ export const demoMenu: RestaurantMenu = {
     item('Soiree', 'Meat Sambousek', 'سمبوسك لحم', 'Seasoned beef, onion and pine nuts', 'لحم متبّل، بصل وصنوبر', 200000),
     item('Soiree', 'Mini Pizza', 'بيتزا صغيرة', 'Tomato, mozzarella and oregano', 'طماطم، موزاريلا وأوريغانو', 180000),
     item('Soiree', 'Mini Zaatar', 'مناقيش صغيرة', 'Mini zaatar bites with sesame', 'مناقيش صغيرة بالزعتر والسمسم', 150000),
-    item('Pizza', 'Margherita', 'مارغريتا', 'Tomato, mozzarella and fresh basil', 'طماطم، موزاريلا وريحان طازج', 350000, [variant('margherita-s', 'S', 350000), variant('margherita-m', 'M', 500000), variant('margherita-l', 'L', 650000)]),
+    item('Pizza', 'Margherita', 'مارغريتا', 'Tomato, mozzarella and fresh basil', 'طماطم، موزاريلا وريحان طازج', 350000, [variant('margherita-s', 'S', 350000), variant('margherita-m', 'M', 500000), variant('margherita-l', 'L', 650000)], [
+      extra('pizza-extra-cheese', 'Extra cheese', 'جبنة إضافية', 50000),
+    ]),
     item('Pizza', 'Vegetarian', 'خضار', 'Mushroom, peppers, olives, onion and corn', 'فطر، فليفلة، زيتون، بصل وذرة', 500000, [variant('vegetarian-s', 'S', 500000), variant('vegetarian-m', 'M', 650000), variant('vegetarian-l', 'L', 800000)]),
     item('Pizza', 'Four Cheese', 'أربع أجبان', 'Mozzarella, akkawi, cheddar and parmesan', 'موزاريلا، عكاوي، شيدر وبارميزان', 600000, [variant('four-cheese-s', 'S', 600000), variant('four-cheese-m', 'M', 750000), variant('four-cheese-l', 'L', 900000)]),
     item('Pizza', 'Chicken Pizza', 'بيتزا دجاج', 'Chicken, smoked cheese, onion and BBQ sauce', 'دجاج، جبنة مدخّنة، بصل وصلصة باربكيو', 600000, [variant('chicken-s', 'S', 600000), variant('chicken-m', 'M', 750000), variant('chicken-l', 'L', 900000)]),

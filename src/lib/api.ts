@@ -1,11 +1,11 @@
 import type { Session } from '@supabase/supabase-js'
 import { demoContactCard, demoGalleryCategories, demoGalleryImages, demoMenu, demoMenuViewStats, demoPlatformAudit, demoPlatformRestaurants } from './demo'
 import { supabase } from './supabase'
-import type { AdminRole, Category, GalleryCategory, GalleryImage, MenuContactCard, MenuItem, MenuViewDay, MenuViewStats, PlatformAuditEntry, PlatformRestaurant, Restaurant, RestaurantMenu, Variant } from './types'
+import type { AdminRole, Category, GalleryCategory, GalleryImage, ItemExtra, MenuContactCard, MenuItem, MenuViewDay, MenuViewStats, PlatformAuditEntry, PlatformRestaurant, Restaurant, RestaurantMenu, Variant } from './types'
 
 type RestaurantInput = Pick<Restaurant, 'name_en' | 'name_ar' | 'slug' | 'primary_color' | 'phone' | 'whatsapp' | 'instagram' | 'maps_url' | 'address_en' | 'address_ar' | 'currency' | 'temporarily_closed' | 'default_language'>
 type CategoryInput = Pick<Category, 'restaurant_id' | 'name_en' | 'name_ar' | 'sort_order'>
-type ItemInput = Pick<MenuItem, 'restaurant_id' | 'category_id' | 'name_en' | 'name_ar' | 'description_en' | 'description_ar' | 'price' | 'image_url' | 'gallery_image_id' | 'variants' | 'available' | 'sort_order'>
+type ItemInput = Pick<MenuItem, 'restaurant_id' | 'category_id' | 'name_en' | 'name_ar' | 'description_en' | 'description_ar' | 'price' | 'image_url' | 'gallery_image_id' | 'variants' | 'extras' | 'available' | 'sort_order'>
 type AssetPurpose = 'cover' | 'item' | 'logo' | 'gallery-thumb'
 export type GalleryImageInput = Pick<GalleryImage, 'category_id' | 'name_en' | 'name_ar' | 'tags_en' | 'tags_ar'> & Pick<GalleryImage, 'source' | 'license_notes'>
 
@@ -539,4 +539,15 @@ export function cleanVariants(variants: Variant[]) {
   return variants
     .filter((variant) => variant.name_en.trim() && variant.price > 0)
     .map((variant) => ({ id: variant.id, name_en: variant.name_en.trim(), price: variant.price }))
+}
+
+export function cleanExtras(extras: ItemExtra[]) {
+  return extras
+    .filter((extra) => extra.name_en.trim() && extra.name_ar.trim() && extra.price >= 0)
+    .map((extra) => ({
+      id: extra.id ?? crypto.randomUUID(),
+      name_en: extra.name_en.trim(),
+      name_ar: extra.name_ar.trim(),
+      price: extra.price,
+    }))
 }

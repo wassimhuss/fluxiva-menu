@@ -8,13 +8,14 @@ import { useReveal } from '../useReveal'
 // Classic keeps using the shared global stylesheet it was originally written
 // against. New templates are scoped with CSS Modules instead.
 
-function MenuCard({ item, index, t, formatPrice, color, unavailableLabel, ordering }: {
+function MenuCard({ item, index, t, formatPrice, color, unavailableLabel, rtl, ordering }: {
   item: MenuItem
   index: number
   t: MenuTemplateProps['t']
   formatPrice: MenuTemplateProps['formatPrice']
   color: string
   unavailableLabel: string
+  rtl: boolean
   ordering?: MenuTemplateProps['ordering']
 }) {
   const [variantIndex, setVariantIndex] = useState(0)
@@ -36,7 +37,7 @@ function MenuCard({ item, index, t, formatPrice, color, unavailableLabel, orderi
         {!item.available && <span className="sold-out-label">{unavailableLabel}</span>}
         {ordering && (
           <div className="menu-card-order" style={{ '--add-active-bg': color } as React.CSSProperties}>
-            <AddToOrder item={item} variantIndex={variantIndex} ordering={ordering} t={t} />
+            <AddToOrder item={item} variantIndex={variantIndex} ordering={ordering} t={t} formatPrice={formatPrice} rtl={rtl} />
           </div>
         )}
         {item.available && item.variants?.length > 0 && (
@@ -125,6 +126,7 @@ export default function ClassicTemplate(props: MenuTemplateProps) {
                 item={item}
                 t={t}
                 formatPrice={formatPrice}
+                rtl={rtl}
                 color={restaurant.primary_color}
                 unavailableLabel={t('Currently unavailable', 'غير متوفر حالياً')}
                 ordering={ordering}

@@ -97,6 +97,8 @@ Migration `018_single_language_variants.sql` removes legacy Arabic labels from e
 
 Migration `019_platform_gallery_folder_loading.sql` adds the super-admin RPC overload used by `/platform` to fetch gallery images for one folder at a time. Apply it after `018`; the original no-argument RPC remains available only for deliberate bulk operations such as **Clear gallery**.
 
+Migration `020_item_extras.sql` adds the `menu_items.extras` JSON array used for optional bilingual add-ons and constrains it to an array value. It was applied to the configured production project on 2026-10-08. Apply it after `019` on any other Supabase environment before saving extras. RLS is unchanged because the data remains on the owner-protected `menu_items` row; demo mode includes sample extras without requiring the migration.
+
 ## 4. Verification by risk
 
 ### Documentation-only

@@ -7,7 +7,7 @@ import { useActiveSlide } from '../useActiveSlide'
 import { useSnapLock } from '../useSnapLock'
 import styles from './Reel.module.css'
 
-function ReelSlide({ item, index, total, category, active, t, formatPrice, ordering }: {
+function ReelSlide({ item, index, total, category, active, t, formatPrice, rtl, ordering }: {
   item: MenuItem
   index: number
   total: number
@@ -15,6 +15,7 @@ function ReelSlide({ item, index, total, category, active, t, formatPrice, order
   active: boolean
   t: MenuTemplateProps['t']
   formatPrice: MenuTemplateProps['formatPrice']
+  rtl: boolean
   ordering?: MenuTemplateProps['ordering']
 }) {
   const [variantIndex, setVariantIndex] = useState(0)
@@ -69,7 +70,7 @@ function ReelSlide({ item, index, total, category, active, t, formatPrice, order
           {item.available
             ? <span className={styles.price}>{formatPrice(price)}</span>
             : <span className={styles.soldOut}>{t('Sold out', 'نفد')}</span>}
-          {ordering && <AddToOrder item={item} variantIndex={variantIndex} ordering={ordering} t={t} className={styles.addToOrder} />}
+          {ordering && <AddToOrder item={item} variantIndex={variantIndex} ordering={ordering} t={t} formatPrice={formatPrice} rtl={rtl} className={styles.addToOrder} />}
         </div>
       </div>
     </section>
@@ -142,6 +143,7 @@ export default function ReelTemplate(props: MenuTemplateProps) {
             active={active === index}
             t={t}
             formatPrice={formatPrice}
+            rtl={rtl}
             ordering={ordering}
           />
         ))}

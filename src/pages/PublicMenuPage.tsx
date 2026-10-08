@@ -20,9 +20,11 @@ import { DEFAULT_TEMPLATE, resolveTemplateId, TEMPLATES, templateComponents } fr
  * logo bundled into the app, which meant every real restaurant got a generic
  * mark while one got a branded one. Now every restaurant gets the same screen.
  */
-function MenuLoadingState() {
+function MenuLoadingState({ language }: { language?: Language }) {
+  const arabic = language === 'ar'
+
   return (
-    <main className="public-menu-loading" aria-busy="true" aria-live="polite">
+    <main className="public-menu-loading" aria-busy="true" aria-live="polite" dir={arabic ? 'rtl' : 'ltr'} lang={language}>
       <div className="public-menu-loading-orbit public-menu-loading-orbit-one" />
       <div className="public-menu-loading-orbit public-menu-loading-orbit-two" />
       <div className="public-menu-loading-card">
@@ -30,10 +32,8 @@ function MenuLoadingState() {
           <div className="public-menu-loading-monogram"><Utensils size={25} /></div>
         </div>
         <span className="public-menu-loading-kicker">FLUXIVA MENU</span>
-        <h1>Preparing your menu</h1>
-        <p>Opening menu</p>
+        {language && <><h1>{arabic ? 'جارٍ تحضير قائمتك' : 'Preparing your menu'}</h1><p>{arabic ? 'جارٍ فتح القائمة' : 'Opening menu'}</p></>}
         <div className="public-menu-loading-progress" aria-hidden="true"><span /></div>
-        <span className="public-menu-loading-arabic">جاري فتح القائمة</span>
       </div>
     </main>
   )
@@ -285,10 +285,12 @@ export function PublicMenuPage() {
     startTransition(() => setSearchParams(next, { replace: true }))
   }, [searchParams, setSearchParams, templateId])
 
+  // The restaurant language arrives with the menu response. Keep this first
+  // network-loading frame language-neutral so Arabic menus never flash English.
   if (loading) return <MenuLoadingState />
   if (error || !menu) return <MenuUnavailable contact={contact} />
   // Hold the branded loader until the first screen can render complete.
-  if (!imagesReady) return <MenuLoadingState />
+  if (!imagesReady) return <MenuLoadingState language={language} />
 
   const { restaurant, categories } = menu
   const Template = templateComponents[templateId]
@@ -317,7 +319,7 @@ export function PublicMenuPage() {
 
   return (
     <>
-      <Suspense fallback={<MenuLoadingState />}>
+      <Suspense fallback={<MenuLoadingState language={language} />}>
         <Template
           restaurant={restaurant}
           categories={categories}
