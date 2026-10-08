@@ -1,6 +1,7 @@
-import { ArrowLeft, ArrowRight, Check, FolderOpen, ImageOff, Search, X } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Check, FolderOpen, ImageOff, Maximize2, Search, X } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import type { GalleryCategory, GalleryImage, Language } from '../lib/types'
+import { ImageLightbox } from './ImageLightbox'
 
 interface GalleryPickerProps {
   images: GalleryImage[]
@@ -16,6 +17,7 @@ interface GalleryPickerProps {
 export function GalleryPicker({ images, categories, language, loading, selectedId, onSelect, onRemove, onClose }: GalleryPickerProps) {
   const [search, setSearch] = useState('')
   const [folderId, setFolderId] = useState<string | null>(null)
+  const [previewImage, setPreviewImage] = useState<GalleryImage | null>(null)
   const arabic = language === 'ar'
 
   useEffect(() => {
@@ -60,10 +62,11 @@ export function GalleryPicker({ images, categories, language, loading, selectedI
           <div className="gallery-grid">
             {filtered.map((image) => {
               const selected = selectedId === image.id
-              return <button type="button" className={selected ? 'selected' : ''} onClick={() => onSelect(image)} key={image.id} aria-pressed={selected}>
-                <span className="gallery-thumb"><img src={image.thumbnail_url} alt="" loading="lazy" />{selected && <i><Check /></i>}</span>
-                <b>{arabic ? image.name_ar : image.name_en}</b><small>{arabic ? image.category_ar : image.category_en}</small>
-              </button>
+              const name = arabic ? image.name_ar : image.name_en
+              return <article className={selected ? 'selected' : ''} key={image.id}>
+                <button type="button" className="gallery-thumb gallery-preview-trigger" onClick={() => setPreviewImage(image)} aria-label={`${arabic ? 'عرض الصورة' : 'View photo'}: ${name}`}><img src={image.thumbnail_url} alt="" loading="lazy" /><span><Maximize2 /></span>{selected && <i><Check /></i>}</button>
+                <button type="button" className="gallery-image-select" onClick={() => onSelect(image)} aria-pressed={selected}><b>{name}</b><small>{arabic ? image.category_ar : image.category_en}</small></button>
+              </article>
             })}
           </div>
         ) : <p className="gallery-empty">{arabic ? 'لا توجد صور مطابقة.' : 'No images match your search.'}</p>}
@@ -72,6 +75,7 @@ export function GalleryPicker({ images, categories, language, loading, selectedI
           <button type="button" className="button button-outline button-small" onClick={onClose}>{arabic ? 'إغلاق' : 'Close'}</button>
         </footer>
       </section>
+      {previewImage && <ImageLightbox url={previewImage.image_url} name={arabic ? previewImage.name_ar : previewImage.name_en} closeLabel={arabic ? 'إغلاق معاينة الصورة' : 'Close image preview'} loadingLabel={arabic ? 'جارٍ تحميل الصورة بالحجم الكامل' : 'Loading full-size image'} actionLabel={arabic ? 'استخدم هذه الصورة' : 'Use this photo'} onAction={() => onSelect(previewImage)} onClose={() => setPreviewImage(null)} />}
     </div>
   )
 }

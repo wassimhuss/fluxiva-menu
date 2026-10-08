@@ -175,6 +175,8 @@ const arabic: Record<string, string> = {
   'This image could not be opened.': 'تعذّر فتح هذه الصورة.',
   'Selected from Fluxiva Gallery': 'مختارة من مكتبة Fluxiva',
   'Current photo': 'الصورة الحالية',
+  'View photo': 'عرض الصورة',
+  'Close image preview': 'إغلاق معاينة الصورة',
   'Remove photo': 'إزالة الصورة',
   'Replace current photo': 'استبدال الصورة الحالية',
   'Choose an image': 'اختيار صورة',
