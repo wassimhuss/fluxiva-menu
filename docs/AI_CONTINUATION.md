@@ -15,7 +15,7 @@ npm ci
 
 Requirements and expectations:
 
-- Use Node.js 22 or newer.
+- Use the Node.js version pinned in `.node-version` (currently `22.22.0`).
 - Preserve any unrelated working-tree changes.
 - Read `AGENTS.md` and `docs/PROJECT_CONTEXT.md` before editing.
 - Copy `.env.example` to `.env.local` only when a real Supabase project is available. Never commit `.env.local`.

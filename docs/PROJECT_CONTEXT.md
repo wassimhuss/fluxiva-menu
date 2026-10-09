@@ -196,7 +196,7 @@ Keep landing-page work scoped to the `lp-` namespace unless intentionally refact
 
 ## Deployment
 
-Render builds the static app with `npm ci && npm run build` and publishes `dist/`. The catch-all rewrite in `render.yaml` sends every route to `index.html`, which is required for direct visits to React Router URLs such as `/m/cedar-oven`.
+Render is pinned to Node `22.22.0` through both `.node-version` and the Blueprint's `NODE_VERSION`. The Blueprint sets `SKIP_INSTALL_DEPS=true` to prevent Render from running an extra implicit install, then builds reproducibly with `npm ci --no-audit --no-fund && npm run build` and publishes `dist/`. The catch-all rewrite in `render.yaml` sends every route to `index.html`, which is required for direct visits to React Router URLs such as `/m/cedar-oven`.
 
 Supabase migrations are currently expected to be run manually in sequence in the Supabase SQL editor.
 
@@ -210,4 +210,4 @@ Supabase migrations are currently expected to be run manually in sequence in the
 - Demo-mode mutations are not persisted across reloads.
 - The landing page imports Google Fonts over the network; provide a fallback/self-hosting plan if offline or privacy requirements change.
 - The `/platform` route shares the owner UI route guard. Server-side RPC authorization is the actual security boundary.
-- The Render production build inherits the Node version configured by Render; ensure it remains Node 22+.
+- Keep `.node-version`, `package.json` engines, and Render's `NODE_VERSION` aligned on Node 22. The app deliberately does not inherit Render's moving default Node version.
