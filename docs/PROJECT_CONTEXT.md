@@ -196,7 +196,7 @@ Keep landing-page work scoped to the `lp-` namespace unless intentionally refact
 
 ## Deployment
 
-Render is pinned to Node `22.22.0` through both `.node-version` and the Blueprint's `NODE_VERSION`. The Blueprint sets `SKIP_INSTALL_DEPS=true` to prevent Render from running an extra implicit install, then builds reproducibly with `npm ci --no-audit --no-fund && npm run build` and publishes `dist/`. The catch-all rewrite in `render.yaml` sends every route to `index.html`, which is required for direct visits to React Router URLs such as `/m/cedar-oven`.
+Render is pinned to Node `22.22.0` through both `.node-version` and the Blueprint's `NODE_VERSION`. The Blueprint sets `SKIP_INSTALL_DEPS=true` to prevent Render from running an extra implicit install. Render uses the committed `pnpm-lock.yaml` with pnpm `10.18.3` for deployment because npm's installer has repeatedly crashed inside Render with `Exit handler never called`; local development remains on the supported `npm ci` workflow. The static build publishes `dist/`, and the catch-all rewrite in `render.yaml` sends every route to `index.html`, which is required for direct visits to React Router URLs such as `/m/cedar-oven`.
 
 Supabase migrations are currently expected to be run manually in sequence in the Supabase SQL editor.
 

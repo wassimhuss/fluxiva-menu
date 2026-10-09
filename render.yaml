@@ -2,7 +2,7 @@ services:
   - type: web
     name: fluxiva-menu
     runtime: static
-    buildCommand: npm ci --no-audit --no-fund && npm run build
+    buildCommand: COREPACK_ENABLE_PROJECT_SPEC=0 corepack pnpm@10.18.3 install --frozen-lockfile --registry=https://registry.npmjs.org --store-dir /tmp/pnpm-store && COREPACK_ENABLE_PROJECT_SPEC=0 corepack pnpm@10.18.3 run build
     staticPublishPath: ./dist
     envVars:
       - key: NODE_VERSION
