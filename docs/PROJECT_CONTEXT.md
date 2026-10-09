@@ -4,7 +4,7 @@ Last verified: 2026-09-24
 
 ## Product summary
 
-Fluxiva Menu is a bilingual QR-menu SaaS aimed at Lebanese restaurants. A restaurant owner can create a branded public menu, manage categories and items, add photos and size-based prices, mark products unavailable, import items from CSV, and download a print-ready QR code. Guests open the menu without installing an app and can switch between English and Arabic.
+Fluxiva Menu is a bilingual QR-menu SaaS aimed at Lebanese restaurants. A restaurant owner can create a branded public menu, manage categories and items, add photos and size-based prices, mark products unavailable, import or export a structured Excel workbook, and download a print-ready QR code. Guests open the menu without installing an app and can switch between English and Arabic.
 
 The current commercial model is one plan at **$60 USD per year** after a **14-day trial**. Subscription activation is handled manually by the Fluxiva operator.
 
@@ -55,6 +55,7 @@ Demo mode is a deliberate development and sales-preview feature. Do not remove i
 
 - `src/lib/supabase.ts` creates the client from the two public Vite environment variables.
 - `src/lib/auth.tsx` owns the session lifecycle and exposes `session`, `loading`, `demoMode`, and `signOut`.
+- Login, signup, forgot-password, and reset-password screens inherit the landing-page language preference (`fluxiva-landing-language`) and apply a complete English/Arabic RTL layout through `src/lib/authI18n.ts`.
 - `src/lib/api.ts` is the client-side data boundary for restaurant, category, item, asset, and platform operations.
 - Public menus query by slug and allow only `trial` or `active` restaurants.
 - Owner menus query by the authenticated user's ID.
@@ -84,6 +85,7 @@ src/
     auth.tsx              Authentication context
     demo.ts               Complete offline/demo restaurant menu
     format.ts             LBP formatting, bilingual text selection, slug creation
+    menuWorkbook.ts       Excel template, export, parsing, and pre-import validation
     supabase.ts           Environment detection and Supabase client
     types.ts              Shared domain types
   pages/
@@ -164,7 +166,7 @@ The owner dashboard supports:
 - Restaurant logo, cover, theme, contact details, opening state, and default language.
   - A restaurant-wide food-photo visibility switch. Hiding photos preserves the uploaded files, limits the design picker to the photo-optional Classic, Noir, and Maison templates, and safely falls back to Classic when a photo-based design had been selected. Maison adds editorial thumbnails when photos are enabled and collapses cleanly to a text-only layout when they are hidden.
 - The owner dashboard has an English/Arabic UI switch in the header. It persists in local storage, applies RTL layout, and translates the dashboard panels, analytics card, subscription warning, forms, dialogs, and action feedback without changing the restaurant's public-menu language setting.
-- CSV import using fields such as `category_en`, `category_ar`, `name_en`, `name_ar`, `description_en`, `description_ar`, `price_lbp`, and `available`.
+- Excel import/export through a styled `.xlsx` workbook. `Items` contains bilingual categories and item copy, `Variants` contains English-only size labels, and `Extras` contains bilingual add-ons. `item_key` links the sheets. The whole workbook is validated before owner-scoped batch inserts begin, and owners can download either a blank template or their current menu.
 - PNG/SVG QR downloads and browser printing.
 
 Image files are validated as JPG, PNG, or WebP and limited to 8 MB. A personal item photo selected in the owner editor only needs to be a clear image at least 900 px wide and high; it opens the same drag-and-zoom 4:5 portrait cropper as the shared gallery and is previewed as an exact 1200×1500 WebP before the item is saved. One optimized item image is stored and reused across menu templates. Reel preserves that full 4:5 foreground photo, using a blurred and darkened rendering of the same URL to fill the remaining 9:16 canvas; it does not store a second Reel asset. Covers fit within 1600×1200 and logos within 512×512 through high-quality resizing and adaptive WebP compression. Replaced item, cover, and logo files—and item files removed with an item or category—are deleted from the restaurant's Storage folder on a best-effort basis so unused assets do not consume the quota.
@@ -188,6 +190,8 @@ The current landing page was redesigned on 2026-09-18. Its implementation uses:
 - Responsive layouts at 1050, 900, 680, and 420 px breakpoints.
 - `prefers-reduced-motion` fallbacks.
 
+The 2026-10-09 mobile conversion pass keeps the full desktop product mockup but replaces it below 680 px with a readable, task-focused menu editor preview. Mobile also uses a sticky action bar with language, sign-in, and trial access; concise local trust and payment copy; compact feature and setup cards; and a centered RTL-safe phone mockup. Marketing copy remains paired through `landingI18n.ts`, including the Lebanon-specific setup and payment details.
+
 Keep landing-page work scoped to the `lp-` namespace unless intentionally refactoring the global system.
 
 ## Deployment
@@ -202,7 +206,7 @@ Supabase migrations are currently expected to be run manually in sequence in the
 - Vite currently reports a JavaScript chunk slightly over 500 kB after minification. Consider route-based lazy loading before the application grows substantially.
 - All styling is in one large file. Page-level CSS modules or organized stylesheet splits would lower regression risk.
 - `DashboardPage.tsx` owns many workflows and is a strong candidate for component/hook extraction.
-- CSV import performs sequential inserts and minimal validation; partial imports are possible if a later row fails.
+- Excel import batches categories and items separately. A failed item insert can leave newly created empty categories, although no partial set of items is inserted.
 - Demo-mode mutations are not persisted across reloads.
 - The landing page imports Google Fonts over the network; provide a fallback/self-hosting plan if offline or privacy requirements change.
 - The `/platform` route shares the owner UI route guard. Server-side RPC authorization is the actual security boundary.

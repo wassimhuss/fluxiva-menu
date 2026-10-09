@@ -211,6 +211,15 @@ export async function createCategory(input: CategoryInput) {
   return data as Category
 }
 
+/** Keeps spreadsheet imports to one category insert instead of one request per row. */
+export async function createCategories(inputs: CategoryInput[]) {
+  if (!inputs.length) return []
+  if (!supabase) return inputs.map((input) => ({ ...input, id: crypto.randomUUID() } as Category))
+  const { data, error } = await supabase.from('menu_categories').insert(inputs).select()
+  if (error) throw error
+  return data as Category[]
+}
+
 export async function updateCategory(id: string, values: Partial<Category>) {
   if (!supabase) return
   const { error } = await supabase.from('menu_categories').update(values).eq('id', id)
@@ -228,6 +237,15 @@ export async function createItem(input: ItemInput) {
   const { data, error } = await supabase.from('menu_items').insert(input).select().single()
   if (error) throw error
   return data as MenuItem
+}
+
+/** Inserts an already-validated workbook in one owner-scoped request. */
+export async function createItems(inputs: ItemInput[]) {
+  if (!inputs.length) return []
+  if (!supabase) return inputs.map((input) => ({ ...input, id: crypto.randomUUID() } as MenuItem))
+  const { data, error } = await supabase.from('menu_items').insert(inputs).select()
+  if (error) throw error
+  return data as MenuItem[]
 }
 
 export async function updateItem(id: string, values: Partial<MenuItem>) {

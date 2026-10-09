@@ -72,12 +72,12 @@ Build a curated **Fluxiva Gallery** that lets every restaurant owner either sele
 
 ## Engineering backlog
 
-- [ ] Add unit tests for formatting, slugging, CSV parsing, and variant cleaning.
+- [ ] Add unit tests for formatting, slugging, Excel workbook parsing, and variant cleaning.
 - [ ] Add integration tests for demo onboarding, dashboard editing, and public-menu language switching.
 - [ ] Split `DashboardPage.tsx` into focused components and hooks.
 - [ ] Split the central stylesheet into page or feature boundaries.
 - [ ] Lazy-load owner and platform routes to reduce the production JavaScript bundle.
-- [ ] Make CSV import transactional or provide a row-level failure report.
+- [ ] Make Excel category/item import fully transactional so a failed item batch cannot leave empty categories.
 - [ ] Add a documented Supabase migration and deployment pipeline.
 
 ## Item extras
@@ -94,6 +94,9 @@ Build a curated **Fluxiva Gallery** that lets every restaurant owner either sele
 
 ## Completed product improvements
 
+- [x] Confirm before hiding a visible menu item while keeping restoration a one-tap action (2026-10-09).
+- [x] Add persistent English/Arabic translations and RTL layouts to login, signup, and password-recovery screens (2026-10-09).
+- [x] Refine the landing page for mobile conversion with clearer bilingual copy, sticky navigation, readable product previews, local trust/payment details, compact sections, and RTL-safe layouts (2026-10-09).
 - [x] Autofill empty English and Arabic item names from a selected Fluxiva Gallery photo without overwriting owner-entered names (2026-10-08).
 - [x] Add a drag-and-zoom cropper that produces exact `1200 × 1500` 4:5 portrait super-admin gallery uploads (2026-09-29).
 - [x] Reuse the `1200 × 1500` portrait cropper for owners replacing personal item photos, including an immediate cropped preview (2026-09-29).

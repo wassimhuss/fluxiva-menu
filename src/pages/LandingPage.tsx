@@ -3,14 +3,19 @@ import type { CSSProperties } from 'react'
 import {
   ArrowRight,
   BarChart3,
+  Banknote,
   Check,
   CheckCircle2,
   ChevronRight,
   Clock3,
+  EyeOff,
   Languages,
   LayoutDashboard,
+  LogIn,
+  MapPin,
   MessageCircle,
   Palette,
+  Plus,
   QrCode,
   ShieldCheck,
   Smartphone,
@@ -20,6 +25,7 @@ import {
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { Brand } from '../components/Brand'
+import { useAuth } from '../lib/auth'
 import { landingNumber, landingText, type LandingCopyKey } from '../lib/landingI18n'
 import type { Language } from '../lib/types'
 
@@ -27,33 +33,32 @@ const features = [
   {
     icon: Languages,
     title: 'Arabic & English, together',
-    copy: 'Serve every guest naturally with a menu that switches language in one tap.',
+    copy: 'Your customers switch between Arabic and English with one tap.',
     className: 'lp-feature-language',
   },
   {
     icon: Palette,
     title: 'Made to feel like your brand',
-    copy: 'Your logo, colors, cover photo and personality — never a generic template.',
+    copy: 'Add your logo, colors and photos so the menu feels like your restaurant.',
     className: 'lp-feature-brand',
   },
   {
     icon: Zap,
     title: 'Update in seconds',
-    copy: 'Change a price, hide a sold-out item or publish today’s special instantly.',
+    copy: 'Change a price or hide a sold-out item yourself, whenever you need.',
     className: 'lp-feature-speed',
   },
   {
     icon: BarChart3,
     title: 'A dashboard that stays simple',
-    copy: 'Everything you need to manage your menu without the usual technical clutter.',
+    copy: 'Clear controls make everyday menu changes easy, even if you are not technical.',
     className: 'lp-feature-dashboard',
   },
 ] as const
 
 const benefits = [
-  ['Unlimited edits', 'Change your menu whenever service demands it.'],
+  ['Unlimited edits', 'Change your menu whenever you need.'],
   ['Bilingual by design', 'Arabic and English live side by side.'],
-  ['Personal setup help', 'We help you get the first version just right.'],
   ['Print-ready QR', 'Download once and use it everywhere.'],
 ] as const
 
@@ -65,7 +70,10 @@ function storedLanguage(): Language {
   }
 }
 
+const SUPPORT_WHATSAPP = import.meta.env.VITE_SUPPORT_WHATSAPP as string | undefined
+
 export function LandingPage() {
+  const { session, loading: authLoading } = useAuth()
   const [language, setLanguage] = useState<Language>(storedLanguage)
   const t = (english: LandingCopyKey) => landingText(language, english)
   const n = (value: number, options?: Intl.NumberFormatOptions) => landingNumber(language, value, options)
@@ -113,10 +121,11 @@ export function LandingPage() {
             >
               <Languages aria-hidden="true" /> <span lang={language === 'en' ? 'ar' : 'en'}>{language === 'en' ? 'العربية' : 'English'}</span>
             </button>
-            <Link className="text-link hide-mobile" to="/login">{t('Sign in')}</Link>
-            <Link className="button button-small lp-nav-cta" to="/signup">
-              {t('Start free')} <ArrowRight size={15} />
-            </Link>
+            {authLoading
+              ? <span className="button button-small lp-nav-cta lp-nav-cta-pending" aria-hidden="true" />
+              : <Link className="button button-small lp-nav-cta" to={session ? '/dashboard' : '/login'}>
+                  {session ? <><LayoutDashboard size={15} /> {t('Dashboard')}</> : <><LogIn size={15} /> {t('Sign in')}</>}
+                </Link>}
           </div>
         </nav>
       </div>
@@ -134,7 +143,7 @@ export function LandingPage() {
             <span>{t('as good as your food.')}</span>
           </h1>
           <p className="lp-hero-lead">
-            {t('Create a beautiful, bilingual QR menu your guests can open instantly — and your team can update in seconds.')}
+            {t('Create your Arabic and English menu, get a ready-to-print QR code, and update prices or items yourself in seconds.')}
           </p>
           <div className="lp-hero-actions">
             <Link className="button lp-primary-button" to="/signup">
@@ -149,11 +158,9 @@ export function LandingPage() {
             <span><CheckCircle2 /> {t('Setup included')}</span>
             <span><CheckCircle2 /> {t('Ready in minutes')}</span>
           </div>
-          <div className="lp-hero-proof">
-            <div className="lp-proof-avatars" aria-hidden="true">
-              <span>{t('CO')}</span><span>{t('MO')}</span><span>{t('BA')}</span><span>+</span>
-            </div>
-            <p><strong>{t('Built for hospitality')}</strong><br />{t('Thoughtful on every screen, from kitchen to table.')}</p>
+          <div className="lp-hero-proof lp-local-proof">
+            <span className="lp-local-proof-icon"><MapPin /></span>
+            <p><strong>{t('Made in Lebanon')}</strong><br />{t('Personal setup and WhatsApp support.')}</p>
           </div>
         </div>
 
@@ -205,18 +212,18 @@ export function LandingPage() {
 
       <section className="lp-trust-bar" aria-label={t('Product benefits')}>
         <div className="shell lp-trust-items">
-          <div><Smartphone /><span><b>{t('Mobile first')}</b><small>{t('Beautiful on every phone')}</small></span></div>
-          <div><Languages /><span><b>{t('Truly bilingual')}</b><small>{t('Arabic and English')}</small></span></div>
-          <div><Palette /><span><b>{t('Always on brand')}</b><small>{t('Your identity, your menu')}</small></span></div>
-          <div><QrCode /><span><b>{t('Scan & discover')}</b><small>{t('No download required')}</small></span></div>
+          <div><Smartphone /><span><b>{t('Works on every phone')}</b><small>{t('No app or download')}</small></span></div>
+          <div><Languages /><span><b>{t('Arabic and English')}</b><small>{t('Switch language in one tap')}</small></span></div>
+          <div><Palette /><span><b>{t('Made for your restaurant')}</b><small>{t('Your logo, colors and photos')}</small></span></div>
+          <div><QrCode /><span><b>{t('QR ready')}</b><small>{t('Print it and place it anywhere')}</small></span></div>
         </div>
       </section>
 
       <section className="lp-story shell" id="features">
         <div className="lp-section-heading" data-reveal>
           <span className="lp-section-kicker">{t('Everything in one place')}</span>
-          <h2>{t('Less menu admin.')}<br /><em>{t('More time for guests.')}</em></h2>
-          <p>{t('Fluxiva keeps the experience polished for customers and refreshingly simple for your team.')}</p>
+          <h2>{t('Simple for you.')}<br /><em>{t('Clear for your customers.')}</em></h2>
+          <p>{t('Add items, change prices and keep your menu up to date without technical work.')}</p>
         </div>
 
         <div className="lp-dashboard-showcase" data-reveal>
@@ -244,6 +251,12 @@ export function LandingPage() {
               </div>
             </div>
           </div>
+          <div className="lp-mobile-editor-preview" aria-hidden="true">
+            <header><span><small>{t('Your menu')}</small><b>{t('Easy everyday changes')}</b></span><i>{t('Live')}</i></header>
+            <div><span><Plus /></span><p><b>{t('Add a menu item')}</b><small>{t('Name, photo and price')}</small></p></div>
+            <div><span><Banknote /></span><p><b>{t('Change a price')}</b><small>{t('Update it whenever you need')}</small></p></div>
+            <div><span><EyeOff /></span><p><b>{t('Hide a sold-out item')}</b><small>{t('Bring it back with one tap')}</small></p></div>
+          </div>
           <div className="lp-dashboard-note">
             <span><Check size={16} /></span>
             <div><b>{t('Changes are live')}</b><small>{t('Your menu updated just now')}</small></div>
@@ -269,28 +282,28 @@ export function LandingPage() {
         <div className="shell">
           <div className="lp-section-heading lp-section-heading-light" data-reveal>
             <span className="lp-section-kicker">{t('From idea to table')}</span>
-            <h2>{t('Live before the')}<br /><em>{t('next service.')}</em></h2>
+            <h2>{t('Ready in three')}<br /><em>{t('simple steps.')}</em></h2>
           </div>
           <div className="lp-step-list">
             <article data-reveal>
               <span className="lp-step-number">{n(1, { minimumIntegerDigits: 2 })}</span>
               <div className="lp-step-icon"><UtensilsCrossed /></div>
-              <h3>{t('Tell us about your place')}</h3>
-              <p>{t('Add your restaurant name, brand colors and contact details.')}</p>
+              <h3>{t('Add your restaurant')}</h3>
+              <p>{t('Enter your name, logo, colors and contact details.')}</p>
               <small>{t('About 2 minutes')}</small>
             </article>
             <article data-reveal style={{ '--delay': '100ms' } as CSSProperties}>
               <span className="lp-step-number">{n(2, { minimumIntegerDigits: 2 })}</span>
               <div className="lp-step-icon"><LayoutDashboard /></div>
-              <h3>{t('Build your menu')}</h3>
-              <p>{t('Add categories, items, photos and prices — in English, Arabic, or both.')}</p>
+              <h3>{t('Add your food and prices')}</h3>
+              <p>{t('Choose gallery photos or upload your own. We can help with the first setup.')}</p>
               <small>{t('We can help with setup')}</small>
             </article>
             <article data-reveal style={{ '--delay': '200ms' } as CSSProperties}>
               <span className="lp-step-number">{n(3, { minimumIntegerDigits: 2 })}</span>
               <div className="lp-step-icon"><QrCode /></div>
-              <h3>{t('Put your QR on the table')}</h3>
-              <p>{t('Download your print-ready code and welcome guests to their new menu.')}</p>
+              <h3>{t('Print and place your QR')}</h3>
+              <p>{t('Download the QR code and place it on tables, counters or packaging.')}</p>
               <small>{t('Live instantly')}</small>
             </article>
           </div>
@@ -303,7 +316,7 @@ export function LandingPage() {
             <span className="lp-section-kicker">{t('Simple, honest pricing')}</span>
             <h2>{t('One plan.')}<br /><em>{t('Everything included.')}</em></h2>
             <p>{t('No setup fee, no hidden packages, and no limits on the number of times you update your menu.')}</p>
-            <div className="lp-support-note"><MessageCircle /><span><b>{t('Real setup support')}</b><small>{t('We are here when you need a hand.')}</small></span></div>
+            <div className="lp-support-note"><MessageCircle /><span><b>{t('We set it up with you')}</b><small>{t('Personal help in Arabic or English.')}</small></span></div>
           </div>
           <div className="lp-price-box">
             <span className="lp-popular-badge"><Sparkles /> {t('Complete plan')}</span>
@@ -315,7 +328,10 @@ export function LandingPage() {
               ))}
             </div>
             <Link className="button lp-primary-button full" to="/signup">{t('Start free for 14 days')} <ArrowRight /></Link>
-            <small className="lp-price-footnote"><ShieldCheck /> {t('No card required to start')}</small>
+            <div className="lp-price-footnotes">
+              <small className="lp-price-footnote"><ShieldCheck /> {t('No card required to start')}</small>
+              <small className="lp-payment-note"><Banknote /> {t('Pay locally by cash, Whish Money, or bank transfer.')}</small>
+            </div>
           </div>
         </div>
       </section>
@@ -323,9 +339,9 @@ export function LandingPage() {
       <section className="lp-final-cta shell" data-reveal>
         <div className="lp-cta-orbit lp-cta-orbit-one" />
         <div className="lp-cta-orbit lp-cta-orbit-two" />
-        <span className="lp-section-kicker">{t('Your next menu is ready')}</span>
-        <h2>{t('Make every first scan')}<br /><em>{t('a beautiful one.')}</em></h2>
-        <p>{t('Give your guests a faster, clearer and more memorable way to explore what you serve.')}</p>
+        <span className="lp-section-kicker">{t('Your menu can be ready today')}</span>
+        <h2>{t('Ready to create')}<br /><em>{t('your new menu?')}</em></h2>
+        <p>{t('Start free, and ask us for help whenever you need it.')}</p>
         <div>
           <Link className="button lp-light-button" to="/signup">{t('Create your menu')} <ArrowRight /></Link>
           <Link className="lp-demo-link" to="/m/demo">{t('View the live demo')} <ChevronRight /></Link>
@@ -336,7 +352,7 @@ export function LandingPage() {
         <div className="shell lp-footer-top">
           <div><Brand light homeLabel={t('Fluxiva Menu home')} /><p>{t('Beautiful digital menus, made in Lebanon.')}</p></div>
           <div className="lp-footer-links"><b>{t('Product')}</b><a href="#features">{t('Features')}</a><a href="#how-it-works">{t('How it works')}</a><a href="#pricing">{t('Pricing')}</a></div>
-          <div className="lp-footer-links"><b>{t('Get started')}</b><Link to="/m/demo">{t('Live demo')}</Link><Link to="/signup">{t('Create account')}</Link><Link to="/login">{t('Sign in')}</Link></div>
+          <div className="lp-footer-links"><b>{t('Get started')}</b><Link to="/m/demo">{t('Live demo')}</Link><Link to="/signup">{t('Create account')}</Link><Link to="/login">{t('Sign in')}</Link>{SUPPORT_WHATSAPP && <a href={`https://wa.me/${SUPPORT_WHATSAPP.replace(/\D/g, '')}`} target="_blank" rel="noreferrer">{t('WhatsApp support')}</a>}</div>
           <div className="lp-footer-promise"><Clock3 /><span><b>{t('Fast to launch')}</b><small>{t('Built for busy restaurants.')}</small></span></div>
         </div>
         <div className="shell lp-footer-bottom"><span>© <bdi>{n(new Date().getFullYear(), { useGrouping: false })}</bdi> {t('Fluxiva Menu')}</span><span>{t('Designed with care for hospitality.')}</span></div>

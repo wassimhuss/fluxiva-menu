@@ -4,7 +4,9 @@ import { Link, useNavigate } from 'react-router-dom'
 import { Brand } from '../components/Brand'
 import { Loading, Notice } from '../components/Status'
 import { useAuth } from '../lib/auth'
+import { AUTH_LANGUAGE_KEY, authErrorText, authText } from '../lib/authI18n'
 import { supabase } from '../lib/supabase'
+import type { Language } from '../lib/types'
 
 /**
  * Where the emailed reset link lands.
@@ -17,11 +19,13 @@ import { supabase } from '../lib/supabase'
 export function ResetPasswordPage() {
   const navigate = useNavigate()
   const { session, loading, demoMode } = useAuth()
+  const [language] = useState<Language>(() => localStorage.getItem(AUTH_LANGUAGE_KEY) === 'ar' ? 'ar' : 'en')
   const [password, setPassword] = useState('')
   const [confirmation, setConfirmation] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
+  const t = (english: string) => authText(language, english)
 
   // An expired or reused link comes back with the reason in the URL fragment
   // rather than as a failed request.
@@ -49,43 +53,43 @@ export function ResetPasswordPage() {
   const ready = demoMode || Boolean(session)
 
   return (
-    <main className="auth-layout">
+    <main className="auth-layout" dir={language === 'ar' ? 'rtl' : 'ltr'} lang={language}>
       <section className="auth-aside">
         <Brand light />
-        <div><span className="eyebrow light"><span /> Fluxiva Menu</span><h1>A better first look at your restaurant.</h1><p>One menu, two languages, always up to date.</p></div>
-        <small>Designed for restaurants in Lebanon.</small>
+        <div><span className="eyebrow light"><span /> Fluxiva Menu</span><h1>{t('A better first look at your restaurant.')}</h1><p>{t('One menu, two languages, always up to date.')}</p></div>
+        <small>{t('Designed for restaurants in Lebanon.')}</small>
       </section>
       <section className="auth-main">
-        <Link className="back-link" to="/login"><ArrowLeft size={17} /> Back to sign in</Link>
+        <Link className="back-link" to="/login"><ArrowLeft size={17} /> {t('Back to sign in')}</Link>
 
-        {loading ? <div className="auth-card"><Loading label="Checking your link…" /></div> : (
+        {loading ? <div className="auth-card"><Loading label={t('Checking your link…')} /></div> : (
           <form className="auth-card" onSubmit={submit}>
-            <span className="eyebrow"><span /> Password help</span>
-            <h2>Choose a new password</h2>
-            <p>{ready ? 'Pick something you’ll remember. You’ll be signed in straight after.' : 'This link can’t be used to reset a password.'}</p>
+            <span className="eyebrow"><span /> {t('Password help')}</span>
+            <h2>{t('Choose a new password')}</h2>
+            <p>{t(ready ? 'Pick something you’ll remember. You’ll be signed in straight after.' : 'This link can’t be used to reset a password.')}</p>
 
-            {linkError && <Notice tone="error">{linkError}</Notice>}
+            {linkError && <Notice tone="error">{authErrorText(language, linkError)}</Notice>}
             {!ready && !linkError && (
-              <Notice tone="error">This reset link has expired or has already been used.</Notice>
+              <Notice tone="error">{t('This reset link has expired or has already been used.')}</Notice>
             )}
-            {error && <Notice tone="error">{error}</Notice>}
+            {error && <Notice tone="error">{authErrorText(language, error)}</Notice>}
 
             {ready ? <>
-              <label>New password
+              <label>{t('New password')}
                 <span className="password-field">
-                  <input required aria-label="New password" minLength={8} type={showPassword ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="At least 8 characters" />
-                  <button type="button" onClick={() => setShowPassword(!showPassword)} aria-label={showPassword ? 'Hide password' : 'Show password'}>{showPassword ? <EyeOff /> : <Eye />}</button>
+                  <input required aria-label={t('New password')} minLength={8} type={showPassword ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)} placeholder={t('At least 8 characters')} />
+                  <button type="button" onClick={() => setShowPassword(!showPassword)} aria-label={t(showPassword ? 'Hide password' : 'Show password')}>{showPassword ? <EyeOff /> : <Eye />}</button>
                 </span>
               </label>
-              <label>Confirm new password
-                <input required aria-label="Confirm new password" minLength={8} type={showPassword ? 'text' : 'password'} value={confirmation} onChange={(e) => setConfirmation(e.target.value)} placeholder="Type it once more" />
+              <label>{t('Confirm new password')}
+                <input required aria-label={t('Confirm new password')} minLength={8} type={showPassword ? 'text' : 'password'} value={confirmation} onChange={(e) => setConfirmation(e.target.value)} placeholder={t('Type it once more')} />
               </label>
-              <button className="button button-primary full" disabled={busy}>{busy ? 'Saving…' : 'Save new password'}</button>
+              <button className="button button-primary full" disabled={busy}>{busy ? t('Saving…') : t('Save new password')}</button>
             </> : (
-              <Link className="button button-primary full" to="/forgot-password">Request a new link</Link>
+              <Link className="button button-primary full" to="/forgot-password">{t('Request a new link')}</Link>
             )}
 
-            <p className="auth-switch">Remembered it? <Link to="/login">Sign in</Link></p>
+            <p className="auth-switch">{t('Remembered it?')} <Link to="/login">{t('Sign in')}</Link></p>
           </form>
         )}
       </section>

@@ -165,10 +165,10 @@ Remaining:
 
 These are opportunities, not committed roadmap items:
 
-1. Add unit tests for formatting, slugging, CSV parsing, and variant cleaning.
+1. Add unit tests for formatting, slugging, Excel workbook parsing, and variant cleaning.
 2. Add route-level integration tests for demo-mode onboarding, dashboard editing, and public-menu language switching.
 3. Split `DashboardPage.tsx` into focused panels/hooks.
 4. Split the central stylesheet into page or feature boundaries.
 5. Lazy-load owner and platform routes to reduce the production bundle.
-6. Make CSV import transactional or provide a row-level failure report.
+6. Make Excel category/item import fully transactional so a failed item batch cannot leave empty categories.
 7. Add a documented Supabase migration/deployment pipeline.

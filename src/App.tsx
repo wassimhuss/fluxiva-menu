@@ -8,8 +8,8 @@ import { PublicMenuPage } from './pages/PublicMenuPage'
 /**
  * Only the public menu is bundled eagerly. It is the screen almost all traffic
  * arrives on — someone scanning a QR code at a table — so it must not pay for a
- * second round trip, and it must not carry the owner dashboard, the CSV
- * importer, the QR generator or the operator console along with it.
+ * second round trip, and it must not carry the owner dashboard, the Excel
+ * workbook tools, the QR generator or the operator console along with it.
  */
 const LandingPage = lazy(() => import('./pages/LandingPage').then((m) => ({ default: m.LandingPage })))
 const AuthPage = lazy(() => import('./pages/AuthPage').then((m) => ({ default: m.AuthPage })))

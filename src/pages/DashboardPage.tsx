@@ -1,4 +1,4 @@
-import { ArrowDown, ArrowLeft, ArrowUp, ChevronLeft, ChevronRight, ExternalLink, Eye, EyeOff, ImagePlus, Images, LayoutDashboard, LogOut, Maximize2, Menu, Palette, Pencil, Plus, QrCode, RotateCcw, Settings, ShieldCheck, Store, Trash2, Upload, X } from 'lucide-react'
+import { ArrowDown, ArrowUp, CheckCircle2, ChevronLeft, ChevronRight, Download, ExternalLink, Eye, EyeOff, FileSpreadsheet, ImagePlus, Images, LayoutDashboard, LogOut, Maximize2, Menu, Palette, Pencil, Plus, QrCode, RotateCcw, Settings, ShieldCheck, Store, Trash2, TriangleAlert, Upload, X } from 'lucide-react'
 import QRCode from 'qrcode'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
@@ -9,14 +9,16 @@ import { SubscriptionBanner } from '../components/SubscriptionBanner'
 import { GalleryPicker } from '../components/GalleryPicker'
 import { ImageLightbox } from '../components/ImageLightbox'
 import { PortraitImageCropper } from '../components/PortraitImageCropper'
-import { cleanExtras, cleanVariants, createCategory, createItem, deleteCategory, deleteItem, deleteRestaurantAsset, getMenuViewStats, getOwnerMenu, listGalleryCategories, listGalleryImages, updateCategory, updateItem, updateRestaurant, uploadRestaurantAsset, validateGallerySource } from '../lib/api'
+import { cleanExtras, cleanVariants, createCategories, createCategory, createItem, createItems, deleteCategory, deleteItem, deleteRestaurantAsset, getMenuViewStats, getOwnerMenu, listGalleryCategories, listGalleryImages, updateCategory, updateItem, updateRestaurant, uploadRestaurantAsset, validateGallerySource } from '../lib/api'
 import { useAuth } from '../lib/auth'
 import { demoMenu } from '../lib/demo'
 import { formatMoney, localText } from '../lib/format'
 import { dashboardText } from '../lib/dashboardI18n'
+import { downloadMenuTemplate, exportMenuWorkbook, readMenuWorkbook } from '../lib/menuWorkbook'
 import { subscriptionState } from '../lib/subscription'
 import { DEFAULT_TEMPLATE, TEMPLATES, resolveTemplateId } from '../templates/registry'
 import type { Category, GalleryCategory, GalleryImage, ItemExtra, Language, MenuItem, MenuViewStats, Restaurant, RestaurantMenu, Variant } from '../lib/types'
+import type { MenuWorkbookPreview } from '../lib/menuWorkbook'
 
 type Panel = 'overview' | 'analysis' | 'menu' | 'design' | 'settings'
 type ItemDraft = { category_id: string; name_en: string; name_ar: string; description_en: string; description_ar: string; price: string; variants: Variant[]; extras: ItemExtra[]; image_file: File | null; image_url?: string | null; gallery_image_id?: string | null }
@@ -32,22 +34,6 @@ function restaurantSettingsSnapshot(restaurant: Restaurant): RestaurantSettings 
 
 async function discardAsset(restaurantId: string, url?: string | null) {
   try { await deleteRestaurantAsset(restaurantId, url) } catch { /* Cleanup must not undo a successful menu change. */ }
-}
-
-function csvRows(text: string) {
-  const rows: string[][] = []
-  let row: string[] = []; let cell = ''; let quoted = false
-  for (let index = 0; index < text.length; index += 1) {
-    const char = text[index]
-    if (char === '"') { if (quoted && text[index + 1] === '"') { cell += '"'; index += 1 } else quoted = !quoted }
-    else if (char === ',' && !quoted) { row.push(cell.trim()); cell = '' }
-    else if ((char === '\n' || char === '\r') && !quoted) { if (char === '\r' && text[index + 1] === '\n') index += 1; row.push(cell.trim()); if (row.some(Boolean)) rows.push(row); row = []; cell = '' }
-    else cell += char
-  }
-  if (cell || row.length) { row.push(cell.trim()); if (row.some(Boolean)) rows.push(row) }
-  if (rows.length < 2) return []
-  const headers = rows[0].map((header) => header.toLowerCase().replace(/\s+/g, '_'))
-  return rows.slice(1).map((values) => Object.fromEntries(headers.map((header, index) => [header, values[index] ?? ''])))
 }
 
 export function DashboardPage() {
@@ -79,6 +65,9 @@ export function DashboardPage() {
   const [imagePreview, setImagePreview] = useState<ImagePreview | null>(null)
   const [importFile, setImportFile] = useState<File | null>(null)
   const [importStatus, setImportStatus] = useState('')
+  const [importPreview, setImportPreview] = useState<MenuWorkbookPreview | null>(null)
+  const [importReading, setImportReading] = useState(false)
+  const [workbookDownload, setWorkbookDownload] = useState<'template' | 'export' | null>(null)
   const [viewStats, setViewStats] = useState<MenuViewStats | null>(null)
   // Empty until the owner picks one, so the saved design stays the source of truth.
   const [templateDraft, setTemplateDraft] = useState('')
@@ -87,6 +76,7 @@ export function DashboardPage() {
   // Null means the saved preference is still the source of truth.
   const [imageVisibilityDraft, setImageVisibilityDraft] = useState<boolean | null>(null)
   const [imageVisibilityConfirmation, setImageVisibilityConfirmation] = useState<boolean | null>(null)
+  const [itemVisibilityConfirmation, setItemVisibilityConfirmation] = useState<MenuItem | null>(null)
   const [previewConfirmationOpen, setPreviewConfirmationOpen] = useState(false)
   const [designExitConfirmationOpen, setDesignExitConfirmationOpen] = useState(false)
   const [savedSettings, setSavedSettings] = useState<RestaurantSettings | null>(null)
@@ -142,6 +132,11 @@ export function DashboardPage() {
   function changeDashboardLanguage(language: Language) {
     setDashboardLanguage(language)
     window.localStorage.setItem(DASHBOARD_LANGUAGE_KEY, language)
+  }
+
+  async function handleSignOut() {
+    await signOut()
+    navigate('/')
   }
 
   const t = (english: string) => dashboardText(dashboardLanguage, english)
@@ -238,6 +233,18 @@ export function DashboardPage() {
     setMenu({ ...menu, items: menu.items.map((entry) => entry.id === item.id ? { ...entry, available } : entry) })
     try { await updateItem(item.id, { available }) }
     catch (caught) { setMenu(menu); setError(caught instanceof Error ? caught.message : dashboardText(dashboardLanguage, 'Could not update item visibility')) }
+  }
+
+  function requestAvailabilityToggle(item: MenuItem) {
+    if (item.available) setItemVisibilityConfirmation(item)
+    else void toggleAvailability(item)
+  }
+
+  async function confirmHideItem() {
+    if (!itemVisibilityConfirmation) return
+    const item = itemVisibilityConfirmation
+    setItemVisibilityConfirmation(null)
+    await toggleAvailability(item)
   }
 
   async function saveRestaurantDetails(): Promise<boolean> {
@@ -416,29 +423,100 @@ export function DashboardPage() {
     setGalleryOpen(false)
   }
 
-  async function importCsv(event: React.FormEvent) {
-    event.preventDefault(); if (!menu || !importFile) return
-    setSaving(true); setImportStatus('Reading your file…'); setError('')
+  function closeWorkbookTools() {
+    setImportModal(false)
+    setImportFile(null)
+    setImportPreview(null)
+    setImportStatus('')
+  }
+
+  async function prepareWorkbook(file: File | null) {
+    setImportFile(file)
+    setImportPreview(null)
+    setImportStatus('')
+    if (!file) return
+    if (!file.name.toLowerCase().endsWith('.xlsx')) {
+      setImportStatus(t('Choose an Excel .xlsx file.'))
+      return
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setImportStatus(t('The Excel file must be smaller than 5 MB.'))
+      return
+    }
+    setImportReading(true)
     try {
-      const rows = csvRows(await importFile.text())
-      if (!rows.length) throw new Error(dashboardText(dashboardLanguage, 'Add at least one CSV row with name_en, name_ar and price columns.'))
-      let nextMenu = menu
-      // `price_lbp` was this column's name before currencies were per
-      // restaurant, and the old name is what the importer's own instructions
-      // told owners to use, so a file written against them still loads.
-      for (const row of rows) {
-        if (!row.name_en || !row.name_ar) continue
-        let category = nextMenu.categories.find((entry) => entry.name_en.toLowerCase() === (row.category_en || 'Imported').toLowerCase())
-        if (!category) {
-          category = await createCategory({ restaurant_id: menu.restaurant.id, name_en: row.category_en || 'Imported', name_ar: row.category_ar || 'مستوردة', sort_order: nextMenu.categories.length + 1 })
-          nextMenu = { ...nextMenu, categories: [...nextMenu.categories, category] }
+      setImportPreview(await readMenuWorkbook(file, dashboardLanguage))
+    } catch {
+      setImportStatus(t('This Excel file could not be read. Download a fresh template and try again.'))
+    } finally {
+      setImportReading(false)
+    }
+  }
+
+  async function downloadExcel(kind: 'template' | 'export') {
+    if (!menu) return
+    setWorkbookDownload(kind)
+    setError('')
+    try {
+      if (kind === 'template') await downloadMenuTemplate()
+      else await exportMenuWorkbook(menu)
+    } catch {
+      setError(t('Could not create the Excel file.'))
+    } finally {
+      setWorkbookDownload(null)
+    }
+  }
+
+  async function importExcel(event: React.FormEvent) {
+    event.preventDefault()
+    if (!menu || !importPreview || importPreview.errors.length) return
+    setSaving(true)
+    setImportStatus('')
+    setError('')
+    try {
+      const categoryKey = (name: string) => name.trim().toLowerCase()
+      const existingCategories = new Map(menu.categories.map((category) => [categoryKey(category.name_en), category]))
+      const missingCategories = new Map<string, { name_en: string; name_ar: string }>()
+      importPreview.items.forEach((item) => {
+        const key = categoryKey(item.categoryEn)
+        if (!existingCategories.has(key) && !missingCategories.has(key)) missingCategories.set(key, { name_en: item.categoryEn, name_ar: item.categoryAr })
+      })
+      const newCategories = await createCategories(Array.from(missingCategories.values()).map((category, index) => ({
+        restaurant_id: menu.restaurant.id,
+        ...category,
+        sort_order: menu.categories.length + index + 1,
+      })))
+      const allCategories = [...menu.categories, ...newCategories]
+      const categoriesByName = new Map(allCategories.map((category) => [categoryKey(category.name_en), category]))
+      const itemCounts = new Map(allCategories.map((category) => [category.id, menu.items.filter((item) => item.category_id === category.id).length]))
+      const importedItems = await createItems(importPreview.items.map((item) => {
+        const category = categoriesByName.get(categoryKey(item.categoryEn))!
+        const nextSortOrder = (itemCounts.get(category.id) ?? 0) + 1
+        itemCounts.set(category.id, nextSortOrder)
+        return {
+          restaurant_id: menu.restaurant.id,
+          category_id: category.id,
+          name_en: item.nameEn,
+          name_ar: item.nameAr,
+          description_en: item.descriptionEn,
+          description_ar: item.descriptionAr,
+          price: item.price,
+          image_url: null,
+          gallery_image_id: null,
+          variants: cleanVariants(item.variants),
+          extras: cleanExtras(item.extras),
+          available: item.available,
+          sort_order: nextSortOrder,
         }
-        const item = await createItem({ restaurant_id: menu.restaurant.id, category_id: category.id, name_en: row.name_en, name_ar: row.name_ar, description_en: row.description_en || '', description_ar: row.description_ar || '', price: Number(row.price ?? row.price_lbp) || 0, variants: [], extras: [], available: row.available !== 'false', sort_order: nextMenu.items.filter((entry) => entry.category_id === category.id).length + 1 })
-        nextMenu = { ...nextMenu, items: [...nextMenu.items, item] }
-      }
-      setMenu(nextMenu); setImportStatus(`Imported ${nextMenu.items.length - menu.items.length} items.`); setImportFile(null)
-    } catch (caught) { setError(caught instanceof Error ? caught.message : dashboardText(dashboardLanguage, 'Could not import CSV')) }
-    finally { setSaving(false) }
+      }))
+      setMenu({ ...menu, categories: allCategories, items: [...menu.items, ...importedItems] })
+      closeWorkbookTools()
+      showSuccess(`${importedItems.length} ${t(importedItems.length === 1 ? 'item imported successfully.' : 'items imported successfully.')}`)
+    } catch (caught) {
+      setImportStatus(caught instanceof Error ? caught.message : t('Could not import the Excel workbook.'))
+    } finally {
+      setSaving(false)
+    }
   }
 
   function addVariant() { setItemDraft((current) => ({ ...current, variants: [...current.variants, { id: crypto.randomUUID(), name_en: '', price: 0 }] })) }
@@ -602,10 +680,10 @@ export function DashboardPage() {
           <button className={panel === 'design' ? 'selected' : ''} onClick={() => { setPanel('design'); setDesignStep(1) }}><Palette /> {t('Menu design')}</button>
           <button className={panel === 'settings' ? 'selected' : ''} onClick={openSettings}><Settings /> {t('Restaurant settings')}</button>
         </nav>
-        <div className="sidebar-bottom"><Link to={`/m/${menu.restaurant.slug}`} target="_blank"><ExternalLink /> {t('Open public menu')}</Link><button onClick={async () => { await signOut(); navigate('/') }}><LogOut /> {t('Sign out')}</button>{adminRole && <Link className="platform-link" to="/platform"><ShieldCheck /> {t('Operator console')}</Link>}</div>
+        <div className="sidebar-bottom"><Link to={`/m/${menu.restaurant.slug}`} target="_blank"><ExternalLink /> {t('Open public menu')}</Link><button onClick={handleSignOut}><LogOut /> {t('Sign out')}</button>{adminRole && <Link className="platform-link" to="/platform"><ShieldCheck /> {t('Operator console')}</Link>}</div>
       </aside>
       <section className="dashboard-main">
-        <header className="dashboard-header">{panel !== 'overview' && <button className="mobile-menu" aria-label={t('Back to overview')} onClick={requestBackToOverview}><ArrowLeft /></button>}<div><span>{t('Restaurant dashboard')}</span><b>{menu.restaurant.name_en}</b></div><div className="header-actions"><button type="button" className="language-switch" onClick={() => changeDashboardLanguage(dashboardLanguage === 'ar' ? 'en' : 'ar')} aria-label={dashboardLanguage === 'ar' ? 'Switch to English' : 'التبديل إلى العربية'}>{dashboardLanguage === 'ar' ? 'EN' : 'عربي'}</button><Link className="button button-small button-outline" to={`/m/${menu.restaurant.slug}`} target="_blank">{t('View menu')} <ExternalLink /></Link></div></header>
+        <header className="dashboard-header">{panel !== 'overview' && <button className="mobile-menu" aria-label={t('Back to overview')} onClick={requestBackToOverview}><BackChevron /></button>}<div><span>{t('Restaurant dashboard')}</span><b>{menu.restaurant.name_en}</b></div><div className="header-actions"><button type="button" className="language-switch" onClick={() => changeDashboardLanguage(dashboardLanguage === 'ar' ? 'en' : 'ar')} aria-label={dashboardLanguage === 'ar' ? 'Switch to English' : 'التبديل إلى العربية'}>{dashboardLanguage === 'ar' ? 'EN' : 'عربي'}</button>{panel === 'overview' && <button type="button" className="dashboard-header-signout" onClick={handleSignOut}><LogOut /> <span>{t('Sign out')}</span></button>}<Link className="button button-small button-outline" to={`/m/${menu.restaurant.slug}`} target="_blank">{t('View menu')} <ExternalLink /></Link></div></header>
         <div className="dashboard-content">
           {error && <Notice tone="error">{error}</Notice>}
           {success && <div className="dashboard-toast" role="status"><Notice tone="success">{success}</Notice></div>}
@@ -650,10 +728,10 @@ export function DashboardPage() {
           </>}
 
           {panel === 'menu' && <>
-            <div className="page-heading menu-editor-page-heading"><div><span className="eyebrow"><span /> {t('Menu editor')}</span><h1>{t('Categories and items.')}</h1><p>{t('Changes appear on your public menu immediately.')}</p></div><div className="button-row menu-editor-actions"><button className="button button-outline" onClick={() => setImportModal(true)}><Upload /> {t('Import CSV')}</button><button className="button button-outline" onClick={() => openCategory()}><Plus /> {t('Category')}</button><button className="button button-primary" onClick={() => openItem()}><Plus /> {t('Item')}</button></div></div>
+            <div className="page-heading menu-editor-page-heading"><div><span className="eyebrow"><span /> {t('Menu editor')}</span><h1>{t('Categories and items.')}</h1><p>{t('Changes appear on your public menu immediately.')}</p></div><div className="button-row menu-editor-actions"><button className="button button-outline" onClick={() => setImportModal(true)}><FileSpreadsheet /> {t('Excel')}</button><button className="button button-outline" onClick={() => openCategory()}><Plus /> {t('Category')}</button><button className="button button-primary" onClick={() => openItem()}><Plus /> {t('Item')}</button></div></div>
             {!menu.categories.length ? <div className="empty-card"><Store /><h2>{t('Create your first category')}</h2><p>{t('Start with Pizza, Drinks, Desserts or any section that fits your menu.')}</p><button className="button button-primary" onClick={() => openCategory()}><Plus /> {t('Add category')}</button></div> : <div className="category-list">{menu.categories.map((category, categoryIndex) => <section className="dashboard-card category-card" key={category.id}><div className="category-heading"><div><h2>{category.name_en}<small>{category.name_ar}</small></h2><span>{menu.items.filter((item) => item.category_id === category.id).length} {t('items')}</span></div><div className="category-actions"><button className="icon-button" disabled={categoryIndex === 0} onClick={() => moveCategory(category, -1)} title={t('Move category up')}><ArrowUp /></button><button className="icon-button" disabled={categoryIndex === menu.categories.length - 1} onClick={() => moveCategory(category, 1)} title={t('Move category down')}><ArrowDown /></button><button className="icon-button" onClick={() => openCategory(category)} title={t('Edit category')}><Pencil /></button><button className="icon-button danger" onClick={() => removeCategory(category)} title={t('Delete category')}><Trash2 /></button><button className="button button-small button-outline" onClick={() => openItem(category.id)}><Plus /> {t('Add item')}</button></div></div><div className="dashboard-items">{menu.items.filter((item) => item.category_id === category.id).sort((a, b) => a.sort_order - b.sort_order).map((item, itemIndex, siblings) => <article key={item.id} className={!item.available ? 'unavailable' : ''}>
               {item.image_url ? <button type="button" className="item-icon item-icon-button" onClick={() => setImagePreview({ url: item.image_url!, name: dashboardLanguage === 'ar' ? item.name_ar : item.name_en })} aria-label={`${t('View photo')}: ${dashboardLanguage === 'ar' ? item.name_ar : item.name_en}`}><img src={item.image_url} alt="" /><Maximize2 aria-hidden="true" /></button> : <div className="item-icon">{item.name_en.slice(0, 1)}</div>}
-              <div className="dashboard-item-info"><b>{item.name_en}<small>{item.name_ar}</small></b><span>{item.variants.length ? `${item.variants.length} ${t('sizes')} · ${t('from')} ${formatMoney(Math.min(...item.variants.map((variant) => variant.price)), currency)}` : formatMoney(item.price, currency)}{(item.extras?.length ?? 0) > 0 ? ` · ${item.extras.length} ${t('extras')}` : ''}</span></div><button className="visibility" onClick={() => toggleAvailability(item)}>{item.available ? <><Eye /> {t('Visible')}</> : <><EyeOff /> {t('Hidden')}</>}</button><div className="item-actions"><button className="icon-button" onClick={() => moveItem(item, -1)} disabled={itemIndex === 0} title={t('Move item up')}><ArrowUp /></button><button className="icon-button" onClick={() => moveItem(item, 1)} disabled={itemIndex === siblings.length - 1} title={t('Move item down')}><ArrowDown /></button><button className="icon-button" onClick={() => openItem(category.id, item)} title={t('Edit item')}><Pencil /></button><button className="icon-button danger" onClick={() => removeItem(item)} title={t('Delete item')}><Trash2 /></button></div></article>)}{!menu.items.some((item) => item.category_id === category.id) && <p className="empty-row">{t('No items in this category yet.')}</p>}</div></section>)}</div>}
+              <div className="dashboard-item-info"><b>{item.name_en}<small>{item.name_ar}</small></b><span>{item.variants.length ? `${item.variants.length} ${t('sizes')} · ${t('from')} ${formatMoney(Math.min(...item.variants.map((variant) => variant.price)), currency)}` : formatMoney(item.price, currency)}{(item.extras?.length ?? 0) > 0 ? ` · ${item.extras.length} ${t('extras')}` : ''}</span></div><button className="visibility" onClick={() => requestAvailabilityToggle(item)}>{item.available ? <><Eye /> {t('Visible')}</> : <><EyeOff /> {t('Hidden')}</>}</button><div className="item-actions"><button className="icon-button" onClick={() => moveItem(item, -1)} disabled={itemIndex === 0} title={t('Move item up')}><ArrowUp /></button><button className="icon-button" onClick={() => moveItem(item, 1)} disabled={itemIndex === siblings.length - 1} title={t('Move item down')}><ArrowDown /></button><button className="icon-button" onClick={() => openItem(category.id, item)} title={t('Edit item')}><Pencil /></button><button className="icon-button danger" onClick={() => removeItem(item)} title={t('Delete item')}><Trash2 /></button></div></article>)}{!menu.items.some((item) => item.category_id === category.id) && <p className="empty-row">{t('No items in this category yet.')}</p>}</div></section>)}</div>}
           </>}
 
           {panel === 'design' && <>
@@ -860,6 +938,8 @@ export function DashboardPage() {
 
       {imageVisibilityConfirmation !== null && <div className="modal-backdrop"><div className="modal-card image-toggle-modal" role="dialog" aria-modal="true" aria-labelledby="image-toggle-title" dir={dashboardLanguage === 'ar' ? 'rtl' : 'ltr'}><button type="button" className="modal-close" aria-label={imageConfirmationCopy.close} onClick={() => setImageVisibilityConfirmation(null)}><X /></button><span className="eyebrow"><span /> {imageConfirmationCopy.eyebrow}</span><h2 id="image-toggle-title">{imageVisibilityConfirmation ? imageConfirmationCopy.showTitle : imageConfirmationCopy.hideTitle}</h2><p>{imageVisibilityConfirmation ? imageConfirmationCopy.showDescription : imageConfirmationCopy.hideDescription}</p><div className="button-row modal-actions"><button type="button" className="button button-outline" onClick={() => setImageVisibilityConfirmation(null)}>{imageConfirmationCopy.cancel}</button><button type="button" className="button button-primary" onClick={confirmItemImages}>{imageVisibilityConfirmation ? imageConfirmationCopy.showAction : imageConfirmationCopy.hideAction}</button></div></div></div>}
 
+      {itemVisibilityConfirmation && <div className="modal-backdrop"><div className="modal-card item-visibility-modal" role="dialog" aria-modal="true" aria-labelledby="item-visibility-title" dir={dashboardLanguage === 'ar' ? 'rtl' : 'ltr'}><button type="button" className="modal-close" aria-label={t('Close item visibility confirmation')} onClick={() => setItemVisibilityConfirmation(null)}><X /></button><span className="eyebrow"><span /> {t('Confirm menu change')}</span><h2 id="item-visibility-title">{t('Hide this item?')}</h2><p><strong>{localText(dashboardLanguage, itemVisibilityConfirmation.name_en, itemVisibilityConfirmation.name_ar)}</strong> — {t('This item will disappear from your public menu. You can show it again at any time.')}</p><div className="button-row modal-actions"><button type="button" className="button button-outline" onClick={() => setItemVisibilityConfirmation(null)}>{t('Cancel')}</button><button type="button" className="button button-danger" onClick={() => void confirmHideItem()}><EyeOff /> {t('Hide item')}</button></div></div></div>}
+
       {previewConfirmationOpen && <div className="modal-backdrop"><div className="modal-card preview-save-modal" role="dialog" aria-modal="true" aria-labelledby="preview-save-title" dir={dashboardLanguage === 'ar' ? 'rtl' : 'ltr'}><button type="button" className="modal-close" aria-label={t('Close preview confirmation')} onClick={() => setPreviewConfirmationOpen(false)}><X /></button><span className="eyebrow"><span /> {t('Preview changes')}</span><h2 id="preview-save-title">{t('Save before previewing?')}</h2><p>{t('You have unsaved design changes. Save them first so your public menu uses this design, or preview without saving.')}</p><div className="button-row modal-actions preview-save-actions"><button type="button" className="button button-outline" disabled={saving} onClick={continueToPreview}>{t('Continue without saving')}</button><button type="button" className="button button-primary" disabled={saving} onClick={() => void saveAndOpenPreview()}>{saving ? t('Saving…') : t('Save and preview')}</button></div></div></div>}
 
       {designExitConfirmationOpen && <div className="modal-backdrop"><div className="modal-card design-exit-modal" role="dialog" aria-modal="true" aria-labelledby="design-exit-title" dir={dashboardLanguage === 'ar' ? 'rtl' : 'ltr'}><button type="button" className="modal-close" aria-label={t('Keep editing')} disabled={saving} onClick={() => setDesignExitConfirmationOpen(false)}><X /></button><span className="eyebrow"><span /> {t('Unsaved changes')}</span><h2 id="design-exit-title">{t('Save your menu design?')}</h2><p>{t('You changed your menu design. Save it to make it live, or leave without saving and keep your current design.')}</p><div className="design-exit-actions"><button type="button" className="button button-primary" disabled={saving} onClick={() => void saveAndLeaveDesign()}>{saving ? t('Saving…') : t('Save changes')}</button><button type="button" className="button button-outline" disabled={saving} onClick={leaveDesignWithoutSaving}>{t('Leave without saving')}</button><button type="button" className="button button-ghost" disabled={saving} onClick={() => setDesignExitConfirmationOpen(false)}>{t('Keep editing')}</button></div></div></div>}
@@ -873,7 +953,22 @@ export function DashboardPage() {
       {galleryOpen && <GalleryPicker images={galleryImages} categories={galleryCategories} language={dashboardLanguage} loading={galleryLoading} selectedId={itemDraft.gallery_image_id} onSelect={selectGalleryImage} onRemove={() => { setItemDraft({ ...itemDraft, image_url: null, gallery_image_id: null, image_file: null }); setGalleryOpen(false) }} onClose={() => setGalleryOpen(false)} />}
       {pendingItemCrop && <PortraitImageCropper file={pendingItemCrop} language={dashboardLanguage} onCancel={() => setPendingItemCrop(null)} onConfirm={acceptItemCrop} />}
 
-      {importModal && <div className="modal-backdrop"><form className="modal-card" onSubmit={importCsv}><button type="button" className="modal-close" onClick={() => { setImportModal(false); setImportStatus(''); setImportFile(null) }}><X /></button><span className="eyebrow"><span /> {t('Bulk import')}</span><h2>{t('Import menu items')}</h2><p>{t('Upload a CSV exported from Excel or Google Sheets. Columns: category_en, category_ar, name_en, name_ar, description_en, description_ar, price, available.')}</p><label className="file-drop"><Upload /><b>{importFile?.name || t('Choose CSV file')}</b><small>{t('One item per row')}</small><input type="file" accept=".csv,text/csv" onChange={(e) => setImportFile(e.target.files?.[0] ?? null)} /></label>{importStatus && <p className="notice notice-success">{importStatus}</p>}<button className="button button-primary full" disabled={saving || !importFile}>{saving ? t('Importing…') : t('Import items')}</button></form></div>}
+      {importModal && <div className="modal-backdrop"><form className="modal-card modal-large excel-tools-modal" onSubmit={importExcel}><button type="button" className="modal-close" aria-label={t('Close')} onClick={closeWorkbookTools}><X /></button><span className="eyebrow"><span /> {t('Excel menu tools')}</span><h2>{t('Import or export your menu')}</h2><p>{t('Use the Fluxiva workbook to move many bilingual items safely, including sizes and extras.')}</p>
+        <div className="excel-download-grid">
+          <button type="button" className="excel-action-card" disabled={workbookDownload !== null} onClick={() => void downloadExcel('template')}><span><Download /></span><div><b>{workbookDownload === 'template' ? t('Preparing…') : t('Download blank template')}</b><small>{t('Start with the correct columns and an example.')}</small></div></button>
+          <button type="button" className="excel-action-card" disabled={workbookDownload !== null} onClick={() => void downloadExcel('export')}><span><FileSpreadsheet /></span><div><b>{workbookDownload === 'export' ? t('Preparing…') : t('Export current menu')}</b><small>{menu.items.length} {t('items')} · {t('Ready for Excel')}</small></div></button>
+        </div>
+        <div className="excel-import-heading"><div><b>{t('Import workbook')}</b><small>{t('Imports add new items and never remove your current menu.')}</small></div><span>.XLSX</span></div>
+        <ol className="excel-steps"><li><span>1</span>{t('Download the template')}</li><li><span>2</span>{t('Fill Items, Variants and Extras')}</li><li><span>3</span>{t('Upload and review')}</li></ol>
+        <label className={`file-drop excel-file-drop ${importFile ? 'has-file' : ''}`}><Upload /><b>{importFile?.name || t('Choose Excel file')}</b><small>{importReading ? t('Reading and checking your workbook…') : t('Excel .xlsx · maximum 5 MB')}</small><input type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" disabled={importReading || saving} onChange={(event) => { const file = event.currentTarget.files?.[0] ?? null; event.currentTarget.value = ''; void prepareWorkbook(file) }} /></label>
+        {importStatus && <Notice tone="error">{importStatus}</Notice>}
+        {importPreview && <div className={`excel-review ${importPreview.errors.length ? 'has-errors' : 'is-ready'}`}>
+          <div className="excel-review-title">{importPreview.errors.length ? <TriangleAlert /> : <CheckCircle2 />}<div><b>{importPreview.errors.length ? t('Fix the workbook before importing') : t('Workbook ready to import')}</b><small>{importPreview.errors.length ? t('Nothing has been saved yet.') : t('All rows passed validation. Nothing is saved until you confirm.')}</small></div></div>
+          <div className="excel-summary"><span><b>{importPreview.items.length}</b>{t('Items')}</span><span><b>{importPreview.categoryCount}</b>{t('Categories')}</span><span><b>{importPreview.variantCount}</b>{t('Sizes')}</span><span><b>{importPreview.extraCount}</b>{t('Extras')}</span></div>
+          {importPreview.errors.length > 0 && <div className="excel-errors"><ul>{importPreview.errors.slice(0, 6).map((message, index) => <li key={`${message}-${index}`}>{message}</li>)}</ul>{importPreview.errors.length > 6 && <small>+ {importPreview.errors.length - 6} {t('more errors')}</small>}</div>}
+        </div>}
+        <button className="button button-primary full" disabled={saving || importReading || !importPreview || importPreview.errors.length > 0}>{saving ? t('Importing…') : importPreview ? `${t('Import')} ${importPreview.items.length} ${t(importPreview.items.length === 1 ? 'item' : 'items')}` : t('Review a workbook first')}</button>
+      </form></div>}
 
       {qrModal && <div className="modal-backdrop"><div className="modal-card qr-modal qr-print-area"><button className="modal-close" aria-label={t('Close')} onClick={() => setQrModal(false)}><X /></button><span className="eyebrow"><span /> {t('Ready to scan')}</span><h2>{t('Your menu QR code')}</h2><p>{t('Print it on table cards, packaging or your storefront.')}</p>{qrData && <img src={qrData} alt={t('Restaurant menu QR code')} />}<code>{menuUrl}</code><div className="qr-actions"><button className="button button-primary" onClick={downloadQr}><QrCode /> PNG</button><button className="button button-outline" onClick={downloadQrSvg}>SVG</button><button className="button button-outline" onClick={printQr}>{t('Print')}</button></div></div></div>}
     </main>
