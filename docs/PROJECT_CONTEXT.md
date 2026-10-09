@@ -181,6 +181,7 @@ The current landing page was redesigned on 2026-09-18. Its implementation uses:
 
 - `landing-v2` as the page scope and `lp-` prefixed selectors.
 - A complete English/Arabic language switch stored under `fluxiva-landing-language`, with translated marketing copy, product mockups, accessible labels, and a dedicated RTL layout.
+- Landing copy keys are checked against the Arabic dictionary at build time. Arabic uses Lebanese Arabic number formatting, localized currency/preview labels, and script-specific spacing and contrast. Storage errors do not disable the language switch.
 - An animated phone/menu preview built with HTML and CSS using existing demo photography.
 - A dashboard product mockup, feature grid, three-step workflow, pricing, CTA, and expanded footer.
 - Intersection Observer reveal states through `[data-reveal]` and `.is-visible`.

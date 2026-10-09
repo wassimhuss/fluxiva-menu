@@ -20,7 +20,7 @@ import {
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { Brand } from '../components/Brand'
-import { landingText } from '../lib/landingI18n'
+import { landingNumber, landingText, type LandingCopyKey } from '../lib/landingI18n'
 import type { Language } from '../lib/types'
 
 const features = [
@@ -48,21 +48,34 @@ const features = [
     copy: 'Everything you need to manage your menu without the usual technical clutter.',
     className: 'lp-feature-dashboard',
   },
-]
+] as const
 
 const benefits = [
   ['Unlimited edits', 'Change your menu whenever service demands it.'],
   ['Bilingual by design', 'Arabic and English live side by side.'],
   ['Personal setup help', 'We help you get the first version just right.'],
   ['Print-ready QR', 'Download once and use it everywhere.'],
-]
+] as const
+
+function storedLanguage(): Language {
+  try {
+    return localStorage.getItem('fluxiva-landing-language') === 'ar' ? 'ar' : 'en'
+  } catch {
+    return 'en'
+  }
+}
 
 export function LandingPage() {
-  const [language, setLanguage] = useState<Language>(() => localStorage.getItem('fluxiva-landing-language') === 'ar' ? 'ar' : 'en')
-  const t = (english: string) => landingText(language, english)
+  const [language, setLanguage] = useState<Language>(storedLanguage)
+  const t = (english: LandingCopyKey) => landingText(language, english)
+  const n = (value: number, options?: Intl.NumberFormatOptions) => landingNumber(language, value, options)
 
   useEffect(() => {
-    localStorage.setItem('fluxiva-landing-language', language)
+    try {
+      localStorage.setItem('fluxiva-landing-language', language)
+    } catch {
+      // Language switching still works when browser storage is unavailable.
+    }
   }, [language])
 
   useEffect(() => {
@@ -85,7 +98,7 @@ export function LandingPage() {
     <main className="landing landing-v2" dir={language === 'ar' ? 'rtl' : 'ltr'} lang={language}>
       <div className="lp-nav-wrap">
         <nav className="lp-nav shell" aria-label={t('Main navigation')}>
-          <Brand />
+          <Brand homeLabel={t('Fluxiva Menu home')} />
           <div className="lp-nav-links hide-tablet">
             <a href="#features">{t('Features')}</a>
             <a href="#how-it-works">{t('How it works')}</a>
@@ -98,7 +111,7 @@ export function LandingPage() {
               onClick={() => setLanguage((current) => current === 'en' ? 'ar' : 'en')}
               aria-label={language === 'en' ? t('Switch to Arabic') : t('Switch to English')}
             >
-              <Languages /> {language === 'en' ? 'العربية' : 'EN'}
+              <Languages aria-hidden="true" /> <span lang={language === 'en' ? 'ar' : 'en'}>{language === 'en' ? 'العربية' : 'English'}</span>
             </button>
             <Link className="text-link hide-mobile" to="/login">{t('Sign in')}</Link>
             <Link className="button button-small lp-nav-cta" to="/signup">
@@ -138,13 +151,13 @@ export function LandingPage() {
           </div>
           <div className="lp-hero-proof">
             <div className="lp-proof-avatars" aria-hidden="true">
-              <span>CO</span><span>MO</span><span>BA</span><span>+</span>
+              <span>{t('CO')}</span><span>{t('MO')}</span><span>{t('BA')}</span><span>+</span>
             </div>
             <p><strong>{t('Built for hospitality')}</strong><br />{t('Thoughtful on every screen, from kitchen to table.')}</p>
           </div>
         </div>
 
-        <div className="lp-hero-stage" aria-label={t('Animated preview of a Fluxiva restaurant menu')}>
+        <div className="lp-hero-stage" role="group" aria-label={t('Animated preview of a Fluxiva restaurant menu')}>
           <div className="lp-stage-ring lp-stage-ring-one" />
           <div className="lp-stage-ring lp-stage-ring-two" />
           <div className="lp-phone-wrap">
@@ -152,7 +165,7 @@ export function LandingPage() {
               <div className="lp-phone-top"><span /><i /></div>
               <div className="lp-phone-screen">
                 <div className="lp-menu-cover">
-                  <div className="lp-menu-logo">CO</div>
+                  <div className="lp-menu-logo">{t('CO')}</div>
                   <small>{t('CEDAR OVEN')}</small>
                   <strong>{t('Fresh from our oven')}</strong>
                   <span>{t('Beirut · Open now')}</span>
@@ -162,11 +175,11 @@ export function LandingPage() {
                 <div className="lp-menu-content">
                   <small>{t('POPULAR TODAY')}</small>
                   <div className="lp-demo-item">
-                    <div><b>{t('Cheese Manoushe')}</b><span>{t('Akawi cheese, sesame')}</span><strong>250,000 LBP</strong></div>
+                    <div><b>{t('Cheese Manoushe')}</b><span>{t('Akawi cheese, sesame')}</span><strong><bdi>{n(250000)} {t('LBP')}</bdi></strong></div>
                     <img src="/menu/manakish.jpg" alt={t('Cheese manoushe')} />
                   </div>
                   <div className="lp-demo-item">
-                    <div><b>{t('Margherita')}</b><span>{t('Tomato, mozzarella, basil')}</span><strong>420,000 LBP</strong></div>
+                    <div><b>{t('Margherita')}</b><span>{t('Tomato, mozzarella, basil')}</span><strong><bdi>{n(420000)} {t('LBP')}</bdi></strong></div>
                     <img src="/menu/pizza.jpg" alt={t('Margherita pizza')} />
                   </div>
                 </div>
@@ -207,27 +220,27 @@ export function LandingPage() {
         </div>
 
         <div className="lp-dashboard-showcase" data-reveal>
-          <div className="lp-dashboard-window">
+          <div className="lp-dashboard-window" role="group" aria-label={t('Illustrative dashboard preview')}>
             <div className="lp-window-bar"><span /><span /><span /><b>{t('Menu overview')}</b></div>
             <aside className="lp-window-sidebar">
-              <div className="lp-mini-brand"><UtensilsCrossed /> CO</div>
+              <div className="lp-mini-brand"><UtensilsCrossed /> {t('CO')}</div>
               <span className="active"><LayoutDashboard /> {t('Overview')}</span>
               <span><UtensilsCrossed /> {t('Menu items')}</span>
               <span><Palette /> {t('Appearance')}</span>
               <span><QrCode /> {t('Your QR')}</span>
             </aside>
             <div className="lp-window-main">
-              <div className="lp-window-title"><span><small>{t('GOOD AFTERNOON')}</small><b>{t('Your menu is looking great.')}</b></span><button>{t('+ Add item')}</button></div>
+              <div className="lp-window-title"><span><small>{t('GOOD AFTERNOON')}</small><b>{t('Your menu is looking great.')}</b></span><span className="lp-window-add">{t('+ Add item')}</span></div>
               <div className="lp-window-stats">
-                <div><small>{t('Menu items')}</small><b>28</b><span>4 {t('categories')}</span></div>
-                <div><small>{t('Available now')}</small><b>26</b><span className="positive">● {t('Live')}</span></div>
-                <div><small>{t('Languages')}</small><b>2</b><span>EN + AR</span></div>
+                <div><small>{t('Menu items')}</small><b>{n(28)}</b><span>{n(4)} {t('categories')}</span></div>
+                <div><small>{t('Available now')}</small><b>{n(26)}</b><span className="positive">● {t('Live')}</span></div>
+                <div><small>{t('Languages')}</small><b>{n(2)}</b><span>{t('EN + AR')}</span></div>
               </div>
               <div className="lp-window-list">
                 <header><b>{t('Popular items')}</b><span>{t('View all')}</span></header>
-                <div><img src="/menu/manakish.jpg" alt="" /><span><b>{t('Cheese Manoushe')}</b><small>{t('Manakish')} · {t('Available')}</small></span><strong>250,000</strong></div>
-                <div><img src="/menu/pizza.jpg" alt="" /><span><b>{t('Margherita')}</b><small>{t('Pizza')} · {t('Available')}</small></span><strong>420,000</strong></div>
-                <div><img src="/menu/croissants.jpg" alt="" /><span><b>{t('Almond Croissant')}</b><small>{t('Bakery')} · {t('Available')}</small></span><strong>180,000</strong></div>
+                <div><img src="/menu/manakish.jpg" alt="" /><span><b>{t('Cheese Manoushe')}</b><small>{t('Manakish')} · {t('Available')}</small></span><strong><bdi>{n(250000)}</bdi></strong></div>
+                <div><img src="/menu/pizza.jpg" alt="" /><span><b>{t('Margherita')}</b><small>{t('Pizza')} · {t('Available')}</small></span><strong><bdi>{n(420000)}</bdi></strong></div>
+                <div><img src="/menu/croissants.jpg" alt="" /><span><b>{t('Almond Croissant')}</b><small>{t('Bakery')} · {t('Available')}</small></span><strong><bdi>{n(180000)}</bdi></strong></div>
               </div>
             </div>
           </div>
@@ -243,9 +256,9 @@ export function LandingPage() {
               <div className="lp-feature-icon"><Icon /></div>
               <h3>{t(title)}</h3>
               <p>{t(copy)}</p>
-              {index === 0 && <div className="lp-language-pills"><b>{t('English')}</b><span>العربية</span></div>}
-              {index === 1 && <div className="lp-color-palette"><span /><span /><span /><i>CO</i></div>}
-              {index === 2 && <div className="lp-speed-demo"><span>{t('Margherita')}</span><b>420,000</b><i>{t('Saved')}</i></div>}
+              {index === 0 && <div className="lp-language-pills"><b>{t('English')}</b><span lang="ar">{landingText('ar', 'Arabic')}</span></div>}
+              {index === 1 && <div className="lp-color-palette"><span /><span /><span /><i>{t('CO')}</i></div>}
+              {index === 2 && <div className="lp-speed-demo"><span>{t('Margherita')}</span><b><bdi>{n(420000)}</bdi></b><i>{t('Saved')}</i></div>}
               {index === 3 && <div className="lp-chart-demo"><span /><span /><span /><span /><span /><span /><span /></div>}
             </article>
           ))}
@@ -260,21 +273,21 @@ export function LandingPage() {
           </div>
           <div className="lp-step-list">
             <article data-reveal>
-              <span className="lp-step-number">01</span>
+              <span className="lp-step-number">{n(1, { minimumIntegerDigits: 2 })}</span>
               <div className="lp-step-icon"><UtensilsCrossed /></div>
               <h3>{t('Tell us about your place')}</h3>
               <p>{t('Add your restaurant name, brand colors and contact details.')}</p>
               <small>{t('About 2 minutes')}</small>
             </article>
             <article data-reveal style={{ '--delay': '100ms' } as CSSProperties}>
-              <span className="lp-step-number">02</span>
+              <span className="lp-step-number">{n(2, { minimumIntegerDigits: 2 })}</span>
               <div className="lp-step-icon"><LayoutDashboard /></div>
               <h3>{t('Build your menu')}</h3>
               <p>{t('Add categories, items, photos and prices — in English, Arabic, or both.')}</p>
               <small>{t('We can help with setup')}</small>
             </article>
             <article data-reveal style={{ '--delay': '200ms' } as CSSProperties}>
-              <span className="lp-step-number">03</span>
+              <span className="lp-step-number">{n(3, { minimumIntegerDigits: 2 })}</span>
               <div className="lp-step-icon"><QrCode /></div>
               <h3>{t('Put your QR on the table')}</h3>
               <p>{t('Download your print-ready code and welcome guests to their new menu.')}</p>
@@ -294,7 +307,7 @@ export function LandingPage() {
           </div>
           <div className="lp-price-box">
             <span className="lp-popular-badge"><Sparkles /> {t('Complete plan')}</span>
-            <div className="lp-price"><strong>$60</strong><span><b>{t('USD')}</b>{t('per year')}</span></div>
+            <div className="lp-price"><strong><bdi>{language === 'ar' ? n(60) : '$60'}</bdi></strong><span><b>{t('USD')}</b>{t('per year')}</span></div>
             <p>{t('Everything you need to launch and manage your digital menu.')}</p>
             <div className="lp-benefit-list">
               {benefits.map(([title, copy]) => (
@@ -321,12 +334,12 @@ export function LandingPage() {
 
       <footer className="lp-footer">
         <div className="shell lp-footer-top">
-          <div><Brand light /><p>{t('Beautiful digital menus, made in Lebanon.')}</p></div>
+          <div><Brand light homeLabel={t('Fluxiva Menu home')} /><p>{t('Beautiful digital menus, made in Lebanon.')}</p></div>
           <div className="lp-footer-links"><b>{t('Product')}</b><a href="#features">{t('Features')}</a><a href="#how-it-works">{t('How it works')}</a><a href="#pricing">{t('Pricing')}</a></div>
           <div className="lp-footer-links"><b>{t('Get started')}</b><Link to="/m/demo">{t('Live demo')}</Link><Link to="/signup">{t('Create account')}</Link><Link to="/login">{t('Sign in')}</Link></div>
           <div className="lp-footer-promise"><Clock3 /><span><b>{t('Fast to launch')}</b><small>{t('Built for busy restaurants.')}</small></span></div>
         </div>
-        <div className="shell lp-footer-bottom"><span>© {new Date().getFullYear()} Fluxiva Menu</span><span>{t('Designed with care for hospitality.')}</span></div>
+        <div className="shell lp-footer-bottom"><span>© <bdi>{n(new Date().getFullYear(), { useGrouping: false })}</bdi> {t('Fluxiva Menu')}</span><span>{t('Designed with care for hospitality.')}</span></div>
       </footer>
     </main>
   )

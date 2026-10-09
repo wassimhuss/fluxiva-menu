@@ -76,6 +76,7 @@ Do not silently depend on a field that is absent from the demo data or existing 
 4. Test the hero after entrance animations finish.
 5. Verify 1280 px desktop, 768 px tablet, and 390 px mobile.
 6. Check with reduced motion enabled.
+7. Keep new landing copy in the typed English/Arabic dictionary. Verify Arabic currency, statistics, accessible labels, header alignment, and the complete phone preview at 390 px; do not rely on an English fallback for missing translations.
 
 ### Add a Supabase migration
 
