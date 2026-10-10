@@ -9,7 +9,7 @@ This file is the working product backlog for developers and AI agents. Keep it u
 - `[x]` Complete
 - `[!]` Blocked or waiting for a prerequisite
 
-## Next planned feature: shared image gallery
+## Shared image gallery
 
 **Status:** `[x]` Local implementation complete; migration and the first production image collection still need deployment/content work.
 
@@ -76,9 +76,22 @@ Build a curated **Fluxiva Gallery** that lets every restaurant owner either sele
 - [ ] Add integration tests for demo onboarding, dashboard editing, and public-menu language switching.
 - [ ] Split `DashboardPage.tsx` into focused components and hooks.
 - [ ] Split the central stylesheet into page or feature boundaries.
-- [ ] Lazy-load owner and platform routes to reduce the production JavaScript bundle.
+- [x] Lazy-load owner and platform routes to reduce the production JavaScript bundle (completed 2026-09-19).
 - [ ] Make Excel category/item import fully transactional so a failed item batch cannot leave empty categories.
 - [ ] Add a documented Supabase migration and deployment pipeline.
+
+## Multi-place accounts and one brand QR
+
+**Status:** `[x]` Local implementation complete; migration `021_multi_place_brands.sql` still needs to be applied to configured Supabase environments.
+
+- [x] Let one owner account manage multiple places, with an independent menu, settings, public slug, images, and analytics for each place.
+- [x] Add a persistent place switcher and an in-dashboard bilingual **Add another place** workflow.
+- [x] Add a public bilingual `/b/:slug` branch selector for the brand-level QR code.
+- [x] Keep direct `/m/:slug` menu links for a specific place.
+- [x] Backfill every existing restaurant into its own brand before removing the one-restaurant-per-owner database constraint.
+- [x] Keep owner and public access protected by RLS, including validation that a place can only join its owner's brand.
+- [x] Preserve the complete branch selection, switching, and creation flow in demo mode.
+- [ ] Apply migration `021_multi_place_brands.sql` to the configured Supabase project and verify anonymous/owner access against production-like data.
 
 ## Item extras
 

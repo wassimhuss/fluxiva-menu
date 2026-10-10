@@ -1,4 +1,4 @@
-import type { Category, GalleryCategory, GalleryImage, ItemExtra, MenuContactCard, MenuItem, MenuViewDay, MenuViewStats, PlatformAuditEntry, PlatformRestaurant, RestaurantMenu, Variant } from './types'
+import type { BrandGroup, Category, GalleryCategory, GalleryImage, ItemExtra, MenuContactCard, MenuItem, MenuViewDay, MenuViewStats, PlatformAuditEntry, PlatformRestaurant, Restaurant, RestaurantMenu, Variant } from './types'
 
 const categories: Category[] = [
   ['manakish', 'Manakish', 'مناقيش'], ['croissants', 'Croissants', 'كرواسون'], ['soiree', 'Soiree', 'سوارية'],
@@ -42,7 +42,7 @@ function item(category: string, name_en: string, name_ar: string, description_en
 
 export const demoMenu: RestaurantMenu = {
   restaurant: {
-    id: 'demo-restaurant', slug: 'demo', name_en: 'Hilal Oven', name_ar: 'فرن الهلال',
+    id: 'demo-restaurant', brand_id: 'demo-brand', slug: 'demo', name_en: 'Hilal Oven — Tripoli', name_ar: 'فرن الهلال — طرابلس',
     description_en: 'Traditional Lebanese oven favorites, baked fresh.', description_ar: 'أطيب المخبوزات اللبنانية، طازجة من الفرن.', logo_url: '/hilal-oven-logo.png', cover_image_url: '/hilal-oven-cover.jpg', primary_color: '#4f5535',
     phone: '+961 71 636 189', whatsapp: '+96171636189', instagram: '@hilaloven', maps_url: 'https://maps.google.com/?q=Tripoli,Lebanon',
     address_en: 'Tripoli - Lebanon', address_ar: 'طرابلس - لبنان', currency: 'LBP', temporarily_closed: false,
@@ -83,6 +83,53 @@ export const demoMenu: RestaurantMenu = {
     item('Cold drinks', 'Soft Drink', 'مشروب غازي', 'Choose cola, orange or lemon-lime', 'اختر كولا، برتقال أو ليمون', 100000),
   ]
 }
+
+export const demoBrand: BrandGroup = {
+  id: 'demo-brand',
+  slug: 'hilal-oven',
+  name_en: 'Hilal Oven',
+  name_ar: 'فرن الهلال',
+  logo_url: '/hilal-oven-logo.png',
+  primary_color: '#4f5535',
+  default_language: 'en',
+}
+
+const beirutRestaurant: Restaurant = {
+  ...demoMenu.restaurant,
+  id: 'demo-restaurant-beirut',
+  brand_id: demoBrand.id,
+  slug: 'hilal-beirut',
+  name_en: 'Hilal Oven — Beirut',
+  name_ar: 'فرن الهلال — بيروت',
+  address_en: 'Hamra, Beirut - Lebanon',
+  address_ar: 'الحمرا، بيروت - لبنان',
+  maps_url: 'https://maps.google.com/?q=Hamra,Beirut,Lebanon',
+}
+
+const beirutCategories = demoMenu.categories.map((category) => ({
+  ...structuredClone(category),
+  id: `${category.id}-beirut`,
+  restaurant_id: beirutRestaurant.id,
+}))
+const beirutCategoryIds = new Map(demoMenu.categories.map((category, index) => [category.id, beirutCategories[index].id]))
+const beirutItems = demoMenu.items.map((menuItem) => ({
+  ...structuredClone(menuItem),
+  id: `${menuItem.id}-beirut`,
+  restaurant_id: beirutRestaurant.id,
+  category_id: beirutCategoryIds.get(menuItem.category_id) ?? menuItem.category_id,
+}))
+
+/** Mutable in demo mode so the add-place workflow remains usable without Supabase. */
+export const demoMenus: RestaurantMenu[] = [
+  demoMenu,
+  {
+    restaurant: beirutRestaurant,
+    categories: beirutCategories,
+    items: beirutItems,
+  },
+]
+
+export const demoRestaurants: Restaurant[] = demoMenus.map((menu) => menu.restaurant)
 
 // ---------------------------------------------------------------------------
 // Operator console sample data

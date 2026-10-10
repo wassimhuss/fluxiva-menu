@@ -1,6 +1,6 @@
 # Fluxiva Menu
 
-A bilingual QR menu SaaS for Lebanese restaurants. Owners can create a restaurant, manage categories and items, add size-based prices, upload photos, control availability and opening status, import items from CSV, and download a QR code for their public menu.
+A bilingual QR menu SaaS for Lebanese restaurants. One owner account can manage multiple places, each with its own menu, settings, public link, and analytics. A shared brand QR opens a branch selector before the guest enters the selected menu.
 
 ## Product routes
 
@@ -9,6 +9,7 @@ A bilingual QR menu SaaS for Lebanese restaurants. Owners can create a restauran
 - `/forgot-password` and `/reset-password` — password recovery by email
 - `/onboarding` — restaurant setup
 - `/dashboard` — menu, design and QR management
+- `/b/:slug` — public bilingual branch selector for a brand QR
 - `/m/:slug` — public bilingual menu
 - `/platform` — private operator console for the Fluxiva team
 
@@ -16,7 +17,7 @@ The menu editor supports item/category editing and ordering, item photos, a rest
 
 Owners choose a public menu design under **Menu design** in the dashboard, previewing each one against their own items before saving. The choice is stored as `restaurants.template_id`; unknown or missing values fall back to `classic`, so the column can be added without touching existing rows. Designs differ in scroll behaviour as much as in looks — a full-screen vertical feed, a horizontal deck, scrollytelling with a sticky image pane, and four page-scroll layouts. Appending `?template=<id>` to a menu URL previews a design without saving it. CSV imports use columns such as `category_en`, `category_ar`, `name_en`, `name_ar`, `description_en`, `description_ar`, `price_lbp`, and `available`.
 
-Without Supabase environment variables, the application starts in demo mode. Visit `/m/demo` for the public menu or submit the login form to preview the owner dashboard.
+Without Supabase environment variables, the application starts in demo mode. Visit `/b/hilal-oven` for the two-place branch selector, `/m/demo` for the direct Tripoli menu, or submit the login form to preview the owner dashboard.
 
 ## Local setup
 
@@ -73,6 +74,6 @@ The service has one `$60/year` plan after a 14-day trial. It includes Arabic and
 ## Project documentation
 
 - [`AGENTS.md`](AGENTS.md) — repository-wide rules and validation expectations for AI agents and contributors.
-- [`TODO.md`](TODO.md) — product backlog, including the planned shared Fluxiva image gallery.
+- [`TODO.md`](TODO.md) — product backlog and status of the shared Fluxiva image gallery.
 - [`docs/PROJECT_CONTEXT.md`](docs/PROJECT_CONTEXT.md) — product, architecture, routes, data model, security, deployment, design system and current constraints.
 - [`docs/AI_CONTINUATION.md`](docs/AI_CONTINUATION.md) — startup checklist, common change recipes, verification matrix and handoff template.

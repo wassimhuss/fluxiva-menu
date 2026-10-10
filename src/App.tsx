@@ -4,12 +4,12 @@ import { Loading } from './components/Status'
 import { AuthProvider, useAuth } from './lib/auth'
 import { IDLE_SIGNOUT_KEY, useIdleLogout } from './lib/useIdleLogout'
 import { PublicMenuPage } from './pages/PublicMenuPage'
+import { BranchSelectorPage } from './pages/BranchSelectorPage'
 
 /**
- * Only the public menu is bundled eagerly. It is the screen almost all traffic
- * arrives on — someone scanning a QR code at a table — so it must not pay for a
- * second round trip, and it must not carry the owner dashboard, the Excel
- * workbook tools, the QR generator or the operator console along with it.
+ * The two public guest-entry screens are bundled eagerly. A QR scan must not
+ * pay for a second round trip, and neither route should carry the owner
+ * dashboard, workbook tools, QR generator or operator console along with it.
  */
 const LandingPage = lazy(() => import('./pages/LandingPage').then((m) => ({ default: m.LandingPage })))
 const AuthPage = lazy(() => import('./pages/AuthPage').then((m) => ({ default: m.AuthPage })))
@@ -83,6 +83,7 @@ export function App() {
           <Route path="/onboarding" element={<OwnerRoute><OnboardingPage /></OwnerRoute>} />
           <Route path="/dashboard" element={<OwnerRoute><DashboardPage /></OwnerRoute>} />
           <Route path="/platform" element={<AdminRoute><PlatformPage /></AdminRoute>} />
+          <Route path="/b/:slug" element={<BranchSelectorPage />} />
           <Route path="/m/:slug" element={<PublicMenuPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

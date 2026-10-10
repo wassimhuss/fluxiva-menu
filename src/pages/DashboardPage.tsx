@@ -9,23 +9,25 @@ import { SubscriptionBanner } from '../components/SubscriptionBanner'
 import { GalleryPicker } from '../components/GalleryPicker'
 import { ImageLightbox } from '../components/ImageLightbox'
 import { PortraitImageCropper } from '../components/PortraitImageCropper'
-import { cleanExtras, cleanVariants, createCategories, createCategory, createItem, createItems, deleteCategory, deleteItem, deleteRestaurantAsset, getMenuViewStats, getOwnerMenu, listGalleryCategories, listGalleryImages, updateCategory, updateItem, updateRestaurant, uploadRestaurantAsset, validateGallerySource } from '../lib/api'
+import { cleanExtras, cleanVariants, createCategories, createCategory, createItem, createItems, createRestaurant, deleteCategory, deleteItem, deleteRestaurantAsset, getMenuViewStats, getOwnerBrand, getOwnerMenu, getOwnerRestaurants, listGalleryCategories, listGalleryImages, updateCategory, updateItem, updateRestaurant, uploadRestaurantAsset, validateGallerySource } from '../lib/api'
 import { useAuth } from '../lib/auth'
-import { demoMenu } from '../lib/demo'
-import { formatMoney, localText } from '../lib/format'
+import { formatMoney, localText, slugify } from '../lib/format'
 import { dashboardText } from '../lib/dashboardI18n'
 import { downloadMenuTemplate, exportMenuWorkbook, readMenuWorkbook } from '../lib/menuWorkbook'
 import { subscriptionState } from '../lib/subscription'
 import { DEFAULT_TEMPLATE, TEMPLATES, resolveTemplateId } from '../templates/registry'
-import type { Category, GalleryCategory, GalleryImage, ItemExtra, Language, MenuItem, MenuViewStats, Restaurant, RestaurantMenu, Variant } from '../lib/types'
+import type { BrandGroup, Category, GalleryCategory, GalleryImage, ItemExtra, Language, MenuItem, MenuViewStats, Restaurant, RestaurantMenu, Variant } from '../lib/types'
 import type { MenuWorkbookPreview } from '../lib/menuWorkbook'
 
 type Panel = 'overview' | 'analysis' | 'menu' | 'design' | 'settings'
 type ItemDraft = { category_id: string; name_en: string; name_ar: string; description_en: string; description_ar: string; price: string; variants: Variant[]; extras: ItemExtra[]; image_file: File | null; image_url?: string | null; gallery_image_id?: string | null }
 type ImagePreview = { url: string; name: string }
 type RestaurantSettings = Pick<Restaurant, 'name_en' | 'name_ar' | 'description_en' | 'description_ar' | 'whatsapp' | 'instagram' | 'address_en' | 'address_ar' | 'currency' | 'temporarily_closed' | 'takeaway_enabled' | 'default_language'>
+type PlaceDraft = Pick<Restaurant, 'name_en' | 'name_ar' | 'slug' | 'primary_color' | 'whatsapp' | 'address_en' | 'address_ar' | 'default_language'>
 const DASHBOARD_LANGUAGE_KEY = 'fluxiva-dashboard-language'
+const SELECTED_PLACE_KEY = 'fluxiva-selected-place'
 const emptyItem = (categoryId = ''): ItemDraft => ({ category_id: categoryId, name_en: '', name_ar: '', description_en: '', description_ar: '', price: '', variants: [], extras: [], image_file: null })
+const emptyPlace = (restaurant?: Restaurant): PlaceDraft => ({ name_en: '', name_ar: '', slug: '', primary_color: restaurant?.primary_color ?? '#173f35', whatsapp: restaurant?.whatsapp ?? '', address_en: '', address_ar: '', default_language: restaurant?.default_language ?? 'en' })
 
 function restaurantSettingsSnapshot(restaurant: Restaurant): RestaurantSettings {
   const { name_en, name_ar, description_en, description_ar, whatsapp, instagram, address_en, address_ar, currency, temporarily_closed, takeaway_enabled, default_language } = restaurant
@@ -40,6 +42,8 @@ export function DashboardPage() {
   const { session, demoMode, adminRole, signOut } = useAuth()
   const navigate = useNavigate()
   const [menu, setMenu] = useState<RestaurantMenu | null>(null)
+  const [brand, setBrand] = useState<BrandGroup | null>(null)
+  const [restaurants, setRestaurants] = useState<Restaurant[]>([])
   const [loading, setLoading] = useState(true)
   const [panel, setPanel] = useState<Panel>('overview')
   const [designStep, setDesignStep] = useState(1)
@@ -50,6 +54,10 @@ export function DashboardPage() {
   const [itemModal, setItemModal] = useState(false)
   const [importModal, setImportModal] = useState(false)
   const [qrModal, setQrModal] = useState(false)
+  const [placeSwitcherOpen, setPlaceSwitcherOpen] = useState(false)
+  const [placeModal, setPlaceModal] = useState(false)
+  const [placeDraft, setPlaceDraft] = useState<PlaceDraft>(emptyPlace())
+  const [placeError, setPlaceError] = useState('')
   const [editingCategory, setEditingCategory] = useState<Category | null>(null)
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null)
   const [categoryDraft, setCategoryDraft] = useState({ name_en: '', name_ar: '' })
@@ -91,23 +99,29 @@ export function DashboardPage() {
   const successTimer = useRef<number | undefined>(undefined)
 
   useEffect(() => {
-    if (demoMode) {
-      const demo = structuredClone(demoMenu)
-      setMenu(demo)
-      setSavedSettings(restaurantSettingsSnapshot(demo.restaurant))
-      getMenuViewStats(demoMenu.restaurant.id).then(setViewStats).catch(() => undefined)
-      setLoading(false)
-      return
+    if (!demoMode && !session) return
+    let cancelled = false
+    async function loadWorkspace() {
+      try {
+        const [ownerBrand, places] = await Promise.all([getOwnerBrand(session), getOwnerRestaurants(session)])
+        if (!places.length) { navigate('/onboarding'); return }
+        const remembered = window.localStorage.getItem(SELECTED_PLACE_KEY)
+        const selected = places.find((place) => place.id === remembered) ?? places[0]
+        const data = await getOwnerMenu(session, selected.id)
+        if (cancelled || !data) return
+        setBrand(ownerBrand)
+        setRestaurants(places)
+        setMenu(structuredClone(data))
+        setSavedSettings(restaurantSettingsSnapshot(data.restaurant))
+        getMenuViewStats(data.restaurant.id).then((stats) => { if (!cancelled) setViewStats(stats) }).catch(() => undefined)
+      } catch (caught) {
+        if (!cancelled) setError(caught instanceof Error ? caught.message : dashboardText('en', 'Could not load restaurant'))
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
     }
-    if (!session) return
-    getOwnerMenu(session).then((data) => {
-      if (!data) { navigate('/onboarding'); return }
-      setMenu(data)
-      setSavedSettings(restaurantSettingsSnapshot(data.restaurant))
-      // Loaded separately so a slow or failed analytics query never delays the
-      // editor, which is what the owner actually came here for.
-      getMenuViewStats(data.restaurant.id).then(setViewStats).catch(() => undefined)
-    }).catch((caught) => setError(caught instanceof Error ? caught.message : dashboardText('en', 'Could not load restaurant'))).finally(() => setLoading(false))
+    void loadWorkspace()
+    return () => { cancelled = true }
   }, [session, demoMode, navigate])
 
   useEffect(() => () => window.clearTimeout(successTimer.current), [])
@@ -147,7 +161,49 @@ export function DashboardPage() {
     successTimer.current = window.setTimeout(() => setSuccess(''), 3200)
   }
 
-  const menuUrl = useMemo(() => menu ? `${import.meta.env.VITE_APP_URL || window.location.origin}/m/${menu.restaurant.slug}` : '', [menu])
+  const menuUrl = useMemo(() => menu ? `${import.meta.env.VITE_APP_URL || window.location.origin}${brand ? `/b/${brand.slug}` : `/m/${menu.restaurant.slug}`}` : '', [brand, menu])
+
+  async function switchPlace(restaurantId: string) {
+    if (menu?.restaurant.id === restaurantId) { setPlaceSwitcherOpen(false); return }
+    setLoading(true); setError(''); setPlaceSwitcherOpen(false)
+    try {
+      const data = await getOwnerMenu(session, restaurantId)
+      if (!data) throw new Error(t('Could not load restaurant'))
+      setMenu(structuredClone(data))
+      setSavedSettings(restaurantSettingsSnapshot(data.restaurant))
+      setPanel('overview')
+      setTemplateDraft(''); setColorDraft(''); setImageVisibilityDraft(null)
+      window.localStorage.setItem(SELECTED_PLACE_KEY, restaurantId)
+      getMenuViewStats(restaurantId).then(setViewStats).catch(() => setViewStats(null))
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : t('Could not load restaurant'))
+    } finally { setLoading(false) }
+  }
+
+  function openPlaceCreator() {
+    setPlaceSwitcherOpen(false)
+    setPlaceError('')
+    setPlaceDraft(emptyPlace(menu?.restaurant))
+    setPlaceModal(true)
+  }
+
+  async function savePlace(event: React.FormEvent) {
+    event.preventDefault()
+    setSaving(true); setPlaceError('')
+    try {
+      const restaurant = await createRestaurant(session, placeDraft, brand?.id)
+      setRestaurants((current) => [...current, restaurant])
+      setPlaceModal(false)
+      await switchPlace(restaurant.id)
+      showSuccess(t('Place added successfully.'))
+    } catch (caught) {
+      setPlaceError(caught instanceof Error ? caught.message : t('Could not create restaurant'))
+    } finally { setSaving(false) }
+  }
+
+  function syncRestaurantSummary(restaurant: Restaurant) {
+    setRestaurants((current) => current.map((entry) => entry.id === restaurant.id ? restaurant : entry))
+  }
 
   async function openQr() {
     setQrModal(true)
@@ -157,11 +213,11 @@ export function DashboardPage() {
   }
 
   function downloadQr() {
-    const link = document.createElement('a'); link.href = qrData; link.download = `${menu?.restaurant.slug}-menu-qr.png`; link.click()
+    const link = document.createElement('a'); link.href = qrData; link.download = `${brand?.slug ?? menu?.restaurant.slug}-menu-qr.png`; link.click()
   }
 
   function downloadQrSvg() {
-    const link = document.createElement('a'); link.href = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(qrSvg)}`; link.download = `${menu?.restaurant.slug}-menu-qr.svg`; link.click()
+    const link = document.createElement('a'); link.href = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(qrSvg)}`; link.download = `${brand?.slug ?? menu?.restaurant.slug}-menu-qr.svg`; link.click()
   }
 
   function printQr() { window.print() }
@@ -257,6 +313,7 @@ export function DashboardPage() {
       const { name_en, name_ar, description_en, description_ar, whatsapp, instagram, address_en, address_ar, currency: currencyValue, temporarily_closed, takeaway_enabled, default_language } = menu.restaurant
       await updateRestaurant(menu.restaurant.id, { name_en, name_ar, description_en, description_ar, whatsapp, instagram, address_en, address_ar, currency: currencyValue, temporarily_closed, takeaway_enabled, default_language })
       setSavedSettings(restaurantSettingsSnapshot(menu.restaurant))
+      syncRestaurantSummary(menu.restaurant)
       showSuccess(dashboardText(dashboardLanguage, 'Restaurant details saved.'))
       return true
     } catch (caught) {
@@ -279,7 +336,9 @@ export function DashboardPage() {
     setSaving(true); setError('')
     try {
       await updateRestaurant(menu.restaurant.id, { template_id: templateId, primary_color: color, show_item_images: showItemImages })
-      setMenu({ ...menu, restaurant: { ...menu.restaurant, template_id: templateId, primary_color: color, show_item_images: showItemImages } })
+      const restaurant = { ...menu.restaurant, template_id: templateId, primary_color: color, show_item_images: showItemImages }
+      setMenu({ ...menu, restaurant })
+      syncRestaurantSummary(restaurant)
       setTemplateDraft(''); setColorDraft(''); setImageVisibilityDraft(null)
       showSuccess(dashboardText(dashboardLanguage, 'Menu design updated.'))
       return true
@@ -298,7 +357,9 @@ export function DashboardPage() {
       uploadedUrl = await uploadRestaurantAsset(menu.restaurant.id, file, 'logo')
       await updateRestaurant(menu.restaurant.id, { logo_url: uploadedUrl })
       await discardAsset(menu.restaurant.id, menu.restaurant.logo_url)
-      setMenu({ ...menu, restaurant: { ...menu.restaurant, logo_url: uploadedUrl } })
+      const restaurant = { ...menu.restaurant, logo_url: uploadedUrl }
+      setMenu({ ...menu, restaurant })
+      syncRestaurantSummary(restaurant)
       showSuccess(dashboardText(dashboardLanguage, 'Restaurant logo updated.'))
     } catch (caught) {
       await discardAsset(menu.restaurant.id, uploadedUrl)
@@ -672,7 +733,7 @@ export function DashboardPage() {
     <main className="dashboard-layout" dir={dashboardLanguage === 'ar' ? 'rtl' : 'ltr'}>
       <aside className="dashboard-sidebar">
         <div className="sidebar-top"><Brand light /></div>
-        <div className="restaurant-switcher"><span className="mini-monogram" style={{ backgroundColor: menu.restaurant.primary_color }}>{menu.restaurant.name_en.slice(0, 2).toUpperCase()}</span><span><b>{menu.restaurant.name_en}</b><small>{t('Owner workspace')}</small></span><DirectionalChevron /></div>
+        <button type="button" className="restaurant-switcher" onClick={() => setPlaceSwitcherOpen(true)}><span className="mini-monogram" style={{ backgroundColor: menu.restaurant.primary_color }}>{menu.restaurant.name_en.slice(0, 2).toUpperCase()}</span><span><b>{menu.restaurant.name_en}</b><small>{restaurants.length} {t(restaurants.length === 1 ? 'place' : 'places')}</small></span><DirectionalChevron /></button>
         <nav>
           <button className={panel === 'overview' ? 'selected' : ''} onClick={() => setPanel('overview')}><LayoutDashboard /> {t('Overview')}</button>
           <button className={panel === 'analysis' ? 'selected' : ''} onClick={() => setPanel('analysis')}><Eye /> {t('Analysis')}</button>
@@ -683,7 +744,7 @@ export function DashboardPage() {
         <div className="sidebar-bottom"><Link to={`/m/${menu.restaurant.slug}`} target="_blank"><ExternalLink /> {t('Open public menu')}</Link><button onClick={handleSignOut}><LogOut /> {t('Sign out')}</button>{adminRole && <Link className="platform-link" to="/platform"><ShieldCheck /> {t('Operator console')}</Link>}</div>
       </aside>
       <section className="dashboard-main">
-        <header className="dashboard-header">{panel !== 'overview' && <button className="mobile-menu" aria-label={t('Back to overview')} onClick={requestBackToOverview}><BackChevron /></button>}<div><span>{t('Restaurant dashboard')}</span><b>{menu.restaurant.name_en}</b></div><div className="header-actions"><button type="button" className="language-switch" onClick={() => changeDashboardLanguage(dashboardLanguage === 'ar' ? 'en' : 'ar')} aria-label={dashboardLanguage === 'ar' ? 'Switch to English' : 'التبديل إلى العربية'}>{dashboardLanguage === 'ar' ? 'EN' : 'عربي'}</button>{panel === 'overview' && <button type="button" className="dashboard-header-signout" onClick={handleSignOut}><LogOut /> <span>{t('Sign out')}</span></button>}<Link className="button button-small button-outline" to={`/m/${menu.restaurant.slug}`} target="_blank">{t('View menu')} <ExternalLink /></Link></div></header>
+        <header className="dashboard-header">{panel !== 'overview' && <button className="mobile-menu" aria-label={t('Back to overview')} onClick={requestBackToOverview}><BackChevron /></button>}<button type="button" className="dashboard-current-place" onClick={() => setPlaceSwitcherOpen(true)}><span>{t('Restaurant dashboard')}</span><b>{menu.restaurant.name_en}</b></button><div className="header-actions"><button type="button" className="language-switch" onClick={() => changeDashboardLanguage(dashboardLanguage === 'ar' ? 'en' : 'ar')} aria-label={dashboardLanguage === 'ar' ? 'Switch to English' : 'التبديل إلى العربية'}>{dashboardLanguage === 'ar' ? 'EN' : 'عربي'}</button>{panel === 'overview' && <button type="button" className="dashboard-header-signout" onClick={handleSignOut}><LogOut /> <span>{t('Sign out')}</span></button>}<Link className="button button-small button-outline" to={`/m/${menu.restaurant.slug}`} target="_blank">{t('View menu')} <ExternalLink /></Link></div></header>
         <div className="dashboard-content">
           {error && <Notice tone="error">{error}</Notice>}
           {success && <div className="dashboard-toast" role="status"><Notice tone="success">{success}</Notice></div>}
@@ -705,7 +766,7 @@ export function DashboardPage() {
             </section>
             <div className="overview-columns">
               <article className="dashboard-card"><div className="card-heading"><div><h2>{t('Quick actions')}</h2><p>{t('The most common menu tasks.')}</p></div></div><div className="quick-actions"><button onClick={() => { setPanel('menu'); openItem() }}><span><Plus /></span><div><b>{t('Add an item')}</b><small>{t('Name, price and size options')}</small></div><DirectionalChevron /></button><button onClick={() => { setPanel('menu'); openCategory() }}><span><Menu /></span><div><b>{t('Add a category')}</b><small>{t('Group your menu items')}</small></div><DirectionalChevron /></button><button onClick={openQr}><span><QrCode /></span><div><b>{t('Download QR code')}</b><small>{t('Ready to print and share')}</small></div><DirectionalChevron /></button></div></article>
-              <article className="dashboard-card qr-preview"><div className="card-heading"><div><h2>{t('Your menu link')}</h2><p>{t('Share this link anywhere.')}</p></div></div><div className="link-preview"><span>{menuUrl.replace(/^https?:\/\//, '')}</span><Link to={`/m/${menu.restaurant.slug}`} target="_blank"><ExternalLink /></Link></div><div className="phone-mini"><div className="phone-mini-cover" style={{ backgroundColor: menu.restaurant.primary_color }}><span>{menu.restaurant.name_en.slice(0, 2).toUpperCase()}</span><b>{menu.restaurant.name_en}</b></div><div><i /><i /><i /></div></div></article>
+              <article className="dashboard-card qr-preview"><div className="card-heading"><div><h2>{t('Your menu link')}</h2><p>{t('Share this link anywhere.')}</p></div></div><div className="link-preview"><span>{menuUrl.replace(/^https?:\/\//, '')}</span><a href={menuUrl} target="_blank" rel="noreferrer" aria-label={t('Open brand menu link')}><ExternalLink /></a></div><div className="phone-mini"><div className="phone-mini-cover" style={{ backgroundColor: menu.restaurant.primary_color }}><span>{menu.restaurant.name_en.slice(0, 2).toUpperCase()}</span><b>{menu.restaurant.name_en}</b></div><div><i /><i /><i /></div></div></article>
             </div>
           </>}
 
@@ -946,6 +1007,10 @@ export function DashboardPage() {
 
       {settingsExitConfirmationOpen && <div className="modal-backdrop"><div className="modal-card design-exit-modal" role="dialog" aria-modal="true" aria-labelledby="settings-exit-title" dir={dashboardLanguage === 'ar' ? 'rtl' : 'ltr'}><button type="button" className="modal-close" aria-label={t('Keep editing')} disabled={saving} onClick={() => setSettingsExitConfirmationOpen(false)}><X /></button><span className="eyebrow"><span /> {t('Unsaved changes')}</span><h2 id="settings-exit-title">{t('Save your restaurant details?')}</h2><p>{t('You changed your restaurant details. Save them to update your menu, or leave without saving and keep the current details.')}</p><div className="design-exit-actions"><button type="button" className="button button-primary" disabled={saving} onClick={() => void saveAndLeaveSettings()}>{saving ? t('Saving…') : t('Save changes')}</button><button type="button" className="button button-outline" disabled={saving} onClick={leaveSettingsWithoutSaving}>{t('Leave without saving')}</button><button type="button" className="button button-ghost" disabled={saving} onClick={() => setSettingsExitConfirmationOpen(false)}>{t('Keep editing')}</button></div></div></div>}
 
+      {placeSwitcherOpen && <div className="modal-backdrop"><div className="modal-card place-switcher-modal" role="dialog" aria-modal="true" aria-labelledby="place-switcher-title"><button type="button" className="modal-close" aria-label={t('Close')} onClick={() => setPlaceSwitcherOpen(false)}><X /></button><span className="eyebrow"><span /> {brand ? localText(dashboardLanguage, brand.name_en, brand.name_ar) : t('Your places')}</span><h2 id="place-switcher-title">{t('Choose a place')}</h2><p>{t('Each place has its own menu, settings and analytics.')}</p><div className="owner-place-list">{restaurants.map((restaurant) => <button type="button" key={restaurant.id} className={restaurant.id === menu.restaurant.id ? 'selected' : ''} onClick={() => void switchPlace(restaurant.id)}><span className="mini-monogram" style={{ backgroundColor: restaurant.primary_color }}>{restaurant.name_en.slice(0, 2).toUpperCase()}</span><span><b>{localText(dashboardLanguage, restaurant.name_en, restaurant.name_ar)}</b><small>{localText(dashboardLanguage, restaurant.address_en || restaurant.slug, restaurant.address_ar || restaurant.slug)}</small></span>{restaurant.id === menu.restaurant.id ? <CheckCircle2 /> : <DirectionalChevron />}</button>)}</div><button type="button" className="button button-primary full" onClick={openPlaceCreator}><Plus /> {t('Add another place')}</button></div></div>}
+
+      {placeModal && <div className="modal-backdrop"><form className="modal-card modal-large place-create-modal" onSubmit={savePlace}><button type="button" className="modal-close" aria-label={t('Close')} onClick={() => setPlaceModal(false)}><X /></button><span className="eyebrow"><span /> {t('New place')}</span><h2>{t('Add another place')}</h2><p>{t('This place will have its own menu and public link under the same brand QR code.')}</p>{placeError && <Notice tone="error">{placeError}</Notice>}<div className="form-grid"><label>{t('English name')}<input required autoFocus value={placeDraft.name_en} onChange={(event) => setPlaceDraft({ ...placeDraft, name_en: event.target.value, slug: placeDraft.slug || slugify(event.target.value) })} placeholder="Hilal Oven — Beirut" /></label><label>{t('Arabic name')}<input dir="rtl" required value={placeDraft.name_ar} onChange={(event) => setPlaceDraft({ ...placeDraft, name_ar: event.target.value })} placeholder="فرن الهلال — بيروت" /></label><label>{t('Menu link')}<div className="slug-input"><span>/m/</span><input required value={placeDraft.slug} onChange={(event) => setPlaceDraft({ ...placeDraft, slug: slugify(event.target.value) })} placeholder="hilal-beirut" /></div></label><label>{t('WhatsApp number')}<input value={placeDraft.whatsapp} onChange={(event) => setPlaceDraft({ ...placeDraft, whatsapp: event.target.value })} placeholder="+961 70 123 456" /></label><label>{t('Address in English')}<textarea required value={placeDraft.address_en} onChange={(event) => setPlaceDraft({ ...placeDraft, address_en: event.target.value })} placeholder="Hamra, Beirut" /></label><label>{t('Address in Arabic')}<textarea dir="rtl" required value={placeDraft.address_ar} onChange={(event) => setPlaceDraft({ ...placeDraft, address_ar: event.target.value })} placeholder="الحمرا، بيروت" /></label></div><button className="button button-primary full" disabled={saving}>{saving ? t('Creating…') : t('Create place')}</button></form></div>}
+
       {categoryModal && <div className="modal-backdrop"><form className="modal-card" onSubmit={saveCategory}><button type="button" className="modal-close" onClick={() => { setCategoryModal(false); setEditingCategory(null) }}><X /></button><span className="eyebrow"><span /> {editingCategory ? t('Edit section') : t('New section')}</span><h2>{editingCategory ? t('Edit category') : t('Add a category')}</h2><p>{t('Give it a name in both menu languages.')}</p><label>{t('English name')}<input required autoFocus value={categoryDraft.name_en} onChange={(e) => setCategoryDraft({ ...categoryDraft, name_en: e.target.value })} placeholder="Pizza" /></label><label>{t('Arabic name')}<input dir="rtl" required value={categoryDraft.name_ar} onChange={(e) => setCategoryDraft({ ...categoryDraft, name_ar: e.target.value })} placeholder="بيتزا" /></label><button className="button button-primary full" disabled={saving}>{saving ? t('Saving…') : editingCategory ? t('Save category') : t('Add category')}</button></form></div>}
 
       {itemModal && <div className="modal-backdrop"><form className="modal-card modal-large" onSubmit={saveItem}><button type="button" className="modal-close" onClick={closeItem}><X /></button><span className="eyebrow"><span /> {editingItem ? t('Edit item') : t('New item')}</span><h2>{editingItem ? t('Edit menu item') : t('Add a menu item')}</h2><div className="form-grid"><label>{t('Category')}<select required value={itemDraft.category_id} onChange={(e) => setItemDraft({ ...itemDraft, category_id: e.target.value })}><option value="">{t('Choose category')}</option>{menu.categories.map((category) => <option value={category.id} key={category.id}>{category.name_en}</option>)}</select></label><div className="item-photo-choices"><span>{t('Item photo')}</span><small className="item-photo-help">{t('Choose a photo at least 1200 × 1500 px, then crop it to a 4:5 portrait.')}</small><div className="item-photo-actions"><button type="button" className="item-photo-choice" onClick={openGallery}><Images /> {t('Fluxiva Gallery')}</button><label className="item-photo-choice upload"><ImagePlus /> {t('Upload your photo')}<input type="file" accept="image/png,image/jpeg,image/webp" onChange={(event) => { const file = event.currentTarget.files?.[0] ?? null; event.currentTarget.value = ''; void chooseItemPhoto(file) }} /></label></div>{itemPhotoError && <small className="item-photo-error" role="alert">{itemPhotoError}</small>}{(itemDraft.image_url || itemDraft.image_file) && <div className="item-photo-preview">{(itemFilePreviewUrl || itemDraft.image_url) && <button type="button" className="item-photo-preview-button" onClick={() => setImagePreview({ url: itemFilePreviewUrl || itemDraft.image_url || '', name: (dashboardLanguage === 'ar' ? itemDraft.name_ar : itemDraft.name_en) || t('Item photo') })} aria-label={t('View photo')}><img src={itemFilePreviewUrl || itemDraft.image_url || ''} alt="" /><Maximize2 aria-hidden="true" /></button>}<span>{itemDraft.image_file?.name || (itemDraft.gallery_image_id ? t('Selected from Fluxiva Gallery') : t('Current photo'))}</span><button type="button" onClick={() => { setItemDraft({ ...itemDraft, image_file: null, image_url: null, gallery_image_id: null }); setItemPhotoError('') }} aria-label={t('Remove photo')}><Trash2 /></button></div>}</div><label>{t('English name')}<input required value={itemDraft.name_en} onChange={(e) => setItemDraft({ ...itemDraft, name_en: e.target.value })} placeholder="Margherita" /></label><label>{t('Arabic name')}<input dir="rtl" required value={itemDraft.name_ar} onChange={(e) => setItemDraft({ ...itemDraft, name_ar: e.target.value })} placeholder="مارغريتا" /></label><label>{t('English description')}<textarea value={itemDraft.description_en} onChange={(e) => setItemDraft({ ...itemDraft, description_en: e.target.value })} placeholder="Tomato, mozzarella and basil" /></label><label>{t('Arabic description')}<textarea dir="rtl" value={itemDraft.description_ar} onChange={(e) => setItemDraft({ ...itemDraft, description_ar: e.target.value })} placeholder="طماطم، موزاريلا وريحان" /></label></div><div className="price-section"><label>{t('Base price')} ({currencyLabel})<input required={itemDraft.variants.length === 0} min="0" step={priceStep} type="number" value={itemDraft.price} onChange={(e) => setItemDraft({ ...itemDraft, price: e.target.value })} placeholder={pricePlaceholder} /></label><div className="variant-title"><div><b>{t('Size options')}</b><small>{t('Optional — add sizes when prices differ.')}</small></div><button type="button" onClick={addVariant}><Plus /> {t('Add size')}</button></div>{itemDraft.variants.map((variant, index) => <div className="variant-row" key={variant.id}><input required placeholder="S" value={variant.name_en} onChange={(e) => updateVariant(index, 'name_en', e.target.value)} /><input placeholder="ص" dir="rtl" value={variant.name_ar} onChange={(e) => updateVariant(index, 'name_ar', e.target.value)} /><input required min="0" step={priceStep} type="number" placeholder={`${t('Price')} ${currencyLabel}`} value={variant.price || ''} onChange={(e) => updateVariant(index, 'price', Number(e.target.value))} /><button type="button" onClick={() => setItemDraft((current) => ({ ...current, variants: current.variants.filter((_, position) => position !== index) }))}><X /></button></div>)}<div className="extras-section"><div className="variant-title"><div><b>{t('Extras')}</b><small>{t('Optional — customers can choose more than one.')}</small></div><button type="button" onClick={addExtra}><Plus /> {t('Add extra')}</button></div>{itemDraft.extras.map((extra, index) => <div className="extra-row" key={extra.id}><input required placeholder={t('English name')} value={extra.name_en} onChange={(e) => updateExtra(index, 'name_en', e.target.value)} /><input required placeholder={t('Arabic name')} dir="rtl" value={extra.name_ar} onChange={(e) => updateExtra(index, 'name_ar', e.target.value)} /><input required min="0" step={priceStep} type="number" aria-label={`${t('Extra price')} ${currencyLabel}`} placeholder={`+ ${t('Price')} ${currencyLabel}`} value={extra.price} onChange={(e) => updateExtra(index, 'price', Number(e.target.value))} /><button type="button" onClick={() => setItemDraft((current) => ({ ...current, extras: current.extras.filter((_, position) => position !== index) }))} aria-label={t('Remove extra')}><X /></button></div>)}</div></div><button className="button button-primary full" disabled={saving || !menu.categories.length}>{saving ? t('Saving…') : editingItem ? t('Save menu item') : t('Add menu item')}</button></form></div>}
@@ -970,7 +1035,7 @@ export function DashboardPage() {
         <button className="button button-primary full" disabled={saving || importReading || !importPreview || importPreview.errors.length > 0}>{saving ? t('Importing…') : importPreview ? `${t('Import')} ${importPreview.items.length} ${t(importPreview.items.length === 1 ? 'item' : 'items')}` : t('Review a workbook first')}</button>
       </form></div>}
 
-      {qrModal && <div className="modal-backdrop"><div className="modal-card qr-modal qr-print-area"><button className="modal-close" aria-label={t('Close')} onClick={() => setQrModal(false)}><X /></button><span className="eyebrow"><span /> {t('Ready to scan')}</span><h2>{t('Your menu QR code')}</h2><p>{t('Print it on table cards, packaging or your storefront.')}</p>{qrData && <img src={qrData} alt={t('Restaurant menu QR code')} />}<code>{menuUrl}</code><div className="qr-actions"><button className="button button-primary" onClick={downloadQr}><QrCode /> PNG</button><button className="button button-outline" onClick={downloadQrSvg}>SVG</button><button className="button button-outline" onClick={printQr}>{t('Print')}</button></div></div></div>}
+      {qrModal && <div className="modal-backdrop"><div className="modal-card qr-modal qr-print-area"><button className="modal-close" aria-label={t('Close')} onClick={() => setQrModal(false)}><X /></button><span className="eyebrow"><span /> {t('Ready to scan')}</span><h2>{brand ? t('Your brand QR code') : t('Your menu QR code')}</h2><p>{brand ? t('Customers choose a branch after scanning.') : t('Print it on table cards, packaging or your storefront.')}</p>{qrData && <img src={qrData} alt={t('Restaurant menu QR code')} />}<code>{menuUrl}</code><div className="qr-actions"><button className="button button-primary" onClick={downloadQr}><QrCode /> PNG</button><button className="button button-outline" onClick={downloadQrSvg}>SVG</button><button className="button button-outline" onClick={printQr}>{t('Print')}</button></div></div></div>}
     </main>
   )
 }

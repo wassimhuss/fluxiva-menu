@@ -1,7 +1,7 @@
 import type { Session } from '@supabase/supabase-js'
-import { demoContactCard, demoGalleryCategories, demoGalleryImages, demoMenu, demoMenuViewStats, demoPlatformAudit, demoPlatformRestaurants } from './demo'
+import { demoBrand, demoContactCard, demoGalleryCategories, demoGalleryImages, demoMenu, demoMenus, demoMenuViewStats, demoPlatformAudit, demoPlatformRestaurants, demoRestaurants } from './demo'
 import { supabase } from './supabase'
-import type { AdminRole, Category, GalleryCategory, GalleryImage, ItemExtra, MenuContactCard, MenuItem, MenuViewDay, MenuViewStats, PlatformAuditEntry, PlatformRestaurant, Restaurant, RestaurantMenu, Variant } from './types'
+import type { AdminRole, BrandGroup, BrandPlaces, Category, GalleryCategory, GalleryImage, ItemExtra, MenuContactCard, MenuItem, MenuViewDay, MenuViewStats, PlatformAuditEntry, PlatformRestaurant, Restaurant, RestaurantMenu, Variant } from './types'
 
 type RestaurantInput = Pick<Restaurant, 'name_en' | 'name_ar' | 'slug' | 'primary_color' | 'phone' | 'whatsapp' | 'instagram' | 'maps_url' | 'address_en' | 'address_ar' | 'currency' | 'temporarily_closed' | 'default_language'>
 type CategoryInput = Pick<Category, 'restaurant_id' | 'name_en' | 'name_ar' | 'sort_order'>
@@ -86,7 +86,7 @@ async function optimizeImage(file: File, purpose: AssetPurpose) {
 }
 
 export async function getPublicMenu(slug: string): Promise<RestaurantMenu | null> {
-  if (!supabase) return slug === 'demo' ? demoMenu : null
+  if (!supabase) return demoMenus.find((menu) => menu.restaurant.slug === slug) ?? null
 
   const { data: restaurant, error } = await supabase
     .from('restaurants')
@@ -104,6 +104,23 @@ export async function getPublicMenu(slug: string): Promise<RestaurantMenu | null
   if (categoriesResult.error) throw categoriesResult.error
   if (itemsResult.error) throw itemsResult.error
   return { restaurant, categories: categoriesResult.data ?? [], items: itemsResult.data ?? [] }
+}
+
+/** Loads the lightweight branch chooser reached by a brand-level QR code. */
+export async function getPublicBrand(slug: string): Promise<BrandPlaces | null> {
+  if (!supabase) return ['demo', demoBrand.slug].includes(slug) ? { brand: demoBrand, restaurants: [...demoRestaurants] } : null
+
+  const { data: brand, error } = await supabase.from('brands').select('*').eq('slug', slug).maybeSingle()
+  if (error) throw error
+  if (!brand) return null
+  const { data: restaurants, error: restaurantsError } = await supabase
+    .from('restaurants')
+    .select('*')
+    .eq('brand_id', brand.id)
+    .in('subscription_status', ['trial', 'active'])
+    .order('name_en')
+  if (restaurantsError) throw restaurantsError
+  return { brand: brand as BrandGroup, restaurants: (restaurants ?? []) as Restaurant[] }
 }
 
 /**
@@ -165,10 +182,28 @@ export async function getMenuViewStats(restaurantId: string): Promise<MenuViewSt
   }
 }
 
-export async function getOwnerMenu(session: Session): Promise<RestaurantMenu | null> {
-  if (!supabase) return demoMenu
-  const { data: restaurant, error } = await supabase
-    .from('restaurants').select('*').eq('owner_id', session.user.id).maybeSingle()
+export async function getOwnerBrand(session: Session | null): Promise<BrandGroup | null> {
+  if (!supabase) return demoBrand
+  if (!session) return null
+  const { data, error } = await supabase.from('brands').select('*').eq('owner_id', session.user.id).maybeSingle()
+  if (error) throw error
+  return data as BrandGroup | null
+}
+
+export async function getOwnerRestaurants(session: Session | null): Promise<Restaurant[]> {
+  if (!supabase) return [...demoRestaurants]
+  if (!session) return []
+  const { data, error } = await supabase.from('restaurants').select('*').eq('owner_id', session.user.id).order('created_at')
+  if (error) throw error
+  return (data ?? []) as Restaurant[]
+}
+
+export async function getOwnerMenu(session: Session | null, restaurantId?: string): Promise<RestaurantMenu | null> {
+  if (!supabase) return demoMenus.find((entry) => entry.restaurant.id === restaurantId) ?? demoMenus[0]
+  if (!session) return null
+  let query = supabase.from('restaurants').select('*').eq('owner_id', session.user.id)
+  if (restaurantId) query = query.eq('id', restaurantId)
+  const { data: restaurant, error } = await query.order('created_at').limit(1).maybeSingle()
   if (error) throw error
   if (!restaurant) return null
   const [categories, items] = await Promise.all([
@@ -180,11 +215,41 @@ export async function getOwnerMenu(session: Session): Promise<RestaurantMenu | n
   return { restaurant, categories: categories.data ?? [], items: items.data ?? [] }
 }
 
-export async function createRestaurant(session: Session, input: RestaurantInput) {
-  if (!supabase) return demoMenu.restaurant
+async function ensureOwnerBrand(session: Session, input: RestaurantInput) {
+  const existing = await getOwnerBrand(session)
+  if (existing) return existing
+  const { data, error } = await supabase!.from('brands').insert({
+    owner_id: session.user.id,
+    slug: input.slug,
+    name_en: input.name_en,
+    name_ar: input.name_ar,
+    primary_color: input.primary_color,
+    default_language: input.default_language,
+  }).select().single()
+  if (error?.code === '23505') throw new Error('This brand link is already taken. Choose a different one.')
+  if (error) throw error
+  return data as BrandGroup
+}
+
+export async function createRestaurant(session: Session | null, input: RestaurantInput, brandId?: string) {
+  if (!supabase) {
+    const restaurant: Restaurant = {
+      ...input,
+      id: crypto.randomUUID(),
+      brand_id: demoBrand.id,
+      subscription_status: 'trial',
+      trial_ends_at: new Date(Date.now() + 14 * 86400000).toISOString(),
+    }
+    demoRestaurants.push(restaurant)
+    demoMenus.push({ restaurant, categories: [], items: [] })
+    return restaurant
+  }
+  if (!session) throw new Error('Sign in to add a place.')
+  const brand = brandId ? { id: brandId } : await ensureOwnerBrand(session, input)
   const { data, error } = await supabase.from('restaurants').insert({
     ...input,
     owner_id: session.user.id,
+    brand_id: brand.id,
     subscription_status: 'trial',
     trial_ends_at: new Date(Date.now() + 14 * 86400000).toISOString(),
   }).select().single()

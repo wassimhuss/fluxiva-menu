@@ -96,9 +96,28 @@ export type ServiceMode = 'dine-in' | 'takeaway'
 /** The currencies a restaurant can price in. */
 export type Currency = 'LBP' | 'USD'
 
+/** Public identity shared by every place managed under one owner account. */
+export interface BrandGroup {
+  id: string
+  owner_id?: string
+  slug: string
+  name_en: string
+  name_ar: string
+  logo_url?: string
+  primary_color: string
+  default_language: Language
+}
+
+export interface BrandPlaces {
+  brand: BrandGroup
+  restaurants: Restaurant[]
+}
+
 export interface Restaurant {
   id: string
   owner_id?: string
+  /** Groups independently managed places behind one public branch selector. */
+  brand_id?: string
   slug: string
   name_en: string
   name_ar: string
