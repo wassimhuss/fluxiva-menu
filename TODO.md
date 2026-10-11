@@ -94,6 +94,18 @@ Build a curated **Fluxiva Gallery** that lets every restaurant owner either sele
 - [x] Preserve the complete branch selection, switching, and creation flow in demo mode.
 - [x] Apply migration `021_multi_place_brands.sql` to the configured Supabase project and verify the backfill, schema constraints, policies, and anonymous branch-selector access (2026-10-11).
 
+## Copy a menu into a new branch
+
+**Status:** `[x]` Implementation verified; migration `023_copy_place_menu.sql` applied to the configured production project on 2026-10-11. Frontend deployment remains pending.
+
+- [x] Add bilingual **Copy menu from…** / **Start with an empty menu** choices when adding a branch.
+- [x] Copy categories, items, bilingual copy, prices, sizes, extras, availability, ordering and menu design into independently editable records.
+- [x] Duplicate personal photos into the new branch's Storage folder while safely reusing active shared-gallery photos and protecting repeated-photo references.
+- [x] Start copied branches hidden for price review; preserve the original menu, brand QR, subscriptions and analytics.
+- [x] Verify demo workflows, responsive English/Arabic forms at 320/390/600/1280 px, secure owner-only RPCs (all migrations in isolated PostgreSQL), and client copy/failure-cleanup paths.
+- [x] Apply migration `023_copy_place_menu.sql` to the configured Supabase project, preserving existing menu records.
+- [ ] Add automatic resume/cleanup for interrupted hidden menu copies.
+
 ## Branch visibility and deletion
 
 **Status:** `[x]` Core workflow verified; migration `022_branch_visibility_and_deletion.sql` applied to the configured production project on 2026-10-11. Frontend deployment and asset garbage collection remain follow-ups.

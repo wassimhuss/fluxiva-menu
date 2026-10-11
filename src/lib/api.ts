@@ -158,7 +158,7 @@ export async function recordMenuView(restaurantId: string) {
 
 export async function getMenuViewStats(restaurantId: string): Promise<MenuViewStats> {
   const empty: MenuViewStats = { days: [], total: 0, previousTotal: 0 }
-  if (!supabase) return demoMenuViewStats
+  if (!supabase) return restaurantId.startsWith('demo-restaurant') ? demoMenuViewStats : empty
 
   const { data, error } = await supabase
     .from('menu_view_daily')
@@ -240,6 +240,7 @@ async function ensureOwnerBrand(session: Session, input: RestaurantInput) {
 
 export async function createRestaurant(session: Session | null, input: RestaurantInput, brandId?: string) {
   if (!supabase) {
+    if (demoRestaurants.some((place) => place.slug === input.slug)) throw new Error('This menu link is already taken. Choose a different one.')
     const restaurant: Restaurant = {
       ...input,
       id: crypto.randomUUID(),
@@ -266,6 +267,97 @@ export async function createRestaurant(session: Session | null, input: Restauran
   return data as Restaurant
 }
 
+/** Creates a hidden independent menu, then copies personal assets before it is
+ * ready to edit. Shared active gallery files stay shared; source files are never
+ * deleted or modified. All writes use the signed-in owner's normal permissions. */
+export async function createPlaceFromMenu(session: Session | null, input: RestaurantInput, sourceId: string): Promise<RestaurantMenu> {
+  if (!supabase) {
+    const source = demoMenus.find((entry) => entry.restaurant.id === sourceId)
+    if (!source || source.restaurant.menu_copy_pending) throw new Error('Could not copy this menu. Please try again.')
+    // Blob URLs represent owner-uploaded photos in offline mode. Give the copy
+    // its own URLs so replacing/removing a source photo cannot revoke both.
+    const assetUrls = new Map<string, string>()
+    let restaurant: Restaurant
+    try {
+      const urls = new Set([source.restaurant.logo_url, source.restaurant.cover_image_url, ...source.items.map((item) => item.image_url)])
+      for (const url of urls) if (url?.startsWith('blob:')) {
+        const response = await fetch(url)
+        if (!response.ok) throw new Error('Could not copy this menu. Please try again.')
+        assetUrls.set(url, URL.createObjectURL(await response.blob()))
+      }
+      restaurant = await createRestaurant(session, input, source.restaurant.brand_id)
+    } catch (caught) {
+      assetUrls.forEach((url) => URL.revokeObjectURL(url))
+      throw caught
+    }
+    const { description_en, description_ar, logo_url, cover_image_url, primary_color, instagram, currency, default_language, template_id, show_item_images, takeaway_enabled } = source.restaurant
+    Object.assign(restaurant, { description_en, description_ar, logo_url, cover_image_url, primary_color, instagram, currency, default_language, template_id, show_item_images, takeaway_enabled, temporarily_closed: false, is_published: false, menu_copy_pending: false })
+    restaurant.logo_url = assetUrls.get(logo_url ?? '') ?? logo_url
+    restaurant.cover_image_url = assetUrls.get(cover_image_url ?? '') ?? cover_image_url
+    const categoryIds = new Map(source.categories.map((category) => [category.id, crypto.randomUUID()]))
+    const copied: RestaurantMenu = {
+      restaurant,
+      categories: source.categories.map((category) => ({ ...structuredClone(category), id: categoryIds.get(category.id)!, restaurant_id: restaurant.id })),
+      items: source.items.map((item) => ({ ...structuredClone(item), image_url: assetUrls.get(item.image_url ?? '') ?? item.image_url, id: crypto.randomUUID(), restaurant_id: restaurant.id, category_id: categoryIds.get(item.category_id)! })),
+    }
+    Object.assign(demoMenus.find((entry) => entry.restaurant.id === restaurant.id)!, copied)
+    return structuredClone(copied)
+  }
+  if (!session) throw new Error('Sign in to add a place.')
+  const client = supabase
+  const { data, error } = await client.rpc('owner_create_place_with_menu', { source_restaurant_id_input: sourceId, place_input: input })
+  if (error?.code === '23505') throw new Error('This menu link is already taken. Choose a different one.')
+  if (error?.code === 'PGRST202') throw new Error('Menu copying is not ready yet. Please contact support.')
+  if (error) throw error
+  const copied = data as RestaurantMenu
+  const target = copied.restaurant
+  const attemptedPaths: string[] = []
+  try {
+    const urls = new Set([target.logo_url, target.cover_image_url, ...copied.items.filter((item) => !item.gallery_image_id).map((item) => item.image_url)])
+    const assetUrls: Record<string, string> = {}
+    // Sequential copies bound requests/memory on large menus. Repeated photos
+    // are copied once per new branch, without downloading or recompressing them.
+    for (const url of urls) {
+      if (!url) continue
+      const asset = restaurantCopyAsset(url)
+      if (!asset) continue
+      const extension = asset.path.split('.').pop()?.match(/^(?:jpe?g|png|webp)$/i)?.[0] ?? 'webp'
+      const path = `${target.id}/copy-${crypto.randomUUID()}.${extension}`
+      // Track before requesting: a lost response may still have created a file.
+      attemptedPaths.push(path)
+      const result = await client.storage.from(asset.bucket).copy(asset.path, path, { destinationBucket: 'menu-assets' })
+      if (result.error) throw result.error
+      assetUrls[url] = client.storage.from('menu-assets').getPublicUrl(path).data.publicUrl
+    }
+    const finished = await client.rpc('owner_finish_place_menu_copy', { restaurant_id_input: target.id, asset_urls_input: assetUrls })
+    if (finished.error) throw finished.error
+    return finished.data as RestaurantMenu
+  } catch (caught) {
+    // Remove only this attempt's files, while Storage RLS still sees its row.
+    if (attemptedPaths.length) {
+      try { await client.storage.from('menu-assets').remove(attemptedPaths) } catch { /* best-effort asset cleanup */ }
+    }
+    try { await deleteRestaurant(target.id, target.slug) } catch {
+      throw new Error('The copy could not finish. Refresh your places and delete the hidden incomplete branch before trying again.')
+    }
+    throw caught
+  }
+}
+
+function restaurantCopyAsset(publicUrl: string): { bucket: 'menu-assets' | 'gallery-assets'; path: string } | null {
+  if (!supabase) return null
+  try {
+    const url = new URL(publicUrl)
+    const origin = new URL(supabase.storage.from('menu-assets').getPublicUrl('').data.publicUrl).origin
+    if (url.origin !== origin) return null
+    const match = url.pathname.match(/^\/storage\/v1\/object\/public\/(menu-assets|gallery-assets)\/(.+)$/)
+    if (!match) return null
+    const path = decodeURIComponent(match[2])
+    if (path.includes('..')) throw new Error('Could not copy this menu. Please try again.')
+    return { bucket: match[1] as 'menu-assets' | 'gallery-assets', path }
+  } catch { return null }
+}
+
 export async function updateRestaurant(id: string, values: Partial<Restaurant>) {
   if (!supabase) {
     const restaurant = demoRestaurants.find((place) => place.id === id)
@@ -281,6 +373,7 @@ export async function setPlacePublished(id: string, published: boolean): Promise
   if (!supabase) {
     const restaurant = demoRestaurants.find((place) => place.id === id)
     if (!restaurant) throw new Error('Could not update branch visibility.')
+    if (published && restaurant.menu_copy_pending) throw new Error('Could not update branch visibility.')
     restaurant.is_published = published
     return { ...restaurant }
   }
@@ -310,7 +403,11 @@ export async function setRestaurantTemplate(id: string, templateId: string) {
 }
 
 export async function createCategory(input: CategoryInput) {
-  if (!supabase) return { ...input, id: crypto.randomUUID() } as Category
+  if (!supabase) {
+    const category = { ...input, id: crypto.randomUUID() } as Category
+    demoMenus.find((entry) => entry.restaurant.id === input.restaurant_id)?.categories.push(structuredClone(category))
+    return category
+  }
   const { data, error } = await supabase.from('menu_categories').insert(input).select().single()
   if (error) throw error
   return data as Category
@@ -319,26 +416,40 @@ export async function createCategory(input: CategoryInput) {
 /** Keeps spreadsheet imports to one category insert instead of one request per row. */
 export async function createCategories(inputs: CategoryInput[]) {
   if (!inputs.length) return []
-  if (!supabase) return inputs.map((input) => ({ ...input, id: crypto.randomUUID() } as Category))
+  if (!supabase) return Promise.all(inputs.map(createCategory))
   const { data, error } = await supabase.from('menu_categories').insert(inputs).select()
   if (error) throw error
   return data as Category[]
 }
 
 export async function updateCategory(id: string, values: Partial<Category>) {
-  if (!supabase) return
+  if (!supabase) {
+    const category = demoMenus.flatMap((entry) => entry.categories).find((entry) => entry.id === id)
+    if (category) Object.assign(category, structuredClone(values))
+    return
+  }
   const { error } = await supabase.from('menu_categories').update(values).eq('id', id)
   if (error) throw error
 }
 
 export async function deleteCategory(id: string) {
-  if (!supabase) return
+  if (!supabase) {
+    for (const entry of demoMenus) {
+      entry.categories = entry.categories.filter((category) => category.id !== id)
+      entry.items = entry.items.filter((item) => item.category_id !== id)
+    }
+    return
+  }
   const { error } = await supabase.from('menu_categories').delete().eq('id', id)
   if (error) throw error
 }
 
 export async function createItem(input: ItemInput) {
-  if (!supabase) return { ...input, id: crypto.randomUUID() } as MenuItem
+  if (!supabase) {
+    const item = { ...structuredClone(input), id: crypto.randomUUID() } as MenuItem
+    demoMenus.find((entry) => entry.restaurant.id === input.restaurant_id)?.items.push(structuredClone(item))
+    return item
+  }
   const { data, error } = await supabase.from('menu_items').insert(input).select().single()
   if (error) throw error
   return data as MenuItem
@@ -347,20 +458,27 @@ export async function createItem(input: ItemInput) {
 /** Inserts an already-validated workbook in one owner-scoped request. */
 export async function createItems(inputs: ItemInput[]) {
   if (!inputs.length) return []
-  if (!supabase) return inputs.map((input) => ({ ...input, id: crypto.randomUUID() } as MenuItem))
+  if (!supabase) return Promise.all(inputs.map(createItem))
   const { data, error } = await supabase.from('menu_items').insert(inputs).select()
   if (error) throw error
   return data as MenuItem[]
 }
 
 export async function updateItem(id: string, values: Partial<MenuItem>) {
-  if (!supabase) return
+  if (!supabase) {
+    const item = demoMenus.flatMap((entry) => entry.items).find((entry) => entry.id === id)
+    if (item) Object.assign(item, structuredClone(values))
+    return
+  }
   const { error } = await supabase.from('menu_items').update(values).eq('id', id)
   if (error) throw error
 }
 
 export async function deleteItem(id: string) {
-  if (!supabase) return
+  if (!supabase) {
+    for (const entry of demoMenus) entry.items = entry.items.filter((item) => item.id !== id)
+    return
+  }
   const { error } = await supabase.from('menu_items').delete().eq('id', id)
   if (error) throw error
 }
@@ -381,13 +499,19 @@ export async function uploadRestaurantAsset(restaurantId: string, file: File, pu
  */
 export async function deleteRestaurantAsset(restaurantId: string, publicUrl?: string | null) {
   if (!publicUrl) return
-  if (publicUrl.startsWith('blob:')) { URL.revokeObjectURL(publicUrl); return }
+  if (publicUrl.startsWith('blob:')) {
+    const referenced = demoMenus.some((entry) => entry.restaurant.logo_url === publicUrl || entry.restaurant.cover_image_url === publicUrl || entry.items.some((item) => item.image_url === publicUrl))
+    if (!referenced) URL.revokeObjectURL(publicUrl)
+    return
+  }
   if (!supabase) return
 
   const marker = '/storage/v1/object/public/menu-assets/'
   let path = ''
   try {
-    const pathname = new URL(publicUrl).pathname
+    const assetUrl = new URL(publicUrl)
+    if (assetUrl.origin !== new URL(supabase.storage.from('menu-assets').getPublicUrl('').data.publicUrl).origin) return
+    const pathname = assetUrl.pathname
     const markerIndex = pathname.indexOf(marker)
     if (markerIndex < 0) return
     path = decodeURIComponent(pathname.slice(markerIndex + marker.length))
@@ -396,6 +520,17 @@ export async function deleteRestaurantAsset(restaurantId: string, publicUrl?: st
   }
 
   if (path.split('/')[0] !== restaurantId || path.includes('..')) return
+  // A menu copy may reuse one copied file for several items. Only remove the
+  // file after the last saved reference is gone; also preserve brand QR logos.
+  const [items, restaurant, brands] = await Promise.all([
+    supabase.from('menu_items').select('id').eq('image_url', publicUrl).limit(1),
+    supabase.from('restaurants').select('logo_url, cover_image_url').eq('id', restaurantId).maybeSingle(),
+    supabase.from('brands').select('id').eq('logo_url', publicUrl).limit(1),
+  ])
+  if (items.error) throw items.error
+  if (restaurant.error) throw restaurant.error
+  if (brands.error) throw brands.error
+  if (items.data?.length || brands.data?.length || restaurant.data?.logo_url === publicUrl || restaurant.data?.cover_image_url === publicUrl) return
   const { error } = await supabase.storage.from('menu-assets').remove([path])
   if (error) throw error
 }

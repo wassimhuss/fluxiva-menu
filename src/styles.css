@@ -611,6 +611,12 @@ html.menu-preview-document::-webkit-scrollbar,body.menu-preview-document::-webki
 .place-action-modal .modal-actions{justify-content:flex-end;flex-wrap:wrap}
 .owner-place-select:focus-visible,.owner-place-controls button:focus-visible,.hidden-branch-manage:focus-visible{outline:3px solid var(--orange);outline-offset:-3px}
 .new-place-modal{width:min(700px,calc(100% - 30px))}
+.place-create-fields{min-width:0;margin:0;padding:0;border:0}
+.place-menu-copy{padding:16px;margin:18px 0;border:1px solid var(--line);border-radius:12px;background:#f4f8f5}
+.place-menu-copy-title{display:flex;align-items:center;gap:8px}
+.place-menu-copy-title svg,.place-copy-review svg{width:16px;height:16px;flex:none}
+.place-menu-copy p{margin:9px 0 0;font-size:11px;line-height:1.6;color:var(--muted)}
+.place-copy-review{display:flex;align-items:flex-start;gap:7px;margin-top:10px;color:var(--green);font-size:11px;line-height:1.5}
 
 @media(max-width:600px){
   .branch-selector-page{padding:18px 14px 34px}

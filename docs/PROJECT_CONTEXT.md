@@ -1,6 +1,6 @@
 # Fluxiva Menu — Project Context
 
-Last verified: 2026-10-10
+Last verified: 2026-10-11
 
 ## Product summary
 
@@ -47,7 +47,7 @@ Demo mode is active when `VITE_SUPABASE_URL` or `VITE_SUPABASE_PUBLISHABLE_KEY` 
 
 - `src/lib/demo.ts` supplies the Hilal Oven brand, Tripoli and Beirut places, categories, items, variants, extras, and local image paths.
 - Authentication forms navigate into the owner experience without remote authentication.
-- API mutations generally return local/demo results or no-op; the dashboard maintains the interactive state in memory.
+- Restaurant, category and item mutations update the runtime demo menus so branch switching and menu copying retain independent edits within the session. Other API mutations may return local/demo results or no-op. Demo data is not persisted across a full reload.
 - The shared demo QR destination is `/b/hilal-oven`; `/m/demo` remains the direct Tripoli menu.
 
 Demo mode is a deliberate development and sales-preview feature. Do not remove it when adding production integrations.
@@ -118,6 +118,8 @@ One brand per owner. It owns the shared public branch-selector slug plus bilingu
 
 Each row is an independently managed place attached to the owner's brand through `brand_id`. An owner may have many places. Important fields include the unique direct-menu `slug`, bilingual identity and address fields, logo/cover URLs, contact links, color, default language, opening state, the `show_item_images` food-photo preference, subscription status, and trial/subscription expiry timestamps. Subscription eligibility remains per place. `is_published` (default true) independently controls public visibility: hidden branches disappear from the brand selector and cannot serve a direct public menu, contact-card RPC, or view-count RPC. Owners can still edit them; hiding does not change billing or the temporarily-closed setting.
 
+`menu_copy_pending` marks a newly cloned branch whose personal photos are still being duplicated. A database constraint prevents a pending copy from becoming published. Existing and empty-created branches default to false.
+
 ### `menu_categories`
 
 Belongs to a restaurant and contains paired English/Arabic names plus `sort_order`.
@@ -165,6 +167,9 @@ The first restaurant also creates the owner's brand. Creating any place sets `su
 The owner dashboard supports:
 
 - Switching between all places without leaving the dashboard and adding another bilingual place under the same brand. The mobile overview exposes a visible **Your places / Add place** row; the current restaurant name also opens the place switcher on every dashboard panel.
+- Adding a place defaults to **Copy menu from…** the selected branch, with an explicit **Start with an empty menu** alternative. A copy includes bilingual categories/items/descriptions, base and size prices, extras, availability, ordering, currency, design, descriptions and branding. New branch names, addresses, slug and WhatsApp come from the form; location links, closed state, subscription payments and analytics are not copied. The new place receives its own 14-day trial and category/item IDs. Copies start hidden and open directly in the menu editor so prices can be reviewed before **Show branch**; future edits never sync between branches.
+  - The owner-only `owner_create_place_with_menu` RPC creates the hidden branch and menu records in one database transaction. The client duplicates personal photos/logo/cover into the new restaurant UUID's `menu-assets` folder using existing Storage permissions, copying each repeated URL once. Active gallery references remain shared. An archived gallery photo already used by the source becomes a personal file in the copy rather than attaching a new inactive gallery reference. External URLs and bundled demo assets remain unchanged; demo uploaded blob photos receive independent blob URLs.
+  - `owner_finish_place_menu_copy` validates that copied files exist under the target UUID, rewrites the saved URLs together, and clears the pending flag without publishing. On failure, the client attempts to remove the new files before deleting only the new branch. A tab closure or failed cleanup can leave a hidden **Copy incomplete** branch; the owner must delete it and retry. Incomplete branches cannot be shown or selected as a copy source.
 - The place switcher offers **Hide / Show branch** and **Delete branch**. Hiding requires confirmation and showing is reversible in one tap. Deleting requires the exact menu slug and permanently removes that branch's categories, items and analytics, without changing the brand QR or other places. The protected `owner_delete_place` RPC validates ownership and serializes deletions on the owner's brand; the last remaining place cannot be deleted, but can be hidden. Deleting the selected place switches to another place.
 - Overview counts and trial/subscription state.
 - Category/item creation, editing, deletion, and ordering.
@@ -178,7 +183,7 @@ The owner dashboard supports:
 - Excel import/export through a styled `.xlsx` workbook. `Items` contains bilingual categories and item copy, `Variants` contains English-only size labels, and `Extras` contains bilingual add-ons. `item_key` links the sheets. The whole workbook is validated before owner-scoped batch inserts begin, and owners can download either a blank template or their current menu.
 - One brand-level PNG/SVG QR download and browser printing. It points to `/b/:brandSlug`, where guests choose a place; direct `/m/:placeSlug` links remain available for place-specific sharing.
 
-Image files are validated as JPG, PNG, or WebP and limited to 8 MB. A personal item photo selected in the owner editor only needs to be a clear image at least 900 px wide and high; it opens the same drag-and-zoom 4:5 portrait cropper as the shared gallery and is previewed as an exact 1200×1500 WebP before the item is saved. One optimized item image is stored and reused across menu templates. Reel preserves that full 4:5 foreground photo, using a blurred and darkened rendering of the same URL to fill the remaining 9:16 canvas; it does not store a second Reel asset. Covers fit within 1600×1200 and logos within 512×512 through high-quality resizing and adaptive WebP compression. Replaced item, cover, and logo files—and item files removed with an item or category—are deleted from the restaurant's Storage folder on a best-effort basis so unused assets do not consume the quota.
+Image files are validated as JPG, PNG, or WebP and limited to 8 MB. A personal item photo selected in the owner editor only needs to be a clear image at least 900 px wide and high; it opens the same drag-and-zoom 4:5 portrait cropper as the shared gallery and is previewed as an exact 1200×1500 WebP before the item is saved. One optimized item image is stored and reused across menu templates. Reel preserves that full 4:5 foreground photo, using a blurred and darkened rendering of the same URL to fill the remaining 9:16 canvas; it does not store a second Reel asset. Covers fit within 1600×1200 and logos within 512×512 through high-quality resizing and adaptive WebP compression. Replaced item, cover, and logo files—and item files removed with an item or category—are deleted from the restaurant's Storage folder on a best-effort basis so unused assets do not consume the quota. Cleanup checks remaining visible/owned menu, restaurant and brand references first, preserving repeated copied photos and brand QR logos; a failed reference check never deletes a file.
 
 ### Public branch selector and menu
 
@@ -218,6 +223,7 @@ Supabase migrations are currently expected to be run manually in sequence in the
 - Excel import batches categories and items separately. A failed item insert can leave newly created empty categories, although no partial set of items is inserted.
 - Demo-mode mutations are not persisted across reloads.
 - Branch deletion removes database menu records, not Storage objects. Previously uploaded `menu-assets` files may remain at their existing public URLs; cleanup needs a trusted backend job. The owner cannot delete that folder after its restaurant row is gone because Storage RLS correctly requires an existing owned restaurant. Shared gallery assets and brand logos must not be removed by branch deletion.
+- Menu copying spans a database transaction and Storage requests, not one cross-service transaction. Interrupted copies stay hidden and must be deleted/retried; cleanup is best-effort and the backend orphan-asset cleanup follow-up still applies. Automated copy resume is not implemented.
 - The landing page imports Google Fonts over the network; provide a fallback/self-hosting plan if offline or privacy requirements change.
 - The `/platform` route shares the owner UI route guard. Server-side RPC authorization is the actual security boundary.
 - Keep `.node-version`, `package.json` engines, and Render's `NODE_VERSION` aligned on Node 22. The app deliberately does not inherit Render's moving default Node version.

@@ -1,4 +1,4 @@
-import { ArrowDown, ArrowUp, CheckCircle2, ChevronLeft, ChevronRight, Download, ExternalLink, Eye, EyeOff, FileSpreadsheet, ImagePlus, Images, LayoutDashboard, LogOut, Maximize2, Menu, Palette, Pencil, Plus, QrCode, RotateCcw, Settings, ShieldCheck, Store, Trash2, TriangleAlert, Upload, X } from 'lucide-react'
+import { ArrowDown, ArrowUp, CheckCircle2, ChevronLeft, ChevronRight, Copy, Download, ExternalLink, Eye, EyeOff, FileSpreadsheet, ImagePlus, Images, LayoutDashboard, LogOut, Maximize2, Menu, Palette, Pencil, Plus, QrCode, RotateCcw, Settings, ShieldCheck, Store, Trash2, TriangleAlert, Upload, X } from 'lucide-react'
 import QRCode from 'qrcode'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
@@ -9,7 +9,7 @@ import { SubscriptionBanner } from '../components/SubscriptionBanner'
 import { GalleryPicker } from '../components/GalleryPicker'
 import { ImageLightbox } from '../components/ImageLightbox'
 import { PortraitImageCropper } from '../components/PortraitImageCropper'
-import { cleanExtras, cleanVariants, createCategories, createCategory, createItem, createItems, createRestaurant, deleteCategory, deleteItem, deleteRestaurant, deleteRestaurantAsset, getMenuViewStats, getOwnerBrand, getOwnerMenu, getOwnerRestaurants, listGalleryCategories, listGalleryImages, setPlacePublished, updateCategory, updateItem, updateRestaurant, uploadRestaurantAsset, validateGallerySource } from '../lib/api'
+import { cleanExtras, cleanVariants, createCategories, createCategory, createItem, createItems, createPlaceFromMenu, createRestaurant, deleteCategory, deleteItem, deleteRestaurant, deleteRestaurantAsset, getMenuViewStats, getOwnerBrand, getOwnerMenu, getOwnerRestaurants, listGalleryCategories, listGalleryImages, setPlacePublished, updateCategory, updateItem, updateRestaurant, uploadRestaurantAsset, validateGallerySource } from '../lib/api'
 import { useAuth } from '../lib/auth'
 import { formatMoney, localText, slugify } from '../lib/format'
 import { dashboardText } from '../lib/dashboardI18n'
@@ -58,6 +58,7 @@ export function DashboardPage() {
   const [placeSwitcherOpen, setPlaceSwitcherOpen] = useState(false)
   const [placeModal, setPlaceModal] = useState(false)
   const [placeDraft, setPlaceDraft] = useState<PlaceDraft>(emptyPlace())
+  const [placeCopySource, setPlaceCopySource] = useState('')
   const [placeError, setPlaceError] = useState('')
   const [placeAction, setPlaceAction] = useState<PlaceAction | null>(null)
   const [placeActionError, setPlaceActionError] = useState('')
@@ -189,20 +190,32 @@ export function DashboardPage() {
     setPlaceSwitcherOpen(false)
     setPlaceError('')
     setPlaceDraft(emptyPlace(menu?.restaurant))
+    setPlaceCopySource(menu?.restaurant.menu_copy_pending ? '' : menu?.restaurant.id ?? '')
     setPlaceModal(true)
   }
 
   async function savePlace(event: React.FormEvent) {
     event.preventDefault()
+    if (saving) return
     setSaving(true); setPlaceError('')
     try {
-      const restaurant = await createRestaurant(session, placeDraft, brand?.id)
+      const copied = placeCopySource ? await createPlaceFromMenu(session, placeDraft, placeCopySource) : null
+      const restaurant = copied?.restaurant ?? await createRestaurant(session, placeDraft, brand?.id)
       setRestaurants((current) => [...current, restaurant])
       setPlaceModal(false)
-      await switchPlace(restaurant.id)
-      showSuccess(t('Place added successfully.'))
+      if (copied) {
+        setMenu(structuredClone(copied))
+        setSavedSettings(restaurantSettingsSnapshot(restaurant))
+        setPanel('menu'); setTemplateDraft(''); setColorDraft(''); setImageVisibilityDraft(null)
+        setViewStats(null)
+        window.localStorage.setItem(SELECTED_PLACE_KEY, restaurant.id)
+        showSuccess(t('Menu copied. Edit your prices, then show this branch when ready.'))
+      } else {
+        await switchPlace(restaurant.id)
+        showSuccess(t('Place added successfully.'))
+      }
     } catch (caught) {
-      setPlaceError(caught instanceof Error ? caught.message : t('Could not create restaurant'))
+      setPlaceError(caught instanceof Error ? t(caught.message) : t(placeCopySource ? 'Could not copy this menu. Please try again.' : 'Could not create restaurant'))
     } finally { setSaving(false) }
   }
 
@@ -1090,8 +1103,8 @@ export function DashboardPage() {
             {restaurant.id === menu.restaurant.id ? <CheckCircle2 aria-hidden="true" /> : <DirectionalChevron aria-hidden="true" />}
           </button>
           <div className="owner-place-controls">
-            <span className={`owner-place-status${restaurant.is_published === false ? ' hidden' : ''}`}>{t(restaurant.is_published === false ? 'Hidden' : 'Listed')}</span>
-            <button type="button" disabled={placeActionBusy} aria-label={`${t(restaurant.is_published === false ? 'Show branch' : 'Hide branch')}: ${localText(dashboardLanguage, restaurant.name_en, restaurant.name_ar)}`} onClick={() => restaurant.is_published === false ? void changePlaceVisibility(restaurant, true) : requestPlaceAction('hide', restaurant)}>{restaurant.is_published === false ? <Eye /> : <EyeOff />}{t(restaurant.is_published === false ? 'Show branch' : 'Hide branch')}</button>
+            <span className={`owner-place-status${restaurant.is_published === false ? ' hidden' : ''}`}>{t(restaurant.menu_copy_pending ? 'Copy incomplete' : restaurant.is_published === false ? 'Hidden' : 'Listed')}</span>
+            <button type="button" disabled={placeActionBusy || restaurant.menu_copy_pending} aria-label={`${t(restaurant.is_published === false ? 'Show branch' : 'Hide branch')}: ${localText(dashboardLanguage, restaurant.name_en, restaurant.name_ar)}`} onClick={() => restaurant.is_published === false ? void changePlaceVisibility(restaurant, true) : requestPlaceAction('hide', restaurant)}>{restaurant.is_published === false ? <Eye /> : <EyeOff />}{t(restaurant.is_published === false ? 'Show branch' : 'Hide branch')}</button>
             <button type="button" className="danger" disabled={placeActionBusy || restaurants.length <= 1} aria-label={`${t('Delete branch')}: ${localText(dashboardLanguage, restaurant.name_en, restaurant.name_ar)}`} onClick={() => requestPlaceAction('delete', restaurant)}><Trash2 />{t('Delete branch')}</button>
           </div>
         </article>)}</div>
@@ -1114,7 +1127,33 @@ export function DashboardPage() {
         </div>
       </form></div>}
 
-      {placeModal && <div className="modal-backdrop"><form className="modal-card modal-large place-create-modal" onSubmit={savePlace}><button type="button" className="modal-close" aria-label={t('Close')} onClick={() => setPlaceModal(false)}><X /></button><span className="eyebrow"><span /> {t('New place')}</span><h2>{t('Add another place')}</h2><p>{t('This place will have its own menu and public link under the same brand QR code.')}</p>{placeError && <Notice tone="error">{placeError}</Notice>}<div className="form-grid"><label>{t('English name')}<input required autoFocus value={placeDraft.name_en} onChange={(event) => setPlaceDraft({ ...placeDraft, name_en: event.target.value, slug: placeDraft.slug || slugify(event.target.value) })} placeholder="Hilal Oven — Beirut" /></label><label>{t('Arabic name')}<input dir="rtl" required value={placeDraft.name_ar} onChange={(event) => setPlaceDraft({ ...placeDraft, name_ar: event.target.value })} placeholder="فرن الهلال — بيروت" /></label><label>{t('Menu link')}<div className="slug-input"><span>/m/</span><input required value={placeDraft.slug} onChange={(event) => setPlaceDraft({ ...placeDraft, slug: slugify(event.target.value) })} placeholder="hilal-beirut" /></div></label><label>{t('WhatsApp number')}<input value={placeDraft.whatsapp} onChange={(event) => setPlaceDraft({ ...placeDraft, whatsapp: event.target.value })} placeholder="+961 70 123 456" /></label><label>{t('Address in English')}<textarea required value={placeDraft.address_en} onChange={(event) => setPlaceDraft({ ...placeDraft, address_en: event.target.value })} placeholder="Hamra, Beirut" /></label><label>{t('Address in Arabic')}<textarea dir="rtl" required value={placeDraft.address_ar} onChange={(event) => setPlaceDraft({ ...placeDraft, address_ar: event.target.value })} placeholder="الحمرا، بيروت" /></label></div><button className="button button-primary full" disabled={saving}>{saving ? t('Creating…') : t('Create place')}</button></form></div>}
+      {placeModal && <div className="modal-backdrop"><form className="modal-card modal-large place-create-modal" role="dialog" aria-modal="true" aria-labelledby="place-create-title" aria-busy={saving} onSubmit={savePlace}>
+        <button type="button" className="modal-close" aria-label={t('Close')} disabled={saving} onClick={() => setPlaceModal(false)}><X /></button>
+        <span className="eyebrow"><span /> {t('New place')}</span><h2 id="place-create-title">{t('Add another place')}</h2>
+        <p>{t('This place will have its own menu and public link under the same brand QR code.')}</p>
+        {placeError && <Notice tone="error">{placeError}</Notice>}
+        <fieldset className="place-create-fields" disabled={saving}>
+          <div className="place-menu-copy">
+            <label><span className="place-menu-copy-title"><Copy aria-hidden="true" /> {t('Copy menu from…')}</span>
+              <select value={placeCopySource} onChange={(event) => setPlaceCopySource(event.target.value)} aria-describedby="place-copy-hint">
+                <option value="">{t('Start with an empty menu')}</option>
+                {restaurants.filter((place) => !place.menu_copy_pending).map((place) => <option key={place.id} value={place.id}>{localText(dashboardLanguage, place.name_en, place.name_ar)}</option>)}
+              </select>
+            </label>
+            <p id="place-copy-hint">{t(placeCopySource ? 'Copies all categories, items, photos, sizes, extras, prices and menu design. Future edits affect only this new branch.' : 'Create this branch without categories or items. You can add them later.')}</p>
+            {placeCopySource && <small className="place-copy-review"><EyeOff aria-hidden="true" /> {t('Starts hidden. Review prices, then use Show branch in Your places.')}</small>}
+          </div>
+          <div className="form-grid">
+            <label>{t('English name')}<input dir="ltr" required autoFocus value={placeDraft.name_en} onChange={(event) => setPlaceDraft({ ...placeDraft, name_en: event.target.value, slug: placeDraft.slug || slugify(event.target.value) })} placeholder="Hilal Oven — Beirut" /></label>
+            <label>{t('Arabic name')}<input dir="rtl" required value={placeDraft.name_ar} onChange={(event) => setPlaceDraft({ ...placeDraft, name_ar: event.target.value })} placeholder="فرن الهلال — بيروت" /></label>
+            <label>{t('Menu link')}<div className="slug-input" dir="ltr"><span>/m/</span><input required value={placeDraft.slug} onChange={(event) => setPlaceDraft({ ...placeDraft, slug: slugify(event.target.value) })} placeholder="hilal-beirut" /></div></label>
+            <label>{t('WhatsApp number')}<input dir="ltr" value={placeDraft.whatsapp} onChange={(event) => setPlaceDraft({ ...placeDraft, whatsapp: event.target.value })} placeholder="+961 70 123 456" /></label>
+            <label>{t('Address in English')}<textarea dir="ltr" required value={placeDraft.address_en} onChange={(event) => setPlaceDraft({ ...placeDraft, address_en: event.target.value })} placeholder="Hamra, Beirut" /></label>
+            <label>{t('Address in Arabic')}<textarea dir="rtl" required value={placeDraft.address_ar} onChange={(event) => setPlaceDraft({ ...placeDraft, address_ar: event.target.value })} placeholder="الحمرا، بيروت" /></label>
+          </div>
+        </fieldset>
+        <button className="button button-primary full" disabled={saving}>{t(saving ? (placeCopySource ? 'Copying menu and photos…' : 'Creating…') : (placeCopySource ? 'Create place & copy menu' : 'Create place'))}</button>
+      </form></div>}
 
       {categoryModal && <div className="modal-backdrop"><form className="modal-card" onSubmit={saveCategory}><button type="button" className="modal-close" onClick={() => { setCategoryModal(false); setEditingCategory(null) }}><X /></button><span className="eyebrow"><span /> {editingCategory ? t('Edit section') : t('New section')}</span><h2>{editingCategory ? t('Edit category') : t('Add a category')}</h2><p>{t('Give it a name in both menu languages.')}</p><label>{t('English name')}<input required autoFocus value={categoryDraft.name_en} onChange={(e) => setCategoryDraft({ ...categoryDraft, name_en: e.target.value })} placeholder="Pizza" /></label><label>{t('Arabic name')}<input dir="rtl" required value={categoryDraft.name_ar} onChange={(e) => setCategoryDraft({ ...categoryDraft, name_ar: e.target.value })} placeholder="بيتزا" /></label><button className="button button-primary full" disabled={saving}>{saving ? t('Saving…') : editingCategory ? t('Save category') : t('Add category')}</button></form></div>}
 

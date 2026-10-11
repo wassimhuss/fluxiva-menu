@@ -137,6 +137,8 @@ export interface Restaurant {
   temporarily_closed?: boolean
   /** Hidden places stay editable but are unavailable through all public links. */
   is_published?: boolean
+  /** A new copied branch cannot be shown before its personal photos finish copying. */
+  menu_copy_pending?: boolean
   /** Id of the public menu design; unknown values fall back to the default. */
   template_id?: string
   /** Whether food-item photos are rendered on the public menu. Defaults to true. */
