@@ -360,7 +360,10 @@
   place-items: center;
   text-align: center;
   padding: 40px 24px calc(env(safe-area-inset-bottom, 0px) + 40px);
-  background: linear-gradient(165deg, var(--reel-strong) 0%, #070908 68%);
+  /* Keep the closing card on the selected palette, not the photo scrim's
+     near-black surface. The paired ink also handles light brand colours. */
+  background: var(--reel-brand);
+  color: var(--reel-ink);
 }
 
 .endInner { max-width: 420px; }
@@ -371,7 +374,7 @@
   border-radius: 50%;
   object-fit: cover;
   margin-bottom: 20px;
-  border: 1px solid rgba(255, 255, 255, .28);
+  border: 1px solid var(--reel-footer-line);
 }
 
 .endTitle {
@@ -384,7 +387,7 @@
 .endText {
   font-size: 14px;
   line-height: 1.65;
-  color: rgba(255, 255, 255, .62);
+  color: var(--reel-ink);
   margin: 0 0 28px;
 }
 
@@ -399,26 +402,32 @@
   align-items: center;
   justify-content: center;
   gap: 10px;
-  background: rgba(255, 255, 255, .1);
-  border: 1px solid rgba(255, 255, 255, .18);
+  background: var(--reel-footer-surface);
+  border: 1px solid var(--reel-footer-line);
+  color: var(--reel-ink);
   border-radius: 14px;
   padding: 14px 18px;
   font-size: 14px;
   font-weight: 500;
-  transition: background .22s ease, transform .22s ease;
+  transition: border-color .22s ease, transform .22s ease;
 }
 
-.endContact svg { width: 17px; color: var(--reel-accent); }
+.endContact svg { width: 17px; color: currentColor; }
+
+.endContact:focus-visible {
+  outline: 2px solid var(--reel-ink);
+  outline-offset: 4px;
+}
 
 .endMark {
   margin-top: 26px;
   font-size: 11px;
   letter-spacing: 1.6px;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, .34);
+  color: var(--reel-ink);
 }
 
-.endMark b { color: rgba(255, 255, 255, .62); font-weight: 600; }
+.endMark b { font-weight: 600; }
 
 .closed {
   position: absolute;
@@ -481,5 +490,9 @@
    otherwise leave the hover state stuck on until something else is tapped.
    Guarded so it applies only where a real pointer exists. */
 @media (hover: hover) and (pointer: fine) {
-  .endContact:hover { background: rgba(255, 255, 255, .18); transform: translateY(-2px); }
+  .endContact:hover { border-color: var(--reel-ink); }
+}
+
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  .endContact:hover { transform: translateY(-2px); }
 }

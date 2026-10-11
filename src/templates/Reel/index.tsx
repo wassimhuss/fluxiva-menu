@@ -98,8 +98,9 @@ export default function ReelTemplate(props: MenuTemplateProps) {
         '--reel-brand': theme.brand,
         '--reel-ink': theme.brandInk,
         '--reel-strong': theme.brandStrong,
-        '--reel-accent': theme.accent,
         '--reel-glow': theme.alpha(0.42),
+        '--reel-footer-surface': theme.isLight ? theme.brandTint : theme.brandStrong,
+        '--reel-footer-line': theme.inkAlpha(0.22),
       } as React.CSSProperties}
     >
       <div className={styles.topBar}>
