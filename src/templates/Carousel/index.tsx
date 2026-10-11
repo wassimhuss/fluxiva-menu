@@ -1,6 +1,7 @@
-import { ChevronLeft, ChevronRight, Instagram, MapPin, MessageCircle } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Instagram, MapPin } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { AddToOrder } from '../../components/AddToOrder'
+import { WhatsAppIcon } from '../../components/WhatsAppIcon'
 import { scrollToSlide } from '../scrollToSlide'
 import type { MenuTemplateProps } from '../types'
 import { useActiveSlide } from '../useActiveSlide'
@@ -204,7 +205,7 @@ export default function CarouselTemplate(props: MenuTemplateProps) {
         <div className={styles.contacts}>
           {restaurant.whatsapp && (
             <a className={styles.contact} href={`https://wa.me/${restaurant.whatsapp.replace(/\D/g, '')}`} target="_blank" rel="noreferrer" aria-label={t('Message us', 'راسلنا')}>
-              <MessageCircle />
+              <WhatsAppIcon />
             </a>
           )}
           {address && restaurant.maps_url && (

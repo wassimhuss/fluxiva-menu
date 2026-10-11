@@ -119,6 +119,7 @@ Build a curated **Fluxiva Gallery** that lets every restaurant owner either sele
 
 ## Completed product improvements
 
+- [x] Replace the generic footer chat icon with the WhatsApp brand icon across all eight menu templates, preserving theme colors, contact links, and bilingual responsive layouts (2026-10-11).
 - [x] Confirm before hiding a visible menu item while keeping restoration a one-tap action (2026-10-09).
 - [x] Add persistent English/Arabic translations and RTL layouts to login, signup, and password-recovery screens (2026-10-09).
 - [x] Refine the landing page for mobile conversion with clearer bilingual copy, sticky navigation, readable product previews, local trust/payment details, compact sections, and RTL-safe layouts (2026-10-09).

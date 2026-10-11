@@ -1,6 +1,7 @@
-import { Instagram, MapPin, MessageCircle } from 'lucide-react'
+import { Instagram, MapPin } from 'lucide-react'
 import { useState } from 'react'
 import { AddToOrder } from '../../components/AddToOrder'
+import { WhatsAppIcon } from '../../components/WhatsAppIcon'
 import type { MenuItem } from '../../lib/types'
 import type { MenuTemplateProps } from '../types'
 import { useInView } from '../useInView'
@@ -164,7 +165,7 @@ export default function KioskTemplate(props: MenuTemplateProps) {
             <div className="footer-contact-grid" style={{ '--footer-contact-count': footerContactCount } as React.CSSProperties}>
               {restaurant.whatsapp && (
                 <a className="footer-contact-item footer-contact-item-accent" href={`https://wa.me/${restaurant.whatsapp.replace(/\D/g, '')}`} target="_blank" rel="noreferrer">
-                  <span className="footer-contact-icon"><MessageCircle /></span>
+                  <span className="footer-contact-icon"><WhatsAppIcon /></span>
                   <span className="footer-contact-copy"><small>WhatsApp</small><strong>{t('Message us', 'راسلنا الآن')}</strong></span>
                 </a>
               )}

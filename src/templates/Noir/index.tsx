@@ -1,6 +1,7 @@
-import { Instagram, MapPin, MessageCircle } from 'lucide-react'
+import { Instagram, MapPin } from 'lucide-react'
 import { useState } from 'react'
 import { AddToOrder } from '../../components/AddToOrder'
+import { WhatsAppIcon } from '../../components/WhatsAppIcon'
 import type { MenuItem } from '../../lib/types'
 import type { MenuTemplateProps } from '../types'
 import { useInView } from '../useInView'
@@ -143,7 +144,7 @@ export default function NoirTemplate(props: MenuTemplateProps) {
         <div className={styles.contacts}>
           {restaurant.whatsapp && (
             <a className={styles.contact} href={`https://wa.me/${restaurant.whatsapp.replace(/\D/g, '')}`} target="_blank" rel="noreferrer">
-              <MessageCircle /> {t('Message us', 'راسلنا')}
+              <WhatsAppIcon /> {t('Message us', 'راسلنا')}
             </a>
           )}
           {(restaurant.address_en || restaurant.address_ar) && (

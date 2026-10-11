@@ -1,6 +1,7 @@
-import { ChevronUp, Instagram, MapPin, MessageCircle } from 'lucide-react'
+import { ChevronUp, Instagram, MapPin } from 'lucide-react'
 import { useState } from 'react'
 import { AddToOrder } from '../../components/AddToOrder'
+import { WhatsAppIcon } from '../../components/WhatsAppIcon'
 import type { Category, MenuItem } from '../../lib/types'
 import type { MenuTemplateProps } from '../types'
 import { useActiveSlide } from '../useActiveSlide'
@@ -160,7 +161,7 @@ export default function ReelTemplate(props: MenuTemplateProps) {
             <div className={styles.endContacts}>
               {restaurant.whatsapp && (
                 <a className={styles.endContact} href={`https://wa.me/${restaurant.whatsapp.replace(/\D/g, '')}`} target="_blank" rel="noreferrer">
-                  <MessageCircle /> {t('Message us', 'راسلنا')}
+                  <WhatsAppIcon /> {t('Message us', 'راسلنا')}
                 </a>
               )}
               {address && (
