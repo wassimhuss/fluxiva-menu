@@ -86,6 +86,7 @@ Build a curated **Fluxiva Gallery** that lets every restaurant owner either sele
 
 - [x] Let one owner account manage multiple places, with an independent menu, settings, public slug, images, and analytics for each place.
 - [x] Add a persistent place switcher and an in-dashboard bilingual **Add another place** workflow.
+- [x] Make mobile place management discoverable with a visible **Your places / Add place** row on the overview.
 - [x] Add a public bilingual `/b/:slug` branch selector for the brand-level QR code.
 - [x] Keep direct `/m/:slug` menu links for a specific place.
 - [x] Backfill every existing restaurant into its own brand before removing the one-restaurant-per-owner database constraint.

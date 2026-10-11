@@ -10,6 +10,7 @@ const arabic: Record<string, string> = {
   'place': 'فرع',
   'places': 'فروع',
   'Your places': 'فروعك',
+  'Add place': 'إضافة فرع',
   'Choose a place': 'اختر الفرع',
   'Each place has its own menu, settings and analytics.': 'لكل فرع قائمته وإعداداته وتحليلاته الخاصة.',
   'Add another place': 'إضافة فرع آخر',

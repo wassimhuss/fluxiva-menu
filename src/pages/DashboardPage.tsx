@@ -754,6 +754,14 @@ export function DashboardPage() {
           {panel === 'overview' && <>
             <div className="page-heading overview-page-heading"><div><span className="eyebrow"><span /> {t('Good to see you')}</span><h1>{t('Your menu at a glance.')}</h1></div><button className="button button-primary overview-add-item" onClick={() => { setPanel('menu'); openItem() }}><Plus /> {t('Add menu item')}</button></div>
             <section className="mobile-section-hub" aria-labelledby="mobile-section-hub-title">
+              <div className="mobile-places-bar">
+                <button type="button" className="mobile-places-switcher" onClick={() => setPlaceSwitcherOpen(true)}>
+                  <span className="mobile-section-icon"><Store aria-hidden="true" /></span>
+                  <span><b>{t('Your places')}</b><small>{restaurants.length} {t(restaurants.length === 1 ? 'place' : 'places')}</small></span>
+                  <DirectionalChevron aria-hidden="true" />
+                </button>
+                <button type="button" className="button button-small button-primary mobile-add-place" onClick={openPlaceCreator}><Plus aria-hidden="true" /> {t('Add place')}</button>
+              </div>
               <div className="mobile-section-hub-heading"><div><span className="eyebrow"><span /> {t('Workspace')}</span><h2 id="mobile-section-hub-title">{t('What would you like to manage?')}</h2><p>{t('Choose an area to continue.')}</p></div></div>
               <div className="mobile-section-grid">
                 <button className="mobile-section-card mobile-section-card-primary" onClick={() => setPanel('menu')}><span className="mobile-section-icon"><Menu /></span><span><b>{t('Menu editor')}</b><small>{menu.items.length} {t('items')} · {menu.categories.length} {t('Categories').toLowerCase()}</small></span><DirectionalChevron /></button>

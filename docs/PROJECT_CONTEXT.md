@@ -164,7 +164,7 @@ The first restaurant also creates the owner's brand. Creating any place sets `su
 
 The owner dashboard supports:
 
-- Switching between all places without leaving the dashboard and adding another bilingual place under the same brand.
+- Switching between all places without leaving the dashboard and adding another bilingual place under the same brand. The mobile overview exposes a visible **Your places / Add place** row; the current restaurant name also opens the place switcher on every dashboard panel.
 - Overview counts and trial/subscription state.
 - Category/item creation, editing, deletion, and ordering.
 - Item availability toggles and sold-out presentation.
