@@ -103,6 +103,8 @@ Migration `020_item_extras.sql` adds the `menu_items.extras` JSON array used for
 
 Migration `021_multi_place_brands.sql` creates the owner-level brand used by the shared QR destination, backfills every existing restaurant into a brand, adds `restaurants.brand_id`, and then removes the old unique owner constraint so one account can create multiple places. It was applied to the configured production project on 2026-10-11. Apply it after `020` on any other environment. The migration also adds explicit grants and RLS for public brand reads and owner mutations; a restaurant can only reference a brand owned by the same authenticated user.
 
+Migration `022_branch_visibility_and_deletion.sql` adds `restaurants.is_published` (default true), tightens public restaurant/category/item/brand reads and contact/view RPCs for hidden branches, and adds the authenticated owner-scoped `owner_delete_place` RPC. It was tested in an isolated PostgreSQL instance and applied to the configured production project on 2026-10-11, preserving both existing branches. Apply it after `021` on other environments before deploying the new branch controls. No broad restaurant DELETE grant is added. The RPC requires the exact menu slug and retains at least one place, locking the brand to serialize concurrent deletes. Storage files are deliberately retained (including any brand-logo references); production asset garbage collection remains a backend follow-up.
+
 ## 4. Verification by risk
 
 ### Documentation-only

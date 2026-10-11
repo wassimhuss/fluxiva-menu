@@ -116,7 +116,7 @@ One brand per owner. It owns the shared public branch-selector slug plus bilingu
 
 ### `restaurants`
 
-Each row is an independently managed place attached to the owner's brand through `brand_id`. An owner may have many places. Important fields include the unique direct-menu `slug`, bilingual identity and address fields, logo/cover URLs, contact links, color, default language, opening state, the `show_item_images` food-photo preference, subscription status, and trial/subscription expiry timestamps. Subscription eligibility remains per place.
+Each row is an independently managed place attached to the owner's brand through `brand_id`. An owner may have many places. Important fields include the unique direct-menu `slug`, bilingual identity and address fields, logo/cover URLs, contact links, color, default language, opening state, the `show_item_images` food-photo preference, subscription status, and trial/subscription expiry timestamps. Subscription eligibility remains per place. `is_published` (default true) independently controls public visibility: hidden branches disappear from the brand selector and cannot serve a direct public menu, contact-card RPC, or view-count RPC. Owners can still edit them; hiding does not change billing or the temporarily-closed setting.
 
 ### `menu_categories`
 
@@ -165,6 +165,7 @@ The first restaurant also creates the owner's brand. Creating any place sets `su
 The owner dashboard supports:
 
 - Switching between all places without leaving the dashboard and adding another bilingual place under the same brand. The mobile overview exposes a visible **Your places / Add place** row; the current restaurant name also opens the place switcher on every dashboard panel.
+- The place switcher offers **Hide / Show branch** and **Delete branch**. Hiding requires confirmation and showing is reversible in one tap. Deleting requires the exact menu slug and permanently removes that branch's categories, items and analytics, without changing the brand QR or other places. The protected `owner_delete_place` RPC validates ownership and serializes deletions on the owner's brand; the last remaining place cannot be deleted, but can be hidden. Deleting the selected place switches to another place.
 - Overview counts and trial/subscription state.
 - Category/item creation, editing, deletion, and ordering.
 - Item availability toggles and sold-out presentation.
@@ -216,6 +217,7 @@ Supabase migrations are currently expected to be run manually in sequence in the
 - `DashboardPage.tsx` owns many workflows and is a strong candidate for component/hook extraction.
 - Excel import batches categories and items separately. A failed item insert can leave newly created empty categories, although no partial set of items is inserted.
 - Demo-mode mutations are not persisted across reloads.
+- Branch deletion removes database menu records, not Storage objects. Previously uploaded `menu-assets` files may remain at their existing public URLs; cleanup needs a trusted backend job. The owner cannot delete that folder after its restaurant row is gone because Storage RLS correctly requires an existing owned restaurant. Shared gallery assets and brand logos must not be removed by branch deletion.
 - The landing page imports Google Fonts over the network; provide a fallback/self-hosting plan if offline or privacy requirements change.
 - The `/platform` route shares the owner UI route guard. Server-side RPC authorization is the actual security boundary.
 - Keep `.node-version`, `package.json` engines, and Render's `NODE_VERSION` aligned on Node 22. The app deliberately does not inherit Render's moving default Node version.

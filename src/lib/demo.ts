@@ -46,7 +46,7 @@ export const demoMenu: RestaurantMenu = {
     description_en: 'Traditional Lebanese oven favorites, baked fresh.', description_ar: 'أطيب المخبوزات اللبنانية، طازجة من الفرن.', logo_url: '/hilal-oven-logo.png', cover_image_url: '/hilal-oven-cover.jpg', primary_color: '#4f5535',
     phone: '+961 71 636 189', whatsapp: '+96171636189', instagram: '@hilaloven', maps_url: 'https://maps.google.com/?q=Tripoli,Lebanon',
     address_en: 'Tripoli - Lebanon', address_ar: 'طرابلس - لبنان', currency: 'LBP', temporarily_closed: false,
-    template_id: 'classic', show_item_images: true, takeaway_enabled: true, default_language: 'en', subscription_status: 'active',
+    is_published: true, template_id: 'classic', show_item_images: true, takeaway_enabled: true, default_language: 'en', subscription_status: 'active',
   },
   categories,
   items: [

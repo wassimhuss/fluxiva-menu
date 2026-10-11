@@ -94,6 +94,17 @@ Build a curated **Fluxiva Gallery** that lets every restaurant owner either sele
 - [x] Preserve the complete branch selection, switching, and creation flow in demo mode.
 - [x] Apply migration `021_multi_place_brands.sql` to the configured Supabase project and verify the backfill, schema constraints, policies, and anonymous branch-selector access (2026-10-11).
 
+## Branch visibility and deletion
+
+**Status:** `[x]` Core workflow verified; migration `022_branch_visibility_and_deletion.sql` applied to the configured production project on 2026-10-11. Frontend deployment and asset garbage collection remain follow-ups.
+
+- [x] Add bilingual Hide / Show and confirmed Delete controls to the owner place switcher.
+- [x] Keep hidden branch menus editable while excluding them from shared QR selection and direct public links.
+- [x] Protect deletion with server-side ownership, exact-slug confirmation, cascading menu cleanup, and a concurrent-safe last-place guard.
+- [x] Verify mobile/desktop English/Arabic flows, demo behavior, public reads, and cross-owner access (isolated PostgreSQL migration/RLS tests plus browser checks at 320/390/600/1280 px).
+- [x] Apply migration `022` to the configured Supabase project, preserving existing branches and verifying RPC privileges.
+- [ ] Add a trusted backend cleanup job for unreferenced restaurant Storage assets after branch deletion.
+
 ## Item extras
 
 **Status:** `[x]` Complete; migration `020_item_extras.sql` was applied to the configured production project on 2026-10-08.

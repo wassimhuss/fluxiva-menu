@@ -9,7 +9,7 @@ import { SubscriptionBanner } from '../components/SubscriptionBanner'
 import { GalleryPicker } from '../components/GalleryPicker'
 import { ImageLightbox } from '../components/ImageLightbox'
 import { PortraitImageCropper } from '../components/PortraitImageCropper'
-import { cleanExtras, cleanVariants, createCategories, createCategory, createItem, createItems, createRestaurant, deleteCategory, deleteItem, deleteRestaurantAsset, getMenuViewStats, getOwnerBrand, getOwnerMenu, getOwnerRestaurants, listGalleryCategories, listGalleryImages, updateCategory, updateItem, updateRestaurant, uploadRestaurantAsset, validateGallerySource } from '../lib/api'
+import { cleanExtras, cleanVariants, createCategories, createCategory, createItem, createItems, createRestaurant, deleteCategory, deleteItem, deleteRestaurant, deleteRestaurantAsset, getMenuViewStats, getOwnerBrand, getOwnerMenu, getOwnerRestaurants, listGalleryCategories, listGalleryImages, setPlacePublished, updateCategory, updateItem, updateRestaurant, uploadRestaurantAsset, validateGallerySource } from '../lib/api'
 import { useAuth } from '../lib/auth'
 import { formatMoney, localText, slugify } from '../lib/format'
 import { dashboardText } from '../lib/dashboardI18n'
@@ -24,6 +24,7 @@ type ItemDraft = { category_id: string; name_en: string; name_ar: string; descri
 type ImagePreview = { url: string; name: string }
 type RestaurantSettings = Pick<Restaurant, 'name_en' | 'name_ar' | 'description_en' | 'description_ar' | 'whatsapp' | 'instagram' | 'address_en' | 'address_ar' | 'currency' | 'temporarily_closed' | 'takeaway_enabled' | 'default_language'>
 type PlaceDraft = Pick<Restaurant, 'name_en' | 'name_ar' | 'slug' | 'primary_color' | 'whatsapp' | 'address_en' | 'address_ar' | 'default_language'>
+type PlaceAction = { kind: 'hide' | 'delete'; restaurant: Restaurant }
 const DASHBOARD_LANGUAGE_KEY = 'fluxiva-dashboard-language'
 const SELECTED_PLACE_KEY = 'fluxiva-selected-place'
 const emptyItem = (categoryId = ''): ItemDraft => ({ category_id: categoryId, name_en: '', name_ar: '', description_en: '', description_ar: '', price: '', variants: [], extras: [], image_file: null })
@@ -58,6 +59,10 @@ export function DashboardPage() {
   const [placeModal, setPlaceModal] = useState(false)
   const [placeDraft, setPlaceDraft] = useState<PlaceDraft>(emptyPlace())
   const [placeError, setPlaceError] = useState('')
+  const [placeAction, setPlaceAction] = useState<PlaceAction | null>(null)
+  const [placeActionError, setPlaceActionError] = useState('')
+  const [placeActionBusy, setPlaceActionBusy] = useState(false)
+  const [deletePlaceSlug, setDeletePlaceSlug] = useState('')
   const [editingCategory, setEditingCategory] = useState<Category | null>(null)
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null)
   const [categoryDraft, setCategoryDraft] = useState({ name_en: '', name_ar: '' })
@@ -203,6 +208,63 @@ export function DashboardPage() {
 
   function syncRestaurantSummary(restaurant: Restaurant) {
     setRestaurants((current) => current.map((entry) => entry.id === restaurant.id ? restaurant : entry))
+  }
+
+  function requestPlaceAction(kind: PlaceAction['kind'], restaurant: Restaurant) {
+    setPlaceSwitcherOpen(false)
+    setPlaceActionError('')
+    setDeletePlaceSlug('')
+    setPlaceAction({ kind, restaurant })
+  }
+
+  function closePlaceAction() {
+    if (placeActionBusy) return
+    setPlaceAction(null)
+    setPlaceActionError('')
+    setPlaceSwitcherOpen(true)
+  }
+
+  async function changePlaceVisibility(restaurant: Restaurant, published: boolean) {
+    setPlaceActionBusy(true); setPlaceActionError('')
+    try {
+      const updated = await setPlacePublished(restaurant.id, published)
+      syncRestaurantSummary(updated)
+      setMenu((current) => current?.restaurant.id === restaurant.id ? { ...current, restaurant: { ...current.restaurant, is_published: published } } : current)
+      setPlaceAction(null)
+      setPlaceSwitcherOpen(true)
+      showSuccess(t(published ? 'Branch listed. A valid trial or subscription is still required.' : 'Branch hidden. Its menu is still saved.'))
+    } catch {
+      setPlaceActionError(t('Could not update branch visibility. Please try again.'))
+    } finally { setPlaceActionBusy(false) }
+  }
+
+  async function confirmPlaceAction(event: React.FormEvent) {
+    event.preventDefault()
+    if (!placeAction || placeActionBusy) return
+    if (placeAction.kind === 'hide') { await changePlaceVisibility(placeAction.restaurant, false); return }
+    if (deletePlaceSlug !== placeAction.restaurant.slug) return
+    setPlaceActionBusy(true); setPlaceActionError('')
+    const remaining = restaurants.filter((restaurant) => restaurant.id !== placeAction.restaurant.id)
+    try {
+      if (!remaining.length) throw new Error('Last place')
+      const replacement = menu?.restaurant.id === placeAction.restaurant.id ? await getOwnerMenu(session, remaining[0].id) : null
+      if (menu?.restaurant.id === placeAction.restaurant.id && !replacement) throw new Error('Could not load replacement')
+      await deleteRestaurant(placeAction.restaurant.id, deletePlaceSlug)
+      setRestaurants(remaining)
+      if (replacement) {
+        setMenu(structuredClone(replacement))
+        setSavedSettings(restaurantSettingsSnapshot(replacement.restaurant))
+        setPanel('overview'); setTemplateDraft(''); setColorDraft(''); setImageVisibilityDraft(null)
+        window.localStorage.setItem(SELECTED_PLACE_KEY, replacement.restaurant.id)
+        setViewStats(null)
+        getMenuViewStats(replacement.restaurant.id).then(setViewStats).catch(() => setViewStats(null))
+      }
+      setPlaceAction(null)
+      setPlaceSwitcherOpen(true)
+      showSuccess(t('Branch deleted. Your shared QR code is unchanged.'))
+    } catch {
+      setPlaceActionError(t('Could not delete this branch. Refresh your places and try again.'))
+    } finally { setPlaceActionBusy(false) }
   }
 
   async function openQr() {
@@ -750,6 +812,7 @@ export function DashboardPage() {
           {success && <div className="dashboard-toast" role="status"><Notice tone="success">{success}</Notice></div>}
           {demoMode && <Notice>{t('This preview uses sample data. Connect Supabase to save changes and create owner accounts.')}</Notice>}
           <SubscriptionBanner restaurant={menu.restaurant} language={dashboardLanguage} />
+          {menu.restaurant.is_published === false && <Notice>{t('This branch is hidden from customers. Its menu is still saved.')} <button type="button" className="hidden-branch-manage" onClick={() => setPlaceSwitcherOpen(true)}>{t('Manage branches')}</button></Notice>}
 
           {panel === 'overview' && <>
             <div className="page-heading overview-page-heading"><div><span className="eyebrow"><span /> {t('Good to see you')}</span><h1>{t('Your menu at a glance.')}</h1></div><button className="button button-primary overview-add-item" onClick={() => { setPanel('menu'); openItem() }}><Plus /> {t('Add menu item')}</button></div>
@@ -1015,7 +1078,41 @@ export function DashboardPage() {
 
       {settingsExitConfirmationOpen && <div className="modal-backdrop"><div className="modal-card design-exit-modal" role="dialog" aria-modal="true" aria-labelledby="settings-exit-title" dir={dashboardLanguage === 'ar' ? 'rtl' : 'ltr'}><button type="button" className="modal-close" aria-label={t('Keep editing')} disabled={saving} onClick={() => setSettingsExitConfirmationOpen(false)}><X /></button><span className="eyebrow"><span /> {t('Unsaved changes')}</span><h2 id="settings-exit-title">{t('Save your restaurant details?')}</h2><p>{t('You changed your restaurant details. Save them to update your menu, or leave without saving and keep the current details.')}</p><div className="design-exit-actions"><button type="button" className="button button-primary" disabled={saving} onClick={() => void saveAndLeaveSettings()}>{saving ? t('Saving…') : t('Save changes')}</button><button type="button" className="button button-outline" disabled={saving} onClick={leaveSettingsWithoutSaving}>{t('Leave without saving')}</button><button type="button" className="button button-ghost" disabled={saving} onClick={() => setSettingsExitConfirmationOpen(false)}>{t('Keep editing')}</button></div></div></div>}
 
-      {placeSwitcherOpen && <div className="modal-backdrop"><div className="modal-card place-switcher-modal" role="dialog" aria-modal="true" aria-labelledby="place-switcher-title"><button type="button" className="modal-close" aria-label={t('Close')} onClick={() => setPlaceSwitcherOpen(false)}><X /></button><span className="eyebrow"><span /> {brand ? localText(dashboardLanguage, brand.name_en, brand.name_ar) : t('Your places')}</span><h2 id="place-switcher-title">{t('Choose a place')}</h2><p>{t('Each place has its own menu, settings and analytics.')}</p><div className="owner-place-list">{restaurants.map((restaurant) => <button type="button" key={restaurant.id} className={restaurant.id === menu.restaurant.id ? 'selected' : ''} onClick={() => void switchPlace(restaurant.id)}><span className="mini-monogram" style={{ backgroundColor: restaurant.primary_color }}>{restaurant.name_en.slice(0, 2).toUpperCase()}</span><span><b>{localText(dashboardLanguage, restaurant.name_en, restaurant.name_ar)}</b><small>{localText(dashboardLanguage, restaurant.address_en || restaurant.slug, restaurant.address_ar || restaurant.slug)}</small></span>{restaurant.id === menu.restaurant.id ? <CheckCircle2 /> : <DirectionalChevron />}</button>)}</div><button type="button" className="button button-primary full" onClick={openPlaceCreator}><Plus /> {t('Add another place')}</button></div></div>}
+      {placeSwitcherOpen && <div className="modal-backdrop"><div className="modal-card place-switcher-modal" role="dialog" aria-modal="true" aria-labelledby="place-switcher-title">
+        <button type="button" className="modal-close" aria-label={t('Close')} disabled={placeActionBusy} onClick={() => { setPlaceSwitcherOpen(false); setPlaceActionError('') }}><X /></button>
+        <span className="eyebrow"><span /> {brand ? localText(dashboardLanguage, brand.name_en, brand.name_ar) : t('Your places')}</span>
+        <h2 id="place-switcher-title">{t('Choose a place')}</h2><p>{t('Each place has its own menu, settings and analytics.')}</p>
+        {placeActionError && <Notice tone="error">{placeActionError}</Notice>}
+        <div className="owner-place-list">{restaurants.map((restaurant) => <article key={restaurant.id} className={`owner-place-card${restaurant.id === menu.restaurant.id ? ' selected' : ''}`}>
+          <button type="button" className="owner-place-select" disabled={placeActionBusy} onClick={() => void switchPlace(restaurant.id)}>
+            <span className="mini-monogram" style={{ backgroundColor: restaurant.primary_color }}>{restaurant.name_en.slice(0, 2).toUpperCase()}</span>
+            <span><b>{localText(dashboardLanguage, restaurant.name_en, restaurant.name_ar)}</b><small>{localText(dashboardLanguage, restaurant.address_en || restaurant.slug, restaurant.address_ar || restaurant.slug)}</small></span>
+            {restaurant.id === menu.restaurant.id ? <CheckCircle2 aria-hidden="true" /> : <DirectionalChevron aria-hidden="true" />}
+          </button>
+          <div className="owner-place-controls">
+            <span className={`owner-place-status${restaurant.is_published === false ? ' hidden' : ''}`}>{t(restaurant.is_published === false ? 'Hidden' : 'Listed')}</span>
+            <button type="button" disabled={placeActionBusy} aria-label={`${t(restaurant.is_published === false ? 'Show branch' : 'Hide branch')}: ${localText(dashboardLanguage, restaurant.name_en, restaurant.name_ar)}`} onClick={() => restaurant.is_published === false ? void changePlaceVisibility(restaurant, true) : requestPlaceAction('hide', restaurant)}>{restaurant.is_published === false ? <Eye /> : <EyeOff />}{t(restaurant.is_published === false ? 'Show branch' : 'Hide branch')}</button>
+            <button type="button" className="danger" disabled={placeActionBusy || restaurants.length <= 1} aria-label={`${t('Delete branch')}: ${localText(dashboardLanguage, restaurant.name_en, restaurant.name_ar)}`} onClick={() => requestPlaceAction('delete', restaurant)}><Trash2 />{t('Delete branch')}</button>
+          </div>
+        </article>)}</div>
+        <p className="place-management-hint">{t('Hidden branches keep their menu but disappear from the QR branch list and public menu links. Showing a branch still requires a valid trial or subscription.')}</p>
+        {restaurants.length <= 1 && <p className="place-management-hint">{t('Keep at least one place. You can hide your last branch instead of deleting it.')}</p>}
+        <button type="button" className="button button-primary full" disabled={placeActionBusy} onClick={openPlaceCreator}><Plus /> {t('Add another place')}</button>
+      </div></div>}
+
+      {placeAction && <div className="modal-backdrop"><form className="modal-card place-action-modal" role="dialog" aria-modal="true" aria-labelledby="place-action-title" onSubmit={confirmPlaceAction}>
+        <button type="button" className="modal-close" aria-label={t('Close')} disabled={placeActionBusy} onClick={closePlaceAction}><X /></button>
+        <span className="eyebrow"><span /> {t('Manage branches')}</span>
+        <h2 id="place-action-title">{t(placeAction.kind === 'delete' ? 'Delete this branch?' : 'Hide this branch?')}</h2>
+        <div className="place-action-name"><b>{placeAction.restaurant.name_en}</b><small dir="rtl">{placeAction.restaurant.name_ar}</small></div>
+        <p>{t(placeAction.kind === 'delete' ? 'This permanently deletes this branch, its categories, items and analytics. This cannot be undone. Your other branches and shared QR code stay unchanged.' : 'Customers will no longer see this branch in the QR branch list or open its public menu link. Its menu stays saved, and you can show it again anytime.')}</p>
+        {placeActionError && <Notice tone="error">{placeActionError}</Notice>}
+        {placeAction.kind === 'delete' && <label>{t('Type the menu link to confirm')}<input autoFocus required dir="ltr" autoComplete="off" spellCheck={false} value={deletePlaceSlug} onChange={(event) => setDeletePlaceSlug(event.target.value)} placeholder={placeAction.restaurant.slug} disabled={placeActionBusy} /><small className="field-hint" dir="ltr">{placeAction.restaurant.slug}</small></label>}
+        <div className="button-row modal-actions">
+          <button type="button" className="button button-outline" disabled={placeActionBusy} onClick={closePlaceAction}>{t('Cancel')}</button>
+          <button type="submit" className={`button ${placeAction.kind === 'delete' ? 'button-danger' : 'button-primary'}`} disabled={placeActionBusy || (placeAction.kind === 'delete' && deletePlaceSlug !== placeAction.restaurant.slug)}>{placeActionBusy ? t('Saving…') : t(placeAction.kind === 'delete' ? 'Delete branch' : 'Hide branch')}</button>
+        </div>
+      </form></div>}
 
       {placeModal && <div className="modal-backdrop"><form className="modal-card modal-large place-create-modal" onSubmit={savePlace}><button type="button" className="modal-close" aria-label={t('Close')} onClick={() => setPlaceModal(false)}><X /></button><span className="eyebrow"><span /> {t('New place')}</span><h2>{t('Add another place')}</h2><p>{t('This place will have its own menu and public link under the same brand QR code.')}</p>{placeError && <Notice tone="error">{placeError}</Notice>}<div className="form-grid"><label>{t('English name')}<input required autoFocus value={placeDraft.name_en} onChange={(event) => setPlaceDraft({ ...placeDraft, name_en: event.target.value, slug: placeDraft.slug || slugify(event.target.value) })} placeholder="Hilal Oven — Beirut" /></label><label>{t('Arabic name')}<input dir="rtl" required value={placeDraft.name_ar} onChange={(event) => setPlaceDraft({ ...placeDraft, name_ar: event.target.value })} placeholder="فرن الهلال — بيروت" /></label><label>{t('Menu link')}<div className="slug-input"><span>/m/</span><input required value={placeDraft.slug} onChange={(event) => setPlaceDraft({ ...placeDraft, slug: slugify(event.target.value) })} placeholder="hilal-beirut" /></div></label><label>{t('WhatsApp number')}<input value={placeDraft.whatsapp} onChange={(event) => setPlaceDraft({ ...placeDraft, whatsapp: event.target.value })} placeholder="+961 70 123 456" /></label><label>{t('Address in English')}<textarea required value={placeDraft.address_en} onChange={(event) => setPlaceDraft({ ...placeDraft, address_en: event.target.value })} placeholder="Hamra, Beirut" /></label><label>{t('Address in Arabic')}<textarea dir="rtl" required value={placeDraft.address_ar} onChange={(event) => setPlaceDraft({ ...placeDraft, address_ar: event.target.value })} placeholder="الحمرا، بيروت" /></label></div><button className="button button-primary full" disabled={saving}>{saving ? t('Creating…') : t('Create place')}</button></form></div>}
 

@@ -589,12 +589,27 @@ html.menu-preview-document::-webkit-scrollbar,body.menu-preview-document::-webki
 /* Place management stays lightweight: switching never leaves the dashboard. */
 .place-switcher-modal{width:min(520px,calc(100% - 30px))}
 .owner-place-list{display:flex;flex-direction:column;gap:8px;margin:19px 0}
-.owner-place-list>button{width:100%;display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:11px;padding:11px;border:1px solid var(--line);border-radius:12px;background:#fafbf9;color:var(--ink);text-align:start}
-.owner-place-list>button.selected{border-color:#9fb9b0;background:#eef5f2;box-shadow:0 0 0 2px rgba(23,63,53,.06)}
-.owner-place-list>button>span:nth-child(2){display:flex;flex-direction:column;gap:3px;min-width:0}
+.owner-place-card{overflow:hidden;border:1px solid var(--line);border-radius:12px;background:#fafbf9}
+.owner-place-card.selected{border-color:#9fb9b0;background:#eef5f2;box-shadow:0 0 0 2px rgba(23,63,53,.06)}
+.owner-place-select{width:100%;display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:11px;min-height:62px;padding:11px;border:0;background:none;color:var(--ink);text-align:start}
+.owner-place-select>span:nth-child(2){display:flex;flex-direction:column;gap:3px;min-width:0}
+.owner-place-select .mini-monogram{color:#fff}
 .owner-place-list b,.owner-place-list small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .owner-place-list b{font-size:12px}.owner-place-list small{font-size:9px;color:var(--muted)}
 .owner-place-list svg{width:17px;color:var(--green)}
+.owner-place-controls{display:flex;align-items:center;gap:7px;flex-wrap:wrap;padding:0 10px 8px}
+.owner-place-status{margin-inline-end:auto;color:var(--green);font-size:10px;font-weight:800}
+.owner-place-status.hidden{color:var(--muted)}
+.owner-place-controls button{display:inline-flex;align-items:center;justify-content:center;gap:5px;min-height:44px;padding:0 8px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--green);font-size:10px;font-weight:700}
+.owner-place-controls .danger,.owner-place-controls .danger svg{color:#a24734}
+.owner-place-controls button:disabled{opacity:.45;cursor:not-allowed}
+.owner-place-controls svg{width:14px;height:14px}
+.place-management-hint{font-size:11px!important;line-height:1.5}
+.hidden-branch-manage{border:0;background:none;color:inherit;padding:4px;text-decoration:underline;font-weight:700}
+.place-action-name{display:flex;flex-direction:column;gap:4px;margin:16px 0;color:var(--ink)}
+.place-action-name small{color:var(--muted);text-align:start}
+.place-action-modal .modal-actions{justify-content:flex-end;flex-wrap:wrap}
+.owner-place-select:focus-visible,.owner-place-controls button:focus-visible,.hidden-branch-manage:focus-visible{outline:3px solid var(--orange);outline-offset:-3px}
 .new-place-modal{width:min(700px,calc(100% - 30px))}
 
 @media(max-width:600px){

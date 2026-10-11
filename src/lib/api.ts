@@ -1,6 +1,7 @@
 import type { Session } from '@supabase/supabase-js'
 import { demoBrand, demoContactCard, demoGalleryCategories, demoGalleryImages, demoMenu, demoMenus, demoMenuViewStats, demoPlatformAudit, demoPlatformRestaurants, demoRestaurants } from './demo'
 import { supabase } from './supabase'
+import { subscriptionState } from './subscription'
 import type { AdminRole, BrandGroup, BrandPlaces, Category, GalleryCategory, GalleryImage, ItemExtra, MenuContactCard, MenuItem, MenuViewDay, MenuViewStats, PlatformAuditEntry, PlatformRestaurant, Restaurant, RestaurantMenu, Variant } from './types'
 
 type RestaurantInput = Pick<Restaurant, 'name_en' | 'name_ar' | 'slug' | 'primary_color' | 'phone' | 'whatsapp' | 'instagram' | 'maps_url' | 'address_en' | 'address_ar' | 'currency' | 'temporarily_closed' | 'default_language'>
@@ -86,16 +87,17 @@ async function optimizeImage(file: File, purpose: AssetPurpose) {
 }
 
 export async function getPublicMenu(slug: string): Promise<RestaurantMenu | null> {
-  if (!supabase) return demoMenus.find((menu) => menu.restaurant.slug === slug) ?? null
+  if (!supabase) return demoMenus.find((menu) => menu.restaurant.slug === slug && isPublicPlace(menu.restaurant)) ?? null
 
   const { data: restaurant, error } = await supabase
     .from('restaurants')
     .select('*')
     .eq('slug', slug)
+    .eq('is_published', true)
     .in('subscription_status', ['trial', 'active'])
     .maybeSingle()
   if (error) throw error
-  if (!restaurant) return null
+  if (!restaurant || !isPublicPlace(restaurant)) return null
 
   const [categoriesResult, itemsResult] = await Promise.all([
     supabase.from('menu_categories').select('*').eq('restaurant_id', restaurant.id).order('sort_order'),
@@ -108,7 +110,7 @@ export async function getPublicMenu(slug: string): Promise<RestaurantMenu | null
 
 /** Loads the lightweight branch chooser reached by a brand-level QR code. */
 export async function getPublicBrand(slug: string): Promise<BrandPlaces | null> {
-  if (!supabase) return ['demo', demoBrand.slug].includes(slug) ? { brand: demoBrand, restaurants: [...demoRestaurants] } : null
+  if (!supabase) return ['demo', demoBrand.slug].includes(slug) ? { brand: demoBrand, restaurants: demoRestaurants.filter(isPublicPlace) } : null
 
   const { data: brand, error } = await supabase.from('brands').select('*').eq('slug', slug).maybeSingle()
   if (error) throw error
@@ -117,10 +119,15 @@ export async function getPublicBrand(slug: string): Promise<BrandPlaces | null> 
     .from('restaurants')
     .select('*')
     .eq('brand_id', brand.id)
+    .eq('is_published', true)
     .in('subscription_status', ['trial', 'active'])
     .order('name_en')
   if (restaurantsError) throw restaurantsError
-  return { brand: brand as BrandGroup, restaurants: (restaurants ?? []) as Restaurant[] }
+  return { brand: brand as BrandGroup, restaurants: ((restaurants ?? []) as Restaurant[]).filter(isPublicPlace) }
+}
+
+function isPublicPlace(restaurant: Restaurant) {
+  return restaurant.is_published !== false && subscriptionState(restaurant).serving
 }
 
 /**
@@ -128,7 +135,7 @@ export async function getPublicBrand(slug: string): Promise<BrandPlaces | null> 
  * the slug does not exist at all.
  */
 export async function getMenuContactCard(slug: string): Promise<MenuContactCard | null> {
-  if (!supabase) return slug === 'demo' ? demoContactCard : null
+  if (!supabase) return slug === 'demo' && demoRestaurants.some((restaurant) => restaurant.slug === slug && restaurant.is_published !== false) ? demoContactCard : null
   const { data, error } = await supabase.rpc('menu_contact_card', { slug_input: slug })
   if (error) return null
   const card = (data as MenuContactCard[] | null)?.[0]
@@ -237,6 +244,7 @@ export async function createRestaurant(session: Session | null, input: Restauran
       ...input,
       id: crypto.randomUUID(),
       brand_id: demoBrand.id,
+      is_published: true,
       subscription_status: 'trial',
       trial_ends_at: new Date(Date.now() + 14 * 86400000).toISOString(),
     }
@@ -259,8 +267,40 @@ export async function createRestaurant(session: Session | null, input: Restauran
 }
 
 export async function updateRestaurant(id: string, values: Partial<Restaurant>) {
-  if (!supabase) return
+  if (!supabase) {
+    const restaurant = demoRestaurants.find((place) => place.id === id)
+    if (restaurant) Object.assign(restaurant, values)
+    return
+  }
   const { error } = await supabase.from('restaurants').update(values).eq('id', id)
+  if (error) throw error
+}
+
+/** Persist before changing dashboard state; owners retain access to hidden places. */
+export async function setPlacePublished(id: string, published: boolean): Promise<Restaurant> {
+  if (!supabase) {
+    const restaurant = demoRestaurants.find((place) => place.id === id)
+    if (!restaurant) throw new Error('Could not update branch visibility.')
+    restaurant.is_published = published
+    return { ...restaurant }
+  }
+  const { data, error } = await supabase.from('restaurants').update({ is_published: published }).eq('id', id).select().single()
+  if (error) throw error
+  return data as Restaurant
+}
+
+/** The RPC checks ownership, the typed slug, and the last-place guard atomically. */
+export async function deleteRestaurant(id: string, slugConfirmation: string) {
+  if (!supabase) {
+    const index = demoRestaurants.findIndex((place) => place.id === id && place.slug === slugConfirmation)
+    if (index < 0) throw new Error('The menu link does not match.')
+    if (demoRestaurants.length <= 1) throw new Error('Keep at least one place. Hide it instead.')
+    demoRestaurants.splice(index, 1)
+    const menuIndex = demoMenus.findIndex((entry) => entry.restaurant.id === id)
+    if (menuIndex >= 0) demoMenus.splice(menuIndex, 1)
+    return
+  }
+  const { error } = await supabase.rpc('owner_delete_place', { restaurant_id_input: id, slug_confirmation: slugConfirmation })
   if (error) throw error
 }
 

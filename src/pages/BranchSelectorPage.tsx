@@ -26,7 +26,7 @@ export function BranchSelectorPage() {
   const t = (english: string, arabicText: string) => localText(language, english, arabicText)
 
   if (!data || error) {
-    return <main className="branch-selector-empty" dir={arabic ? 'rtl' : 'ltr'}><Store /><h1>{t('Branches unavailable', 'الفروع غير متاحة')}</h1><p>{error || t('This restaurant could not be found.', 'لم نتمكن من العثور على هذا المطعم.')}</p></main>
+    return <main className="branch-selector-empty"><Store /><h1>Branches unavailable</h1><p>{error || 'No branches are available right now.'}</p><p dir="rtl" lang="ar">لا توجد فروع متاحة حاليًا.</p></main>
   }
 
   const { brand, restaurants } = data
