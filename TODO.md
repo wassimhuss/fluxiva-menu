@@ -82,7 +82,7 @@ Build a curated **Fluxiva Gallery** that lets every restaurant owner either sele
 
 ## Multi-place accounts and one brand QR
 
-**Status:** `[x]` Local implementation complete; migration `021_multi_place_brands.sql` still needs to be applied to configured Supabase environments.
+**Status:** `[x]` Complete; migration `021_multi_place_brands.sql` was applied to the configured production Supabase project on 2026-10-11.
 
 - [x] Let one owner account manage multiple places, with an independent menu, settings, public slug, images, and analytics for each place.
 - [x] Add a persistent place switcher and an in-dashboard bilingual **Add another place** workflow.
@@ -91,7 +91,7 @@ Build a curated **Fluxiva Gallery** that lets every restaurant owner either sele
 - [x] Backfill every existing restaurant into its own brand before removing the one-restaurant-per-owner database constraint.
 - [x] Keep owner and public access protected by RLS, including validation that a place can only join its owner's brand.
 - [x] Preserve the complete branch selection, switching, and creation flow in demo mode.
-- [ ] Apply migration `021_multi_place_brands.sql` to the configured Supabase project and verify anonymous/owner access against production-like data.
+- [x] Apply migration `021_multi_place_brands.sql` to the configured Supabase project and verify the backfill, schema constraints, policies, and anonymous branch-selector access (2026-10-11).
 
 ## Item extras
 

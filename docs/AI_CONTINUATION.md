@@ -101,7 +101,7 @@ Migration `019_platform_gallery_folder_loading.sql` adds the super-admin RPC ove
 
 Migration `020_item_extras.sql` adds the `menu_items.extras` JSON array used for optional bilingual add-ons and constrains it to an array value. It was applied to the configured production project on 2026-10-08. Apply it after `019` on any other Supabase environment before saving extras. RLS is unchanged because the data remains on the owner-protected `menu_items` row; demo mode includes sample extras without requiring the migration.
 
-Migration `021_multi_place_brands.sql` creates the owner-level brand used by the shared QR destination, backfills every existing restaurant into a brand, adds `restaurants.brand_id`, and then removes the old unique owner constraint so one account can create multiple places. Apply it after `020`. The migration also adds explicit grants and RLS for public brand reads and owner mutations; a restaurant can only reference a brand owned by the same authenticated user. Until it is applied, configured Supabase deployments cannot load `/b/:slug` or create a second place, while demo mode remains fully usable.
+Migration `021_multi_place_brands.sql` creates the owner-level brand used by the shared QR destination, backfills every existing restaurant into a brand, adds `restaurants.brand_id`, and then removes the old unique owner constraint so one account can create multiple places. It was applied to the configured production project on 2026-10-11. Apply it after `020` on any other environment. The migration also adds explicit grants and RLS for public brand reads and owner mutations; a restaurant can only reference a brand owned by the same authenticated user.
 
 ## 4. Verification by risk
 
