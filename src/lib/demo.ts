@@ -37,7 +37,7 @@ function item(category: string, name_en: string, name_ar: string, description_en
   const images = categoryImages[category] ?? []
   const imageIndex = categoryImageCounts[category] ?? 0
   categoryImageCounts[category] = imageIndex + 1
-  return { id: `demo-item-${itemNumber}`, restaurant_id: 'demo-restaurant', category_id: categoryId(category), name_en, name_ar, description_en, description_ar, price, image_url: images[imageIndex % images.length], variants, extras, available: true, sort_order: itemNumber }
+  return { id: `demo-item-${itemNumber}`, restaurant_id: 'demo-restaurant', category_id: categoryId(category), name_en, name_ar, description_en, description_ar, price, image_url: images[imageIndex % images.length], variants, extras, available: true, highlighted: false, sort_order: itemNumber }
 }
 
 export const demoMenu: RestaurantMenu = {

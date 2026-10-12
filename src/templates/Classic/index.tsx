@@ -1,3 +1,4 @@
+import { RecommendedBadge } from '../../components/RecommendedBadge'
 import { Instagram, MapPin } from 'lucide-react'
 import { useState } from 'react'
 import { AddToOrder } from '../../components/AddToOrder'
@@ -34,6 +35,7 @@ function MenuCard({ item, index, t, formatPrice, color, unavailableLabel, rtl, o
           <h3>{name}</h3>
           <strong style={{ color }}>{formatPrice(price)}</strong>
         </div>
+        <RecommendedBadge item={item} t={t} />
         {(item.description_en || item.description_ar) && <p>{t(item.description_en ?? '', item.description_ar ?? '')}</p>}
         {!item.available && <span className="sold-out-label">{unavailableLabel}</span>}
         {ordering && (

@@ -1,3 +1,4 @@
+import { RecommendedBadge } from '../../components/RecommendedBadge'
 import { ChevronLeft, ChevronRight, Instagram, MapPin } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { AddToOrder } from '../../components/AddToOrder'
@@ -167,6 +168,7 @@ export default function CarouselTemplate(props: MenuTemplateProps) {
         <section className={styles.caption} key={activeItem.id}>
           <span className={styles.ghostIndex} aria-hidden="true">{String(captionIndex + 1).padStart(2, '0')}</span>
           <h2 className={styles.name}>{activeName}</h2>
+          <RecommendedBadge item={activeItem} t={t} />
           {activeDesc && <p className={styles.desc}>{activeDesc}</p>}
 
           {activeItem.available && activeItem.variants?.length > 0 && (

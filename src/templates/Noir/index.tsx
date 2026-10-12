@@ -1,3 +1,4 @@
+import { RecommendedBadge } from '../../components/RecommendedBadge'
 import { Instagram, MapPin } from 'lucide-react'
 import { useState } from 'react'
 import { AddToOrder } from '../../components/AddToOrder'
@@ -39,6 +40,7 @@ function NoirItem({ item, index, t, formatPrice, rtl, ordering }: {
         <span className={styles.dots} aria-hidden="true" />
         <strong className={styles.price}>{formatPrice(price)}</strong>
       </div>
+      <RecommendedBadge item={item} t={t} />
       {description && <p className={styles.desc}>{description}</p>}
       {!item.available && <span className={styles.soldOutLabel}>{t('Unavailable', 'غير متوفر')}</span>}
       {ordering && (

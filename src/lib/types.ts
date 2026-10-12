@@ -194,6 +194,8 @@ export interface MenuItem {
   /** Optional add-ons. Diners may choose more than one. */
   extras: ItemExtra[]
   available: boolean
+  /** Owner-selected items shown in the public menu's first Recommended section. */
+  highlighted?: boolean
   sort_order: number
 }
 

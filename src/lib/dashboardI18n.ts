@@ -5,6 +5,12 @@ import type { Language } from './types'
  * possible to add Arabic without mixing translation logic into data handling.
  */
 const arabic: Record<string, string> = {
+  'Highlight item': 'ميّز الصنف',
+  'Remove highlight': 'إزالة التمييز',
+  'Tap the star beside an item to recommend it at the top of your menu.': 'اضغط النجمة بجانب الصنف ليظهر بأول القائمة ضمن مننصحك فيه.',
+  'Item highlighted. It now appears in Recommended.': 'تم تمييز الصنف. صار يظهر ضمن مننصحك فيه.',
+  'Highlight removed.': 'تمت إزالة التمييز.',
+  'Could not update the highlight. Please try again.': 'تعذّر تغيير التمييز. حاول مجددًا.',
   'Restaurant dashboard': 'لوحة تحكم المطعم',
   'Owner workspace': 'مساحة المالك',
   'place': 'فرع',
@@ -148,6 +154,11 @@ const arabic: Record<string, string> = {
   'Hidden': 'مخفي',
   'Move item up': 'تحريك الصنف للأعلى',
   'Move item down': 'تحريك الصنف للأسفل',
+  'Move to top': 'نقل إلى أول القسم',
+  'Move to bottom': 'نقل إلى آخر القسم',
+  'Item moved to the top of its category.': 'تم نقل الصنف إلى أول القسم.',
+  'Item moved to the bottom of its category.': 'تم نقل الصنف إلى آخر القسم.',
+  'Could not reorder menu items. Please try again.': 'تعذّر تغيير ترتيب الأصناف. حاول مجددًا.',
   'Edit item': 'تعديل الصنف',
   'Delete item': 'حذف الصنف',
   'No items in this category yet.': 'لا توجد أصناف في هذا القسم بعد.',

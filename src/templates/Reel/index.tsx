@@ -1,3 +1,4 @@
+import { RecommendedBadge } from '../../components/RecommendedBadge'
 import { ChevronUp, Instagram, MapPin } from 'lucide-react'
 import { useState } from 'react'
 import { AddToOrder } from '../../components/AddToOrder'
@@ -53,6 +54,7 @@ function ReelSlide({ item, index, total, category, active, nearby, t, formatPric
         <span className={styles.counter}>{String(index + 1).padStart(2, '0')} / {String(total).padStart(2, '0')}</span>
         {category && <span className={styles.category}>{t(category.name_en, category.name_ar)}</span>}
         <h2 className={styles.name}>{name}</h2>
+        <RecommendedBadge item={item} t={t} />
         {description && <p className={styles.desc}>{description}</p>}
 
         {item.available && item.variants?.length > 0 && (

@@ -1,6 +1,6 @@
 # Fluxiva Menu — Project Context
 
-Last verified: 2026-10-11
+Last verified: 2026-10-12
 
 ## Product summary
 
@@ -126,7 +126,7 @@ Belongs to a restaurant and contains paired English/Arabic names plus `sort_orde
 
 ### `menu_items`
 
-Belongs to both a restaurant and category. Contains paired English/Arabic names and descriptions, a base price in the restaurant's currency, optional image, JSON variants, JSON extras, availability, and `sort_order`.
+Belongs to both a restaurant and category. Contains paired English/Arabic names and descriptions, a base price in the restaurant's currency, optional image, JSON variants, JSON extras, availability, the `highlighted` boolean (default false), and `sort_order`.
 
 ### `variants`
 
@@ -172,8 +172,9 @@ The owner dashboard supports:
   - `owner_finish_place_menu_copy` validates that copied files exist under the target UUID, rewrites the saved URLs together, and clears the pending flag without publishing. On failure, the client attempts to remove the new files before deleting only the new branch. A tab closure or failed cleanup can leave a hidden **Copy incomplete** branch; the owner must delete it and retry. Incomplete branches cannot be shown or selected as a copy source.
 - The place switcher offers **Hide / Show branch** and **Delete branch**. Hiding requires confirmation and showing is reversible in one tap. Deleting requires the exact menu slug and permanently removes that branch's categories, items and analytics, without changing the brand QR or other places. The protected `owner_delete_place` RPC validates ownership and serializes deletions on the owner's brand; the last remaining place cannot be deleted, but can be hidden. Deleting the selected place switches to another place.
 - Overview counts and trial/subscription state.
-- Category/item creation, editing, deletion, and ordering.
+- Category/item creation, editing, deletion, and ordering. Each item has **Move to top / Move to bottom** buttons that jump directly to the corresponding end of its own category. They remain visible on desktop and in a separate row of 44 px touch controls on phones, with bilingual tooltips and accessible labels. The first/last item disables the corresponding button; a one-item category disables both. Movement reads current category ranks, writes only the selected item's existing `sort_order` using owner RLS, and preserves the relative order of every other item. The dashboard changes its order after saving succeeds, shows a spinner while saving, and preserves the old order on failure. New/manual/Excel-imported items append after the category's highest existing rank. Demo public reads and branch switching retain moves during the same runtime; no database migration is required.
 - Item availability toggles and sold-out presentation.
+- One-tap star highlights beside menu items. Filled stars identify the owner's recommendations; saving disables the star and failures preserve its previous state. Public menus open a presentation-only **Recommended / مننصحك فيه** section first when any items are highlighted, across all eight designs. Highlighted items retain their original categories, prices, variants/extras and sold-out state, and show a bilingual recommendation badge. With no highlights the original menu opening is unchanged. Highlights belong to each branch, are preserved on branch copy, and can be changed independently. Excel imports create ordinary unhighlighted items; workbook export does not carry the highlight flag.
 - Item variants, optional priced extras, and photos.
 - A bilingual searchable Fluxiva Gallery alongside personal uploads. Owners browse curated folders such as Cold Mezza or Hot Mezza before selecting a shared photo. Shared photos are reused by URL, while personal uploads stay in the restaurant's own Storage folder.
   - Selecting a gallery photo fills any empty English and Arabic item-name fields from the photo's curated bilingual metadata. Names the owner already entered are never overwritten and remain editable.

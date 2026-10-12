@@ -129,7 +129,7 @@
   .restaurant-monogram,.restaurant-identity>img{width:58px;height:58px;font-size:21px;margin-bottom:9px}
   .restaurant-identity h1{font-size:29px;margin:5px 0 2px}
   .restaurant-identity>p{font-size:12px}
-  .category-actions .icon-button:nth-child(-n+2),.item-actions .icon-button:nth-child(-n+2){display:none}
+  .category-actions .icon-button:nth-child(-n+2){display:none}
   .category-actions{flex-wrap:wrap;justify-content:flex-end}
   .dashboard-items article{grid-template-columns:39px 1fr auto auto;gap:7px}
   .item-actions{gap:3px}
@@ -975,3 +975,30 @@ html.menu-preview-document::-webkit-scrollbar,body.menu-preview-document::-webki
   .excel-summary span{padding:8px 3px;font-size:7px}
   .excel-summary b{font-size:14px}
 }
+
+/* One-tap owner highlights: keep the star visible on narrow screens. */
+.menu-highlight-help{display:flex;align-items:center;gap:8px;font-size:12px;line-height:1.5;color:var(--muted);margin:0 0 18px}
+.menu-highlight-help svg{width:17px;height:17px;flex-shrink:0;color:var(--green)}
+.item-actions .item-highlight-toggle{color:var(--green);border:1px solid var(--line)}
+.item-actions .item-highlight-toggle.is-highlighted{background:var(--cream);border-color:var(--green)}
+.item-actions .item-highlight-toggle:focus-visible{outline:2px solid var(--green);outline-offset:3px}
+@media(max-width:600px){
+  .dashboard-items article{grid-template-columns:48px minmax(0,1fr) 30px auto;gap:5px;padding:11px 8px}
+  .dashboard-items .visibility{width:30px}
+  .item-actions{gap:3px}
+  .item-actions .item-highlight-toggle{width:36px;height:36px}
+}
+
+/* Category edge controls stay visible and touch-friendly on owner menus. */
+.dashboard-items{--item-control-size:36px}
+.dashboard-items .visibility,.dashboard-items .item-actions .icon-button{display:flex;align-items:center;justify-content:center;width:var(--item-control-size);min-width:var(--item-control-size);height:var(--item-control-size);padding:0;gap:0;flex-shrink:0}
+.dashboard-items .visibility{font-size:0;line-height:0}
+.dashboard-items .visibility svg,.dashboard-items .item-actions .icon-button svg{display:block;width:18px;height:18px;margin:0;flex:none}
+.dashboard-items .item-move{color:var(--green);border:1px solid var(--line)}
+.dashboard-items .item-move:focus-visible{outline:2px solid var(--green);outline-offset:3px}
+@media(max-width:600px){
+  .dashboard-items{--item-control-size:44px}
+  .dashboard-items article{grid-template-columns:48px minmax(0,1fr) var(--item-control-size);gap:8px;padding:12px}
+  .dashboard-items article>.item-actions{grid-column:1 / -1;gap:6px;padding-top:4px;justify-content:flex-end}
+}
+@media(prefers-reduced-motion:reduce){.item-move .spin{animation:none}}

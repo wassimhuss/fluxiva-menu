@@ -1,0 +1,19 @@
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  max-width: 100%;
+  margin-block: 5px;
+  padding: 5px 9px;
+  border-radius: 20px;
+  background: var(--cream, #f8f5ed);
+  color: var(--green, #173f35);
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.3;
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+.badge svg { flex-shrink: 0; }

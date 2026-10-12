@@ -1,3 +1,4 @@
+import { RecommendedBadge } from '../../components/RecommendedBadge'
 import { ChevronDown, Instagram, MapPin } from 'lucide-react'
 import { useState } from 'react'
 import { AddToOrder } from '../../components/AddToOrder'
@@ -27,6 +28,7 @@ function Chapter({ item, index, active, t, formatPrice, rtl, ordering }: {
       <div className={styles.chapterInner}>
         <span className={styles.index}>{String(index + 1).padStart(2, '0')}</span>
         <h2 className={styles.name}>{name}</h2>
+        <RecommendedBadge item={item} t={t} />
         {description && <p className={styles.desc}>{description}</p>}
 
         {item.available && item.variants?.length > 0 && (

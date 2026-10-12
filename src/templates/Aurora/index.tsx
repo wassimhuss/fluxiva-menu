@@ -1,3 +1,4 @@
+import { RecommendedBadge } from '../../components/RecommendedBadge'
 import { Instagram, MapPin } from 'lucide-react'
 import { useState } from 'react'
 import { AddToOrder } from '../../components/AddToOrder'
@@ -40,6 +41,7 @@ function AuroraCard({ item, index, t, formatPrice, rtl, ordering }: {
       </div>
       <div className={styles.cardBody}>
         <h3 className={styles.itemName}>{name}</h3>
+        <RecommendedBadge item={item} t={t} />
         {description && <p className={styles.desc}>{description}</p>}
         {!item.available && <span className={styles.soldOutLabel}>{t('Currently unavailable', 'غير متوفر حالياً')}</span>}
         {ordering && (

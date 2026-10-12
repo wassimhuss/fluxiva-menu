@@ -6,7 +6,7 @@ import type { AdminRole, BrandGroup, BrandPlaces, Category, GalleryCategory, Gal
 
 type RestaurantInput = Pick<Restaurant, 'name_en' | 'name_ar' | 'slug' | 'primary_color' | 'phone' | 'whatsapp' | 'instagram' | 'maps_url' | 'address_en' | 'address_ar' | 'currency' | 'temporarily_closed' | 'default_language'>
 type CategoryInput = Pick<Category, 'restaurant_id' | 'name_en' | 'name_ar' | 'sort_order'>
-type ItemInput = Pick<MenuItem, 'restaurant_id' | 'category_id' | 'name_en' | 'name_ar' | 'description_en' | 'description_ar' | 'price' | 'image_url' | 'gallery_image_id' | 'variants' | 'extras' | 'available' | 'sort_order'>
+type ItemInput = Pick<MenuItem, 'restaurant_id' | 'category_id' | 'name_en' | 'name_ar' | 'description_en' | 'description_ar' | 'price' | 'image_url' | 'gallery_image_id' | 'variants' | 'extras' | 'available' | 'highlighted' | 'sort_order'>
 type AssetPurpose = 'cover' | 'item' | 'logo' | 'gallery-thumb'
 export type GalleryImageInput = Pick<GalleryImage, 'category_id' | 'name_en' | 'name_ar' | 'tags_en' | 'tags_ar'> & Pick<GalleryImage, 'source' | 'license_notes'>
 
@@ -101,7 +101,7 @@ export async function getPublicMenu(slug: string): Promise<RestaurantMenu | null
 
   const [categoriesResult, itemsResult] = await Promise.all([
     supabase.from('menu_categories').select('*').eq('restaurant_id', restaurant.id).order('sort_order'),
-    supabase.from('menu_items').select('*').eq('restaurant_id', restaurant.id).order('sort_order'),
+    supabase.from('menu_items').select('*').eq('restaurant_id', restaurant.id).order('sort_order').order('id'),
   ])
   if (categoriesResult.error) throw categoriesResult.error
   if (itemsResult.error) throw itemsResult.error
@@ -215,7 +215,7 @@ export async function getOwnerMenu(session: Session | null, restaurantId?: strin
   if (!restaurant) return null
   const [categories, items] = await Promise.all([
     supabase.from('menu_categories').select('*').eq('restaurant_id', restaurant.id).order('sort_order'),
-    supabase.from('menu_items').select('*').eq('restaurant_id', restaurant.id).order('sort_order'),
+    supabase.from('menu_items').select('*').eq('restaurant_id', restaurant.id).order('sort_order').order('id'),
   ])
   if (categories.error) throw categories.error
   if (items.error) throw items.error
@@ -446,7 +446,7 @@ export async function deleteCategory(id: string) {
 
 export async function createItem(input: ItemInput) {
   if (!supabase) {
-    const item = { ...structuredClone(input), id: crypto.randomUUID() } as MenuItem
+    const item = { ...structuredClone(input), id: crypto.randomUUID(), highlighted: input.highlighted ?? false } as MenuItem
     demoMenus.find((entry) => entry.restaurant.id === input.restaurant_id)?.items.push(structuredClone(item))
     return item
   }
@@ -472,6 +472,51 @@ export async function updateItem(id: string, values: Partial<MenuItem>) {
   }
   const { error } = await supabase.from('menu_items').update(values).eq('id', id)
   if (error) throw error
+}
+
+/** Moves only this item; all other items keep their relative category order. */
+export async function moveItemToEdge(restaurantId: string, categoryId: string, itemId: string, edge: 'top' | 'bottom'): Promise<number> {
+  const demo = !supabase ? demoMenus.find((menu) => menu.restaurant.id === restaurantId) : undefined
+  let siblings: Pick<MenuItem, 'id' | 'sort_order'>[]
+  if (!supabase) {
+    siblings = demo?.items.filter((item) => item.category_id === categoryId) ?? []
+  } else {
+    const { data, error } = await supabase.from('menu_items').select('id, sort_order')
+      .eq('restaurant_id', restaurantId).eq('category_id', categoryId).order('sort_order').order('id')
+    if (error) throw error
+    siblings = data ?? []
+  }
+  siblings = [...siblings].sort((a, b) => a.sort_order - b.sort_order || a.id.localeCompare(b.id))
+  const item = siblings.find((entry) => entry.id === itemId)
+  if (!item) throw new Error('Item not found in this category.')
+  const boundary = edge === 'top' ? siblings[0] : siblings[siblings.length - 1]
+  if (boundary.id === itemId) return item.sort_order
+  const sortOrder = boundary.sort_order + (edge === 'top' ? -1 : 1)
+  if (sortOrder < -2147483648 || sortOrder > 2147483647) throw new Error('Could not reorder menu items.')
+  if (!supabase) {
+    item.sort_order = sortOrder
+    // Public demo reads share this runtime menu and must see the saved order.
+    demo!.items = [...demo!.items].sort((a, b) => a.sort_order - b.sort_order || a.id.localeCompare(b.id))
+    return sortOrder
+  }
+  const { data, error } = await supabase.from('menu_items').update({ sort_order: sortOrder })
+    .eq('restaurant_id', restaurantId).eq('category_id', categoryId).eq('id', itemId).select('sort_order').single()
+  if (error) throw error
+  return data.sort_order as number
+}
+
+/** Uses existing owner RLS and confirms that a matching item was updated. */
+export async function setItemHighlighted(restaurantId: string, id: string, highlighted: boolean): Promise<boolean> {
+  if (!supabase) {
+    const item = demoMenus.find((entry) => entry.restaurant.id === restaurantId)?.items.find((entry) => entry.id === id)
+    if (!item) throw new Error('Item not found.')
+    item.highlighted = highlighted
+    return highlighted
+  }
+  const { data, error } = await supabase.from('menu_items').update({ highlighted })
+    .eq('restaurant_id', restaurantId).eq('id', id).select('highlighted').single()
+  if (error) throw error
+  return data.highlighted as boolean
 }
 
 export async function deleteItem(id: string) {

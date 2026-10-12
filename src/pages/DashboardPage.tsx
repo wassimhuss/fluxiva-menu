@@ -1,4 +1,4 @@
-import { ArrowDown, ArrowUp, CheckCircle2, ChevronLeft, ChevronRight, Copy, Download, ExternalLink, Eye, EyeOff, FileSpreadsheet, ImagePlus, Images, LayoutDashboard, LogOut, Maximize2, Menu, Palette, Pencil, Plus, QrCode, RotateCcw, Settings, ShieldCheck, Store, Trash2, TriangleAlert, Upload, X } from 'lucide-react'
+import { ArrowDown, ArrowDownToLine, ArrowUp, ArrowUpToLine, CheckCircle2, ChevronLeft, ChevronRight, Copy, Download, ExternalLink, Eye, EyeOff, FileSpreadsheet, ImagePlus, Images, LayoutDashboard, LoaderCircle, LogOut, Maximize2, Menu, Palette, Pencil, Plus, QrCode, RotateCcw, Settings, ShieldCheck, Star, Store, Trash2, TriangleAlert, Upload, X } from 'lucide-react'
 import QRCode from 'qrcode'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
@@ -9,7 +9,7 @@ import { SubscriptionBanner } from '../components/SubscriptionBanner'
 import { GalleryPicker } from '../components/GalleryPicker'
 import { ImageLightbox } from '../components/ImageLightbox'
 import { PortraitImageCropper } from '../components/PortraitImageCropper'
-import { cleanExtras, cleanVariants, createCategories, createCategory, createItem, createItems, createPlaceFromMenu, createRestaurant, deleteCategory, deleteItem, deleteRestaurant, deleteRestaurantAsset, getMenuViewStats, getOwnerBrand, getOwnerMenu, getOwnerRestaurants, listGalleryCategories, listGalleryImages, setPlacePublished, updateCategory, updateItem, updateRestaurant, uploadRestaurantAsset, validateGallerySource } from '../lib/api'
+import { cleanExtras, cleanVariants, createCategories, createCategory, createItem, createItems, createPlaceFromMenu, createRestaurant, deleteCategory, deleteItem, deleteRestaurant, deleteRestaurantAsset, getMenuViewStats, getOwnerBrand, getOwnerMenu, getOwnerRestaurants, listGalleryCategories, listGalleryImages, moveItemToEdge, setItemHighlighted, setPlacePublished, updateCategory, updateItem, updateRestaurant, uploadRestaurantAsset, validateGallerySource } from '../lib/api'
 import { useAuth } from '../lib/auth'
 import { formatMoney, localText, slugify } from '../lib/format'
 import { dashboardText } from '../lib/dashboardI18n'
@@ -46,6 +46,8 @@ export function DashboardPage() {
   const [brand, setBrand] = useState<BrandGroup | null>(null)
   const [restaurants, setRestaurants] = useState<Restaurant[]>([])
   const [loading, setLoading] = useState(true)
+  const [highlightBusy, setHighlightBusy] = useState<string[]>([])
+  const [itemMoveBusy, setItemMoveBusy] = useState<{ id: string; edge: 'top' | 'bottom' } | null>(null)
   const [panel, setPanel] = useState<Panel>('overview')
   const [designStep, setDesignStep] = useState(1)
   const [settingsStep, setSettingsStep] = useState(1)
@@ -340,14 +342,16 @@ export function DashboardPage() {
       uploadedImageUrl = itemDraft.image_file ? await uploadRestaurantAsset(menu.restaurant.id, itemDraft.image_file) : undefined
       const image_url = uploadedImageUrl ?? itemDraft.image_url
       const gallery_image_id = uploadedImageUrl ? null : itemDraft.gallery_image_id ?? null
-      const input = { restaurant_id: menu.restaurant.id, category_id: itemDraft.category_id, name_en: itemDraft.name_en, name_ar: itemDraft.name_ar, description_en: itemDraft.description_en, description_ar: itemDraft.description_ar, price: Number(itemDraft.price) || 0, image_url, gallery_image_id, variants: cleanVariants(itemDraft.variants), extras: cleanExtras(itemDraft.extras), available: editingItem?.available ?? true, sort_order: editingItem?.sort_order ?? menu.items.filter((entry) => entry.category_id === itemDraft.category_id).length + 1 }
+      const input = { restaurant_id: menu.restaurant.id, category_id: itemDraft.category_id, name_en: itemDraft.name_en, name_ar: itemDraft.name_ar, description_en: itemDraft.description_en, description_ar: itemDraft.description_ar, price: Number(itemDraft.price) || 0, image_url, gallery_image_id, variants: cleanVariants(itemDraft.variants), extras: cleanExtras(itemDraft.extras), available: editingItem?.available ?? true, sort_order: editingItem?.category_id === itemDraft.category_id ? editingItem.sort_order : Math.max(0, ...menu.items.filter((entry) => entry.category_id === itemDraft.category_id).map((entry) => entry.sort_order)) + 1 }
       let item: MenuItem
       if (editingItem) {
         item = { ...editingItem, ...input }
         await updateItem(editingItem.id, input)
       } else item = await createItem(input)
       if (editingItem?.image_url && editingItem.image_url !== image_url && !editingItem.gallery_image_id) await discardAsset(menu.restaurant.id, editingItem.image_url)
-      setMenu({ ...menu, items: editingItem ? menu.items.map((entry) => entry.id === item.id ? item : entry) : [...menu.items, item] })
+      setMenu((current) => current?.restaurant.id === menu.restaurant.id
+        ? { ...current, items: editingItem ? current.items.map((entry) => entry.id === item.id ? { ...item, highlighted: entry.highlighted } : entry) : [...current.items, item] }
+        : current)
       setItemModal(false); setEditingItem(null); setPendingItemCrop(null); setItemPhotoError(''); setItemDraft(emptyItem(menu.categories[0]?.id))
       showSuccess(dashboardText(dashboardLanguage, editingItem ? 'Menu item updated.' : 'Menu item added.'))
     } catch (caught) {
@@ -364,6 +368,24 @@ export function DashboardPage() {
     setMenu({ ...menu, items: menu.items.map((entry) => entry.id === item.id ? { ...entry, available } : entry) })
     try { await updateItem(item.id, { available }) }
     catch (caught) { setMenu(menu); setError(caught instanceof Error ? caught.message : dashboardText(dashboardLanguage, 'Could not update item visibility')) }
+  }
+
+  async function toggleHighlight(item: MenuItem) {
+    if (!menu || highlightBusy.includes(item.id)) return
+    const restaurantId = menu.restaurant.id
+    setHighlightBusy((current) => [...current, item.id])
+    setError('')
+    try {
+      const highlighted = await setItemHighlighted(restaurantId, item.id, !item.highlighted)
+      setMenu((current) => current?.restaurant.id === restaurantId
+        ? { ...current, items: current.items.map((entry) => entry.id === item.id ? { ...entry, highlighted } : entry) }
+        : current)
+      showSuccess(t(highlighted ? 'Item highlighted. It now appears in Recommended.' : 'Highlight removed.'))
+    } catch {
+      setError(t('Could not update the highlight. Please try again.'))
+    } finally {
+      setHighlightBusy((current) => current.filter((id) => id !== item.id))
+    }
   }
 
   function requestAvailabilityToggle(item: MenuItem) {
@@ -485,22 +507,26 @@ export function DashboardPage() {
     try {
       await Promise.all([updateCategory(category.id, { sort_order: next.sort_order }), updateCategory(next.id, { sort_order: category.sort_order })])
       const categories = [...menu.categories]; categories[index] = { ...next, sort_order: category.sort_order }; categories[nextIndex] = { ...category, sort_order: next.sort_order }
-      setMenu({ ...menu, categories })
+      setMenu((current) => current?.restaurant.id === menu.restaurant.id ? { ...current, categories } : current)
     } catch (caught) { setError(caught instanceof Error ? caught.message : dashboardText(dashboardLanguage, 'Could not reorder categories')) }
   }
 
-  async function moveItem(item: MenuItem, direction: -1 | 1) {
-    if (!menu) return
-    const siblings = menu.items.filter((entry) => entry.category_id === item.category_id).sort((a, b) => a.sort_order - b.sort_order)
-    const index = siblings.findIndex((entry) => entry.id === item.id); const nextIndex = index + direction
-    if (index < 0 || nextIndex < 0 || nextIndex >= siblings.length) return
-    const next = siblings[nextIndex]
+  async function moveItem(item: MenuItem, edge: 'top' | 'bottom') {
+    if (!menu || itemMoveBusy) return
+    const restaurantId = menu.restaurant.id
+    setItemMoveBusy({ id: item.id, edge })
     setError('')
     try {
-      await Promise.all([updateItem(item.id, { sort_order: next.sort_order }), updateItem(next.id, { sort_order: item.sort_order })])
-      const items = menu.items.map((entry) => entry.id === item.id ? { ...entry, sort_order: next.sort_order } : entry.id === next.id ? { ...entry, sort_order: item.sort_order } : entry)
-      setMenu({ ...menu, items })
-    } catch (caught) { setError(caught instanceof Error ? caught.message : dashboardText(dashboardLanguage, 'Could not reorder menu items')) }
+      const sort_order = await moveItemToEdge(restaurantId, item.category_id, item.id, edge)
+      setMenu((current) => current?.restaurant.id === restaurantId
+        ? { ...current, items: current.items.map((entry) => entry.id === item.id ? { ...entry, sort_order } : entry) }
+        : current)
+      showSuccess(t(edge === 'top' ? 'Item moved to the top of its category.' : 'Item moved to the bottom of its category.'))
+    } catch {
+      setError(t('Could not reorder menu items. Please try again.'))
+    } finally {
+      setItemMoveBusy(null)
+    }
   }
 
   function openItem(categoryId = menu?.categories[0]?.id ?? '', item?: MenuItem) {
@@ -624,11 +650,11 @@ export function DashboardPage() {
       })))
       const allCategories = [...menu.categories, ...newCategories]
       const categoriesByName = new Map(allCategories.map((category) => [categoryKey(category.name_en), category]))
-      const itemCounts = new Map(allCategories.map((category) => [category.id, menu.items.filter((item) => item.category_id === category.id).length]))
+      const itemSortOrders = new Map(allCategories.map((category) => [category.id, Math.max(0, ...menu.items.filter((item) => item.category_id === category.id).map((item) => item.sort_order))]))
       const importedItems = await createItems(importPreview.items.map((item) => {
         const category = categoriesByName.get(categoryKey(item.categoryEn))!
-        const nextSortOrder = (itemCounts.get(category.id) ?? 0) + 1
-        itemCounts.set(category.id, nextSortOrder)
+        const nextSortOrder = (itemSortOrders.get(category.id) ?? 0) + 1
+        itemSortOrders.set(category.id, nextSortOrder)
         return {
           restaurant_id: menu.restaurant.id,
           category_id: category.id,
@@ -874,9 +900,10 @@ export function DashboardPage() {
 
           {panel === 'menu' && <>
             <div className="page-heading menu-editor-page-heading"><div><span className="eyebrow"><span /> {t('Menu editor')}</span><h1>{t('Categories and items.')}</h1><p>{t('Changes appear on your public menu immediately.')}</p></div><div className="button-row menu-editor-actions"><button className="button button-outline" onClick={() => setImportModal(true)}><FileSpreadsheet /> {t('Excel')}</button><button className="button button-outline" onClick={() => openCategory()}><Plus /> {t('Category')}</button><button className="button button-primary" onClick={() => openItem()}><Plus /> {t('Item')}</button></div></div>
-            {!menu.categories.length ? <div className="empty-card"><Store /><h2>{t('Create your first category')}</h2><p>{t('Start with Pizza, Drinks, Desserts or any section that fits your menu.')}</p><button className="button button-primary" onClick={() => openCategory()}><Plus /> {t('Add category')}</button></div> : <div className="category-list">{menu.categories.map((category, categoryIndex) => <section className="dashboard-card category-card" key={category.id}><div className="category-heading"><div><h2>{category.name_en}<small>{category.name_ar}</small></h2><span>{menu.items.filter((item) => item.category_id === category.id).length} {t('items')}</span></div><div className="category-actions"><button className="icon-button" disabled={categoryIndex === 0} onClick={() => moveCategory(category, -1)} title={t('Move category up')}><ArrowUp /></button><button className="icon-button" disabled={categoryIndex === menu.categories.length - 1} onClick={() => moveCategory(category, 1)} title={t('Move category down')}><ArrowDown /></button><button className="icon-button" onClick={() => openCategory(category)} title={t('Edit category')}><Pencil /></button><button className="icon-button danger" onClick={() => removeCategory(category)} title={t('Delete category')}><Trash2 /></button><button className="button button-small button-outline" onClick={() => openItem(category.id)}><Plus /> {t('Add item')}</button></div></div><div className="dashboard-items">{menu.items.filter((item) => item.category_id === category.id).sort((a, b) => a.sort_order - b.sort_order).map((item, itemIndex, siblings) => <article key={item.id} className={!item.available ? 'unavailable' : ''}>
+            {menu.items.length > 0 && <p className="menu-highlight-help"><Star aria-hidden="true" /> {t('Tap the star beside an item to recommend it at the top of your menu.')}</p>}
+            {!menu.categories.length ? <div className="empty-card"><Store /><h2>{t('Create your first category')}</h2><p>{t('Start with Pizza, Drinks, Desserts or any section that fits your menu.')}</p><button className="button button-primary" onClick={() => openCategory()}><Plus /> {t('Add category')}</button></div> : <div className="category-list">{menu.categories.map((category, categoryIndex) => <section className="dashboard-card category-card" key={category.id}><div className="category-heading"><div><h2>{category.name_en}<small>{category.name_ar}</small></h2><span>{menu.items.filter((item) => item.category_id === category.id).length} {t('items')}</span></div><div className="category-actions"><button className="icon-button" disabled={categoryIndex === 0} onClick={() => moveCategory(category, -1)} title={t('Move category up')}><ArrowUp /></button><button className="icon-button" disabled={categoryIndex === menu.categories.length - 1} onClick={() => moveCategory(category, 1)} title={t('Move category down')}><ArrowDown /></button><button className="icon-button" onClick={() => openCategory(category)} title={t('Edit category')}><Pencil /></button><button className="icon-button danger" onClick={() => removeCategory(category)} title={t('Delete category')}><Trash2 /></button><button className="button button-small button-outline" onClick={() => openItem(category.id)}><Plus /> {t('Add item')}</button></div></div><div className="dashboard-items">{menu.items.filter((item) => item.category_id === category.id).sort((a, b) => a.sort_order - b.sort_order || a.id.localeCompare(b.id)).map((item, itemIndex, siblings) => <article key={item.id} className={!item.available ? 'unavailable' : ''}>
               {item.image_url ? <button type="button" className="item-icon item-icon-button" onClick={() => setImagePreview({ url: item.image_url!, name: dashboardLanguage === 'ar' ? item.name_ar : item.name_en })} aria-label={`${t('View photo')}: ${dashboardLanguage === 'ar' ? item.name_ar : item.name_en}`}><img src={item.image_url} alt="" /><Maximize2 aria-hidden="true" /></button> : <div className="item-icon">{item.name_en.slice(0, 1)}</div>}
-              <div className="dashboard-item-info"><b>{item.name_en}<small>{item.name_ar}</small></b><span>{item.variants.length ? `${item.variants.length} ${t('sizes')} · ${t('from')} ${formatMoney(Math.min(...item.variants.map((variant) => variant.price)), currency)}` : formatMoney(item.price, currency)}{(item.extras?.length ?? 0) > 0 ? ` · ${item.extras.length} ${t('extras')}` : ''}</span></div><button className="visibility" onClick={() => requestAvailabilityToggle(item)}>{item.available ? <><Eye /> {t('Visible')}</> : <><EyeOff /> {t('Hidden')}</>}</button><div className="item-actions"><button className="icon-button" onClick={() => moveItem(item, -1)} disabled={itemIndex === 0} title={t('Move item up')}><ArrowUp /></button><button className="icon-button" onClick={() => moveItem(item, 1)} disabled={itemIndex === siblings.length - 1} title={t('Move item down')}><ArrowDown /></button><button className="icon-button" onClick={() => openItem(category.id, item)} title={t('Edit item')}><Pencil /></button><button className="icon-button danger" onClick={() => removeItem(item)} title={t('Delete item')}><Trash2 /></button></div></article>)}{!menu.items.some((item) => item.category_id === category.id) && <p className="empty-row">{t('No items in this category yet.')}</p>}</div></section>)}</div>}
+              <div className="dashboard-item-info"><b>{item.name_en}<small>{item.name_ar}</small></b><span>{item.variants.length ? `${item.variants.length} ${t('sizes')} · ${t('from')} ${formatMoney(Math.min(...item.variants.map((variant) => variant.price)), currency)}` : formatMoney(item.price, currency)}{(item.extras?.length ?? 0) > 0 ? ` · ${item.extras.length} ${t('extras')}` : ''}</span></div><button className="visibility" title={t(item.available ? 'Visible' : 'Hidden')} onClick={() => requestAvailabilityToggle(item)}>{item.available ? <><Eye /> {t('Visible')}</> : <><EyeOff /> {t('Hidden')}</>}</button><div className="item-actions"><button type="button" className={`icon-button item-highlight-toggle ${item.highlighted ? 'is-highlighted' : ''}`} aria-pressed={Boolean(item.highlighted)} aria-label={`${t(item.highlighted ? 'Remove highlight' : 'Highlight item')}: ${dashboardLanguage === 'ar' ? item.name_ar : item.name_en}`} title={t(item.highlighted ? 'Remove highlight' : 'Highlight item')} disabled={highlightBusy.includes(item.id)} aria-busy={highlightBusy.includes(item.id)} onClick={() => void toggleHighlight(item)}><Star fill={item.highlighted ? 'currentColor' : 'none'} aria-hidden="true" /></button><button type="button" className="icon-button item-move item-move-top" onClick={() => void moveItem(item, 'top')} disabled={itemIndex === 0 || Boolean(itemMoveBusy)} title={t('Move to top')} aria-label={`${t('Move to top')}: ${dashboardLanguage === 'ar' ? item.name_ar : item.name_en}`} aria-busy={itemMoveBusy?.id === item.id && itemMoveBusy.edge === 'top'}>{itemMoveBusy?.id === item.id && itemMoveBusy.edge === 'top' ? <LoaderCircle className="spin" aria-hidden="true" /> : <ArrowUpToLine aria-hidden="true" />}</button><button type="button" className="icon-button item-move item-move-bottom" onClick={() => void moveItem(item, 'bottom')} disabled={itemIndex === siblings.length - 1 || Boolean(itemMoveBusy)} title={t('Move to bottom')} aria-label={`${t('Move to bottom')}: ${dashboardLanguage === 'ar' ? item.name_ar : item.name_en}`} aria-busy={itemMoveBusy?.id === item.id && itemMoveBusy.edge === 'bottom'}>{itemMoveBusy?.id === item.id && itemMoveBusy.edge === 'bottom' ? <LoaderCircle className="spin" aria-hidden="true" /> : <ArrowDownToLine aria-hidden="true" />}</button><button className="icon-button" disabled={Boolean(itemMoveBusy)} onClick={() => openItem(category.id, item)} title={t('Edit item')}><Pencil /></button><button className="icon-button danger" disabled={Boolean(itemMoveBusy)} onClick={() => removeItem(item)} title={t('Delete item')}><Trash2 /></button></div></article>)}{!menu.items.some((item) => item.category_id === category.id) && <p className="empty-row">{t('No items in this category yet.')}</p>}</div></section>)}</div>}
           </>}
 
           {panel === 'design' && <>

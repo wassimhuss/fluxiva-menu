@@ -9,6 +9,26 @@ This file is the working product backlog for developers and AI agents. Keep it u
 - `[x]` Complete
 - `[!]` Blocked or waiting for a prerequisite
 
+## Move items to category top or bottom
+
+**Status:** `[x]` Implemented and verified locally; frontend deployment remains pending. No database migration is needed.
+
+- [x] Replace single-step item arrows with Move to top / Move to bottom, in English and Arabic.
+- [x] Keep both controls visible on desktop and mobile, with a separate touch-friendly action row on phones.
+- [x] Save only the selected item's existing sort order through owner RLS; preserve the order of other category items and demo behavior.
+- [x] Verify first/last states and repeated jumps, 44 px mobile actions at 320/390 px, desktop at 1280 px, English/Arabic RTL, API single-item/no-op and failure cases, category/branch isolation, public demo order, and lint/build.
+
+## One-tap item highlights
+
+**Status:** `[x]` Implemented and verified; migration `024` applied to the configured production Supabase project on 2026-10-12. Frontend deployment remains pending.
+
+- [x] Add a star toggle beside each owner menu item with bilingual labels and saving/error feedback.
+- [x] Show a first Recommended / مننصحك فيه section and badges across all eight public-menu designs, keeping items in their original categories and preserving sold-out and takeaway behavior.
+- [x] Add migration `024_item_highlights.sql` with owner RLS unchanged and preserve highlights when copying branches.
+- [x] Verify owner workflows at 320/390/1280 px, all eight public designs in English/Arabic at 390/1280 px, saving/failure/retry states, sold-out display, sizes/extras ordering, last-highlight removal, photos-off behavior, lint/build, and all migrations with owner/anonymous/cross-owner access checks in isolated PostgreSQL.
+- [x] Apply migration `024` to production, preserving 2 branches, 6 categories and 23 items; verify the boolean/default, branch-copy definition, RLS and function privileges (2026-10-12).
+- [ ] Deploy the updated frontend.
+
 ## Shared image gallery
 
 **Status:** `[x]` Local implementation complete; migration and the first production image collection still need deployment/content work.

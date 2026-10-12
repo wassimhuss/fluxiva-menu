@@ -1,3 +1,4 @@
+import { RecommendedBadge } from '../../components/RecommendedBadge'
 import { Instagram, MapPin } from 'lucide-react'
 import { useState } from 'react'
 import { AddToOrder } from '../../components/AddToOrder'
@@ -45,6 +46,7 @@ function KioskCard({ item, index, t, formatPrice, rtl, ordering }: {
         {item.image_url && (
           <div className={styles.overlay}>
             <h3 className={styles.itemName}>{name}</h3>
+            <RecommendedBadge item={item} t={t} />
             {description && <p className={styles.desc}>{description}</p>}
           </div>
         )}
@@ -52,6 +54,7 @@ function KioskCard({ item, index, t, formatPrice, rtl, ordering }: {
       {!item.image_url && (
         <div className={styles.overlay} style={{ position: 'static', color: '#16201e' }}>
           <h3 className={styles.itemName}>{name}</h3>
+          <RecommendedBadge item={item} t={t} />
           {description && <p className={styles.desc} style={{ color: 'rgba(22,32,30,.55)' }}>{description}</p>}
         </div>
       )}

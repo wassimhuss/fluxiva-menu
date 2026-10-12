@@ -1,3 +1,4 @@
+import { RecommendedBadge } from '../../components/RecommendedBadge'
 import { Instagram, MapPin } from 'lucide-react'
 import { useState } from 'react'
 import { AddToOrder } from '../../components/AddToOrder'
@@ -40,6 +41,7 @@ function MaisonItem({ item, index, t, formatPrice, rtl, ordering }: {
           <span className={styles.leader} aria-hidden="true" />
           <strong>{formatPrice(price)}</strong>
         </div>
+        <RecommendedBadge item={item} t={t} />
         {description && <p>{description}</p>}
         {!item.available && <span className={styles.soldOut}>{t('Currently unavailable', 'غير متوفر حالياً')}</span>}
         {ordering && (
