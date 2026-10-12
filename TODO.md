@@ -9,23 +9,23 @@ This file is the working product backlog for developers and AI agents. Keep it u
 - `[x]` Complete
 - `[!]` Blocked or waiting for a prerequisite
 
-## Move whole categories to menu top or bottom
+## Move whole categories one position up or down
 
 **Status:** `[x]` Implemented and verified locally. Frontend deployment remains pending; no database migration is needed.
 
-- [x] Replace category step arrows with bilingual Move category to top / Move category to bottom controls.
+- [x] Use bilingual Move category up / Move category down controls that swap with the neighboring category, one position per tap.
 - [x] Keep arrows visible on mobile, with consistent 36 px desktop / 44 px mobile icon controls.
-- [x] Persist only the category's existing rank using owner RLS; preserve all items, other categories' relative order and demo branch isolation.
-- [x] Verify UI jumps, boundaries, new category placement after moves, equal 44 px mobile icons, 320/390/1280 px English/Arabic layouts, unchanged items and other category order, plus API repeated/single-category/failure cases, demo public tabs and branch isolation. Lint/build and diff checks pass.
+- [x] Persist category ranks in one atomic batch using owner INSERT/UPDATE RLS; preserve all items, other categories' relative order and demo branch isolation.
+- [x] Verify single-step UI movement, boundaries, 320/390/1280 px English/Arabic layouts, unchanged items and other category order, tied ranks, API repeated/no-op/failure cases, demo public tabs and branch isolation. Isolated PostgreSQL verifies owner writes, anonymous/cross-owner denial and atomic rollback. Lint/build and diff checks pass.
 
-## Move items to category top or bottom
+## Move items one position up or down
 
-**Status:** `[x]` Implemented and verified locally; frontend deployment remains pending. No database migration is needed.
+**Status:** `[x]` Implemented and verified; migration `025` applied to production on 2026-10-12. Frontend deployment remains pending.
 
-- [x] Replace single-step item arrows with Move to top / Move to bottom, in English and Arabic.
-- [x] Keep both controls visible on desktop and mobile, with a separate touch-friendly action row on phones.
-- [x] Save only the selected item's existing sort order through owner RLS; preserve the order of other category items and demo behavior.
-- [x] Verify first/last states and repeated jumps, 44 px mobile actions at 320/390 px, desktop at 1280 px, English/Arabic RTL, API single-item/no-op and failure cases, category/branch isolation, public demo order, and lint/build.
+- [x] Use Move item up / Move item down with plain arrows, moving one position per tap within the category in English and Arabic.
+- [x] Keep both controls visible on desktop and mobile, with the existing equal-width touch controls on phones.
+- [x] Add migration `025` with an atomic owner RPC that updates ranks only, preserving photos, prices, variants, extras, availability, recommendations and other category/branch data.
+- [x] Verify demo/public ordering, boundaries, tied ranks, RPC success/failure, owner/anonymous/cross-owner access and transaction rollback, including cropped archived gallery photos. Check 320/390 px mobile and 1280 px desktop in English/Arabic, lint/build and diff checks.
 
 ## One-tap item highlights
 

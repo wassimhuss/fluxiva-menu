@@ -432,34 +432,39 @@ export async function updateCategory(id: string, values: Partial<Category>) {
   if (error) throw error
 }
 
-/** Moves a whole category without changing its items or other categories' relative order. */
-export async function moveCategoryToEdge(restaurantId: string, categoryId: string, edge: 'top' | 'bottom'): Promise<number> {
+/** Persists a one-position move in one batch, including any tied-rank normalization. */
+export async function moveCategoryByOne(restaurantId: string, categoryId: string, direction: 'up' | 'down'): Promise<Category[]> {
   const demo = !supabase ? demoMenus.find((menu) => menu.restaurant.id === restaurantId) : undefined
-  let categories: Pick<Category, 'id' | 'sort_order'>[]
+  let categories: Category[]
   if (!supabase) {
     categories = demo?.categories ?? []
   } else {
-    const { data, error } = await supabase.from('menu_categories').select('id, sort_order')
+    const { data, error } = await supabase.from('menu_categories').select('*')
       .eq('restaurant_id', restaurantId).order('sort_order').order('id')
     if (error) throw error
-    categories = data ?? []
+    categories = (data ?? []) as Category[]
   }
   categories = [...categories].sort((a, b) => a.sort_order - b.sort_order || a.id.localeCompare(b.id))
-  const category = categories.find((entry) => entry.id === categoryId)
-  if (!category) throw new Error('Category not found in this restaurant.')
-  const boundary = edge === 'top' ? categories[0] : categories[categories.length - 1]
-  if (boundary.id === categoryId) return category.sort_order
-  const sortOrder = boundary.sort_order + (edge === 'top' ? -1 : 1)
-  if (sortOrder < -2147483648 || sortOrder > 2147483647) throw new Error('Could not reorder categories.')
+  const index = categories.findIndex((entry) => entry.id === categoryId)
+  if (index < 0) throw new Error('Category not found in this restaurant.')
+  const nextIndex = index + (direction === 'up' ? -1 : 1)
+  if (nextIndex < 0 || nextIndex >= categories.length) return []
+  const ranks = new Map(categories.map((entry) => [entry.id, entry.sort_order]))
+  const adjacent = categories[nextIndex]
+  categories[nextIndex] = categories[index]
+  categories[index] = adjacent
+  const changed = categories.map((category, position) => ({ ...category, sort_order: position + 1 }))
+    .filter((category) => category.sort_order !== ranks.get(category.id))
   if (!supabase) {
-    category.sort_order = sortOrder
-    demo!.categories = [...demo!.categories].sort((a, b) => a.sort_order - b.sort_order || a.id.localeCompare(b.id))
-    return sortOrder
+    const updated = new Map(changed.map((category) => [category.id, category.sort_order]))
+    demo!.categories = categories.map((category) => ({ ...category, sort_order: updated.get(category.id) ?? category.sort_order }))
+    return changed
   }
-  const { data, error } = await supabase.from('menu_categories').update({ sort_order: sortOrder })
-    .eq('restaurant_id', restaurantId).eq('id', categoryId).select('sort_order').single()
+  // Include the existing records so the database can swap their ranks atomically.
+  // Owner INSERT/UPDATE RLS applies to the complete statement, as with Excel imports.
+  const { data, error } = await supabase.from('menu_categories').upsert(changed, { onConflict: 'id' }).select()
   if (error) throw error
-  return data.sort_order as number
+  return (data ?? []) as Category[]
 }
 
 export async function deleteCategory(id: string) {
@@ -504,35 +509,35 @@ export async function updateItem(id: string, values: Partial<MenuItem>) {
   if (error) throw error
 }
 
-/** Moves only this item; all other items keep their relative category order. */
-export async function moveItemToEdge(restaurantId: string, categoryId: string, itemId: string, edge: 'top' | 'bottom'): Promise<number> {
-  const demo = !supabase ? demoMenus.find((menu) => menu.restaurant.id === restaurantId) : undefined
-  let siblings: Pick<MenuItem, 'id' | 'sort_order'>[]
-  if (!supabase) {
-    siblings = demo?.items.filter((item) => item.category_id === categoryId) ?? []
-  } else {
-    const { data, error } = await supabase.from('menu_items').select('id, sort_order')
-      .eq('restaurant_id', restaurantId).eq('category_id', categoryId).order('sort_order').order('id')
+/** Moves one position within this category and saves sibling ranks atomically. */
+export async function moveItemByOne(restaurantId: string, categoryId: string, itemId: string, direction: 'up' | 'down'): Promise<MenuItem[]> {
+  if (supabase) {
+    const { data, error } = await supabase.rpc('owner_move_menu_item', {
+      restaurant_id_input: restaurantId,
+      category_id_input: categoryId,
+      item_id_input: itemId,
+      direction_input: direction,
+    })
     if (error) throw error
-    siblings = data ?? []
+    return (data ?? []) as MenuItem[]
   }
+  const demo = demoMenus.find((menu) => menu.restaurant.id === restaurantId)
+  let siblings = demo?.items.filter((item) => item.category_id === categoryId) ?? []
   siblings = [...siblings].sort((a, b) => a.sort_order - b.sort_order || a.id.localeCompare(b.id))
-  const item = siblings.find((entry) => entry.id === itemId)
-  if (!item) throw new Error('Item not found in this category.')
-  const boundary = edge === 'top' ? siblings[0] : siblings[siblings.length - 1]
-  if (boundary.id === itemId) return item.sort_order
-  const sortOrder = boundary.sort_order + (edge === 'top' ? -1 : 1)
-  if (sortOrder < -2147483648 || sortOrder > 2147483647) throw new Error('Could not reorder menu items.')
-  if (!supabase) {
-    item.sort_order = sortOrder
-    // Public demo reads share this runtime menu and must see the saved order.
-    demo!.items = [...demo!.items].sort((a, b) => a.sort_order - b.sort_order || a.id.localeCompare(b.id))
-    return sortOrder
-  }
-  const { data, error } = await supabase.from('menu_items').update({ sort_order: sortOrder })
-    .eq('restaurant_id', restaurantId).eq('category_id', categoryId).eq('id', itemId).select('sort_order').single()
-  if (error) throw error
-  return data.sort_order as number
+  const index = siblings.findIndex((entry) => entry.id === itemId)
+  if (index < 0) throw new Error('Item not found in this category.')
+  const nextIndex = index + (direction === 'up' ? -1 : 1)
+  if (nextIndex < 0 || nextIndex >= siblings.length) return []
+  const ranks = new Map(siblings.map((entry) => [entry.id, entry.sort_order]))
+  const adjacent = siblings[nextIndex]
+  siblings[nextIndex] = siblings[index]
+  siblings[index] = adjacent
+  const changed = siblings.map((item, position) => ({ ...item, sort_order: position + 1 }))
+    .filter((item) => item.sort_order !== ranks.get(item.id))
+  const updated = new Map(changed.map((item) => [item.id, item.sort_order]))
+  demo!.items = demo!.items.map((item) => ({ ...item, sort_order: updated.get(item.id) ?? item.sort_order }))
+    .sort((a, b) => a.sort_order - b.sort_order || a.id.localeCompare(b.id))
+  return changed
 }
 
 /** Uses existing owner RLS and confirms that a matching item was updated. */
