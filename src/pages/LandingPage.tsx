@@ -73,7 +73,7 @@ function storedLanguage(): Language {
 const SUPPORT_WHATSAPP = import.meta.env.VITE_SUPPORT_WHATSAPP as string | undefined
 
 export function LandingPage() {
-  const { session, loading: authLoading } = useAuth()
+  const { session, loading: authLoading, adminRole, adminLoading, adminError } = useAuth()
   const [language, setLanguage] = useState<Language>(storedLanguage)
   const t = (english: LandingCopyKey) => landingText(language, english)
   const n = (value: number, options?: Intl.NumberFormatOptions) => landingNumber(language, value, options)
@@ -121,10 +121,10 @@ export function LandingPage() {
             >
               <Languages aria-hidden="true" /> <span lang={language === 'en' ? 'ar' : 'en'}>{language === 'en' ? 'العربية' : 'English'}</span>
             </button>
-            {authLoading
+            {authLoading || (session && adminLoading)
               ? <span className="button button-small lp-nav-cta lp-nav-cta-pending" aria-hidden="true" />
-              : <Link className="button button-small lp-nav-cta" to={session ? '/dashboard' : '/login'}>
-                  {session ? <><LayoutDashboard size={15} /> {t('Dashboard')}</> : <><LogIn size={15} /> {t('Sign in')}</>}
+              : <Link className="button button-small lp-nav-cta" to={session && !adminError ? adminRole ? '/platform' : '/dashboard' : '/login'}>
+                  {session ? <><LayoutDashboard size={15} /> {t(adminError ? 'Continue' : adminRole ? 'Operator console' : 'Dashboard')}</> : <><LogIn size={15} /> {t('Sign in')}</>}
                 </Link>}
           </div>
         </nav>

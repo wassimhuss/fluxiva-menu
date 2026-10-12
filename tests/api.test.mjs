@@ -33,6 +33,16 @@ async function loadApi(t) {
   return { api, ...client, ...cache, queryClient }
 }
 const session = (id = 'owner') => ({ user: { id } })
+test('role lookup distinguishes owners from failed requests and can recover on retry', async (t) => {
+  const { api, setClient } = await loadApi(t)
+  let result = { data: null, error: null }
+  setClient({ rpc: () => ({ abortSignal: () => Promise.resolve(result) }) })
+  assert.equal(await api.getAdminRole(), null)
+  result = { data: null, error: new Error('Connection lost') }
+  await assert.rejects(api.getAdminRole(), /Connection lost/)
+  result = { data: 'super_admin', error: null }
+  assert.equal(await api.getAdminRole(), 'super_admin')
+})
 const fixture = (id = 'place') => ({
   id, owner_id: 'owner', slug: id, name_en: id, name_ar: 'مطعم', default_language: 'en',
   primary_color: '#173f35', is_published: true, subscription_status: 'active',

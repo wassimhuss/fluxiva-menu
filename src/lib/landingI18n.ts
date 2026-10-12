@@ -2,6 +2,8 @@ import type { Language } from './types'
 
 // Every landing-page string must have an Arabic counterpart.
 const arabic = {
+  'Operator console': 'لوحة الإدارة',
+  'Continue': 'متابعة',
   'Main navigation': 'التنقل الرئيسي',
   'Features': 'الميزات',
   'How it works': 'طريقة العمل',

@@ -712,9 +712,8 @@ export async function deleteRestaurantAsset(restaurantId: string, publicUrl?: st
 export async function getAdminRole(): Promise<AdminRole | null> {
   if (!supabase) return 'super_admin'
   const { data, error } = await supabase.rpc('platform_admin_role').abortSignal(readSignal())
-  // A failure here means "not an operator" as far as the UI is concerned; the
-  // database rejects the privileged calls regardless of what this returns.
-  if (error) return null
+  // Unknown access must not be mistaken for an owner account.
+  if (error) throw error
   return (data as AdminRole | null) ?? null
 }
 

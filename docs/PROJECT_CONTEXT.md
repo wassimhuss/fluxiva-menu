@@ -58,6 +58,7 @@ Demo mode is a deliberate development and sales-preview feature. Do not remove i
 - `src/lib/supabase.ts` creates the client from the two public Vite environment variables.
 - `src/lib/auth.tsx` owns the session lifecycle and exposes `session`, `loading`, `demoMode`, and `signOut`.
 - Signed-in operators go directly from authentication to `/platform` after their role resolves. Normal owners go to `/dashboard` (new signups to `/onboarding`); the owner dashboard contains no operator-console link. Demo login continues to open the owner dashboard.
+- Owner route guards also redirect operators away from `/dashboard` and `/onboarding`. Signed-in landing navigation uses the account's actual workspace. Role failures show bilingual Retry/Sign out controls instead of treating an unresolved operator as an owner; password recovery returns through the role-aware sign-in destination. Demo mode retains both workspace previews.
 - Login, signup, forgot-password, and reset-password screens inherit the landing-page language preference (`fluxiva-landing-language`) and apply a complete English/Arabic RTL layout through `src/lib/authI18n.ts`.
 - `src/lib/api.ts` is the client-side data boundary for restaurant, category, item, asset, and platform operations.
 - Public menus query by slug and allow only `trial` or `active` restaurants.
@@ -258,5 +259,5 @@ Supabase migrations are currently expected to be run manually in sequence in the
 - Branch deletion removes database menu records, not Storage objects. Previously uploaded `menu-assets` files may remain at their existing public URLs; cleanup needs a trusted backend job. The owner cannot delete that folder after its restaurant row is gone because Storage RLS correctly requires an existing owned restaurant. Shared gallery assets and brand logos must not be removed by branch deletion.
 - Menu copying spans a database transaction and Storage requests, not one cross-service transaction. Interrupted copies stay hidden and must be deleted/retried; cleanup is best-effort and the backend orphan-asset cleanup follow-up still applies. Automated copy resume is not implemented.
 - The landing page imports Google Fonts over the network; provide a fallback/self-hosting plan if offline or privacy requirements change.
-- The `/platform` route shares the owner UI route guard. Server-side RPC authorization is the actual security boundary.
+- Owner/operator routes have separate guards that wait for role resolution; protected server RPCs remain the security boundary.
 - Keep `.node-version`, `package.json` engines, and Render's `NODE_VERSION` aligned on Node 22. The app deliberately does not inherit Render's moving default Node version.

@@ -47,7 +47,7 @@ export function ResetPasswordPage() {
     setBusy(false)
     if (updateError) { setError(updateError.message); return }
     // The recovery link already signed them in, so they go straight through.
-    navigate('/dashboard', { replace: true })
+    navigate('/login', { replace: true })
   }
 
   const ready = demoMode || Boolean(session)

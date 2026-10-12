@@ -2,6 +2,7 @@ import { ArrowLeft, Eye, EyeOff } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link, Navigate, useNavigate } from 'react-router-dom'
 import { Brand } from '../components/Brand'
+import { AccountAccessError } from '../components/AccountAccessError'
 import { Loading, Notice } from '../components/Status'
 import { useAuth } from '../lib/auth'
 import { AUTH_LANGUAGE_KEY, authErrorText, authText } from '../lib/authI18n'
@@ -36,7 +37,7 @@ export function AuthPage({ mode }: { mode: Mode }) {
   const isSignup = mode === 'signup'
   const isForgot = mode === 'forgot'
   const navigate = useNavigate()
-  const { session, demoMode, adminRole, adminLoading } = useAuth()
+  const { session, demoMode, adminRole, adminLoading, adminError } = useAuth()
   const [language] = useState<Language>(() => localStorage.getItem(AUTH_LANGUAGE_KEY) === 'ar' ? 'ar' : 'en')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -65,6 +66,7 @@ export function AuthPage({ mode }: { mode: Mode }) {
 
   if (session) {
     if (adminLoading) return <main className="dashboard-loading"><Loading /></main>
+    if (adminError) return <AccountAccessError />
     return <Navigate to={adminRole ? '/platform' : isSignup ? '/onboarding' : '/dashboard'} replace />
   }
 
