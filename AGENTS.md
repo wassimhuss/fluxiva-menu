@@ -22,11 +22,12 @@ This file applies to the entire repository. Read it before making changes, then 
 - Required checks before handoff:
 
 ```bash
+npm run test
 npm run lint
 npm run build
 ```
 
-There is currently no automated test runner. Compensate with focused browser verification of the affected route and viewport.
+The Node test runner covers API request behavior and owner-cache isolation. Run the focused browser verification of the affected route and viewport as well.
 
 ## Repository conventions
 

@@ -12,21 +12,29 @@ export function BranchSelectorPage() {
   const [language, setLanguage] = useState<Language>('en')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [loadAttempt, setLoadAttempt] = useState(0)
+  const [settledSlug, setSettledSlug] = useState('')
 
   useEffect(() => {
-    getPublicBrand(slug).then((result) => {
+    const controller = new AbortController()
+    let cancelled = false
+    setLoading(true); setError(''); setData(null)
+    getPublicBrand(slug, controller.signal).then((result) => {
+      if (cancelled) return
       setData(result)
       if (result) setLanguage(result.brand.default_language)
-    }).catch(() => setError('This branch list could not be loaded.')).finally(() => setLoading(false))
-  }, [slug])
+    }).catch(() => { if (!cancelled) setError('This branch list could not be loaded.') })
+      .finally(() => { if (!cancelled) { setSettledSlug(slug); setLoading(false) } })
+    return () => { cancelled = true; controller.abort() }
+  }, [slug, loadAttempt])
 
-  if (loading) return <main className="branch-selector-loading"><Loading /></main>
+  if (loading || settledSlug !== slug) return <main className="branch-selector-loading"><Loading /></main>
 
   const arabic = language === 'ar'
   const t = (english: string, arabicText: string) => localText(language, english, arabicText)
 
   if (!data || error) {
-    return <main className="branch-selector-empty"><Store /><h1>Branches unavailable</h1><p>{error || 'No branches are available right now.'}</p><p dir="rtl" lang="ar">لا توجد فروع متاحة حاليًا.</p></main>
+    return <main className="branch-selector-empty"><Store /><h1>{error ? 'Connection interrupted' : 'Branches unavailable'}</h1><p>{error || 'No branches are available right now.'}</p><p dir="rtl" lang="ar">{error ? 'تعذّر الاتصال. حاول مجددًا.' : 'لا توجد فروع متاحة حاليًا.'}</p>{error && <button className="button button-primary" onClick={() => setLoadAttempt((attempt) => attempt + 1)}>Try again / حاول مجددًا</button>}</main>
   }
 
   const { brand, restaurants } = data

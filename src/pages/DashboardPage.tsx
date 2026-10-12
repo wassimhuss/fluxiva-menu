@@ -1,6 +1,7 @@
 import { ArrowDown, ArrowUp, CheckCircle2, ChevronLeft, ChevronRight, Copy, Download, ExternalLink, Eye, EyeOff, FileSpreadsheet, ImagePlus, Images, LayoutDashboard, LoaderCircle, LogOut, Maximize2, Menu, Palette, Pencil, Plus, QrCode, RotateCcw, Settings, ShieldCheck, Star, Store, Trash2, TriangleAlert, Upload, X } from 'lucide-react'
 import QRCode from 'qrcode'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { isCancelledError } from '@tanstack/react-query'
+import { useCallback, useEffect, useMemo, useRef, useState, type SetStateAction } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Brand } from '../components/Brand'
 import { Loading, Notice } from '../components/Status'
@@ -9,9 +10,10 @@ import { SubscriptionBanner } from '../components/SubscriptionBanner'
 import { GalleryPicker } from '../components/GalleryPicker'
 import { ImageLightbox } from '../components/ImageLightbox'
 import { PortraitImageCropper } from '../components/PortraitImageCropper'
-import { cleanExtras, cleanVariants, createCategories, createCategory, createItem, createItems, createPlaceFromMenu, createRestaurant, deleteCategory, deleteItem, deleteRestaurant, deleteRestaurantAsset, getMenuViewStats, getOwnerBrand, getOwnerMenu, getOwnerRestaurants, listGalleryCategories, listGalleryImages, moveCategoryByOne, moveItemByOne, setItemHighlighted, setPlacePublished, updateCategory, updateItem, updateRestaurant, uploadRestaurantAsset, validateGallerySource } from '../lib/api'
+import { cleanExtras, cleanVariants, createCategories, createCategory, createItem, createItems, createPlaceFromMenu, createRestaurant, deleteCategory, deleteItem, deleteRestaurant, deleteRestaurantAsset, getMenuViewStats, getOwnerBrand, getCachedOwnerMenu, getOwnerMenu, getOwnerRestaurants, listGalleryCategories, listGalleryImages, moveCategoryByOne, moveItemByOne, setItemHighlighted, setPlacePublished, updateCategory, updateItem, updateRestaurant, uploadRestaurantAsset, validateGallerySource } from '../lib/api'
 import { useAuth } from '../lib/auth'
 import { formatMoney, localText, slugify } from '../lib/format'
+import { patchMenuItem } from '../lib/menuState'
 import { dashboardText } from '../lib/dashboardI18n'
 import { downloadMenuTemplate, exportMenuWorkbook, readMenuWorkbook } from '../lib/menuWorkbook'
 import { subscriptionState } from '../lib/subscription'
@@ -42,10 +44,24 @@ async function discardAsset(restaurantId: string, url?: string | null) {
 export function DashboardPage() {
   const { session, demoMode, adminRole, signOut } = useAuth()
   const navigate = useNavigate()
-  const [menu, setMenu] = useState<RestaurantMenu | null>(null)
+  const [menu, setMenuState] = useState<RestaurantMenu | null>(null)
+  const menuRevision = useRef(0)
+  const setMenu = useCallback((update: SetStateAction<RestaurantMenu | null>) => {
+    menuRevision.current += 1
+    setMenuState(update)
+  }, [])
+  const workspaceRequest = useRef(0)
+  const workspaceAbort = useRef<AbortController | null>(null)
+  const sessionRef = useRef(session)
+  sessionRef.current = session
+  const accountKey = session?.user.id ?? (demoMode ? 'demo' : 'anonymous')
+  const [workspaceAccount, setWorkspaceAccount] = useState(accountKey)
+  const availabilityRequests = useRef(new Set<string>())
+  const [availabilityBusy, setAvailabilityBusy] = useState<string[]>([])
   const [brand, setBrand] = useState<BrandGroup | null>(null)
   const [restaurants, setRestaurants] = useState<Restaurant[]>([])
   const [loading, setLoading] = useState(true)
+  const [loadAttempt, setLoadAttempt] = useState(0)
   const [categoryMoveBusy, setCategoryMoveBusy] = useState<{ id: string; direction: 'up' | 'down' } | null>(null)
   const [highlightBusy, setHighlightBusy] = useState<string[]>([])
   const [itemMoveBusy, setItemMoveBusy] = useState<{ id: string; direction: 'up' | 'down' } | null>(null)
@@ -108,32 +124,41 @@ export function DashboardPage() {
   const successTimer = useRef<number | undefined>(undefined)
 
   useEffect(() => {
-    if (!demoMode && !session) return
+    if (accountKey === 'anonymous') return
+    setLoading(true); setError('')
+    setWorkspaceAccount(accountKey)
+    setMenu(null); setBrand(null); setRestaurants([]); setViewStats(null)
+    const request = ++workspaceRequest.current
+    const currentSession = sessionRef.current
+    const controller = new AbortController()
+    workspaceAbort.current?.abort()
+    workspaceAbort.current = controller
     let cancelled = false
     async function loadWorkspace() {
       try {
-        const [ownerBrand, places] = await Promise.all([getOwnerBrand(session), getOwnerRestaurants(session)])
+        const [ownerBrand, places] = await Promise.all([getOwnerBrand(currentSession, controller.signal), getOwnerRestaurants(currentSession, controller.signal)])
+        if (cancelled || request !== workspaceRequest.current) return
         if (!places.length) { navigate('/onboarding'); return }
         const remembered = window.localStorage.getItem(SELECTED_PLACE_KEY)
         const selected = places.find((place) => place.id === remembered) ?? places[0]
-        const data = await getOwnerMenu(session, selected.id)
-        if (cancelled || !data) return
+        const data = await getOwnerMenu(currentSession, selected.id)
+        if (cancelled || request !== workspaceRequest.current || !data) return
         setBrand(ownerBrand)
         setRestaurants(places)
         setMenu(structuredClone(data))
         setSavedSettings(restaurantSettingsSnapshot(data.restaurant))
-        getMenuViewStats(data.restaurant.id).then((stats) => { if (!cancelled) setViewStats(stats) }).catch(() => undefined)
+        getMenuViewStats(data.restaurant.id, controller.signal).then((stats) => { if (!cancelled && request === workspaceRequest.current) setViewStats(stats) }).catch(() => undefined)
       } catch (caught) {
-        if (!cancelled) setError(caught instanceof Error ? caught.message : dashboardText('en', 'Could not load restaurant'))
+        if (!cancelled && request === workspaceRequest.current) setError(caught instanceof Error ? caught.message : dashboardText('en', 'Could not load restaurant'))
       } finally {
-        if (!cancelled) setLoading(false)
+        if (!cancelled && request === workspaceRequest.current) setLoading(false)
       }
     }
     void loadWorkspace()
-    return () => { cancelled = true }
-  }, [session, demoMode, navigate])
+    return () => { cancelled = true; controller.abort(); if (request === workspaceRequest.current) workspaceRequest.current += 1 }
+  }, [accountKey, loadAttempt, navigate, setMenu])
 
-  useEffect(() => () => window.clearTimeout(successTimer.current), [])
+  useEffect(() => () => { window.clearTimeout(successTimer.current); workspaceAbort.current?.abort() }, [])
 
   const DirectionalChevron = dashboardLanguage === 'ar' ? ChevronLeft : ChevronRight
   const BackChevron = dashboardLanguage === 'ar' ? ChevronRight : ChevronLeft
@@ -174,19 +199,39 @@ export function DashboardPage() {
 
   async function switchPlace(restaurantId: string) {
     if (menu?.restaurant.id === restaurantId) { setPlaceSwitcherOpen(false); return }
-    setLoading(true); setError(''); setPlaceSwitcherOpen(false)
-    try {
-      const data = await getOwnerMenu(session, restaurantId)
-      if (!data) throw new Error(t('Could not load restaurant'))
-      setMenu(structuredClone(data))
+    const request = ++workspaceRequest.current
+    const controller = new AbortController()
+    workspaceAbort.current?.abort()
+    workspaceAbort.current = controller
+    const cached = getCachedOwnerMenu(session, restaurantId)
+    const activate = (data: RestaurantMenu) => {
+      setMenu(data)
       setSavedSettings(restaurantSettingsSnapshot(data.restaurant))
       setPanel('overview')
       setTemplateDraft(''); setColorDraft(''); setImageVisibilityDraft(null)
+      setViewStats(null)
       window.localStorage.setItem(SELECTED_PLACE_KEY, restaurantId)
-      getMenuViewStats(restaurantId).then(setViewStats).catch(() => setViewStats(null))
+    }
+    setError(''); setPlaceSwitcherOpen(false)
+    setLoading(!cached)
+    if (cached) activate(cached)
+    const revision = menuRevision.current
+    try {
+      const data = await getOwnerMenu(session, restaurantId)
+      if (request !== workspaceRequest.current) return
+      if (!data) throw new Error(t('Could not load restaurant'))
+      // Background refresh must not overwrite a draft or a newer confirmed save.
+      if (!cached) activate(data)
+      else if (menuRevision.current === revision) {
+        setMenu(data)
+        setSavedSettings(restaurantSettingsSnapshot(data.restaurant))
+      }
+      getMenuViewStats(restaurantId, controller.signal).then((stats) => {
+        if (request === workspaceRequest.current) setViewStats(stats)
+      }).catch(() => { if (request === workspaceRequest.current) setViewStats(null) })
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : t('Could not load restaurant'))
-    } finally { setLoading(false) }
+      if (request === workspaceRequest.current && !isCancelledError(caught)) setError(caught instanceof Error ? caught.message : t('Could not load restaurant'))
+    } finally { if (request === workspaceRequest.current) setLoading(false) }
   }
 
   function openPlaceCreator() {
@@ -207,6 +252,7 @@ export function DashboardPage() {
       setRestaurants((current) => [...current, restaurant])
       setPlaceModal(false)
       if (copied) {
+        workspaceRequest.current += 1
         setMenu(structuredClone(copied))
         setSavedSettings(restaurantSettingsSnapshot(restaurant))
         setPanel('menu'); setTemplateDraft(''); setColorDraft(''); setImageVisibilityDraft(null)
@@ -306,10 +352,10 @@ export function DashboardPage() {
     try {
       if (editingCategory) {
         await updateCategory(editingCategory.id, categoryDraft)
-        setMenu({ ...menu, categories: menu.categories.map((entry) => entry.id === editingCategory.id ? { ...entry, ...categoryDraft } : entry) })
+        setMenu((current) => current?.restaurant.id === menu.restaurant.id ? { ...current, categories: current.categories.map((entry) => entry.id === editingCategory.id ? { ...entry, ...categoryDraft } : entry) } : current)
       } else {
         const category = await createCategory({ restaurant_id: menu.restaurant.id, ...categoryDraft, sort_order: Math.max(0, ...menu.categories.map((entry) => entry.sort_order)) + 1 })
-        setMenu({ ...menu, categories: [...menu.categories, category] })
+        setMenu((current) => current?.restaurant.id === menu.restaurant.id ? { ...current, categories: [...current.categories, category] } : current)
       }
       setCategoryModal(false); setEditingCategory(null); setCategoryDraft({ name_en: '', name_ar: '' })
       showSuccess(dashboardText(dashboardLanguage, editingCategory ? 'Category updated.' : 'Category added.'))
@@ -329,7 +375,7 @@ export function DashboardPage() {
       const removedItems = menu.items.filter((item) => item.category_id === category.id)
       await deleteCategory(category.id)
       await Promise.all(removedItems.map((item) => discardAsset(menu.restaurant.id, item.image_url)))
-      setMenu({ ...menu, categories: menu.categories.filter((entry) => entry.id !== category.id), items: menu.items.filter((item) => item.category_id !== category.id) })
+      setMenu((current) => current?.restaurant.id === menu.restaurant.id ? { ...current, categories: current.categories.filter((entry) => entry.id !== category.id), items: current.items.filter((item) => item.category_id !== category.id) } : current)
       showSuccess(dashboardText(dashboardLanguage, 'Category deleted.'))
     }
     catch (caught) { setError(caught instanceof Error ? caught.message : dashboardText(dashboardLanguage, 'Could not delete category')) }
@@ -346,8 +392,7 @@ export function DashboardPage() {
       const input = { restaurant_id: menu.restaurant.id, category_id: itemDraft.category_id, name_en: itemDraft.name_en, name_ar: itemDraft.name_ar, description_en: itemDraft.description_en, description_ar: itemDraft.description_ar, price: Number(itemDraft.price) || 0, image_url, gallery_image_id, variants: cleanVariants(itemDraft.variants), extras: cleanExtras(itemDraft.extras), available: editingItem?.available ?? true, sort_order: editingItem?.category_id === itemDraft.category_id ? editingItem.sort_order : Math.max(0, ...menu.items.filter((entry) => entry.category_id === itemDraft.category_id).map((entry) => entry.sort_order)) + 1 }
       let item: MenuItem
       if (editingItem) {
-        item = { ...editingItem, ...input }
-        await updateItem(editingItem.id, input)
+        item = await updateItem(editingItem.id, input)
       } else item = await createItem(input)
       if (editingItem?.image_url && editingItem.image_url !== image_url && !editingItem.gallery_image_id) await discardAsset(menu.restaurant.id, editingItem.image_url)
       setMenu((current) => current?.restaurant.id === menu.restaurant.id
@@ -363,12 +408,21 @@ export function DashboardPage() {
   }
 
   async function toggleAvailability(item: MenuItem) {
-    if (!menu) return
+    if (!menu || availabilityRequests.current.has(item.id)) return
+    const restaurantId = menu.restaurant.id
     const available = !item.available
+    availabilityRequests.current.add(item.id)
+    setAvailabilityBusy((current) => [...current, item.id])
     setError('')
-    setMenu({ ...menu, items: menu.items.map((entry) => entry.id === item.id ? { ...entry, available } : entry) })
+    setMenu((current) => patchMenuItem(current, restaurantId, item.id, { available }))
     try { await updateItem(item.id, { available }) }
-    catch (caught) { setMenu(menu); setError(caught instanceof Error ? caught.message : dashboardText(dashboardLanguage, 'Could not update item visibility')) }
+    catch (caught) {
+      setMenu((current) => patchMenuItem(current, restaurantId, item.id, { available: item.available }))
+      setError(caught instanceof Error ? caught.message : dashboardText(dashboardLanguage, 'Could not update item visibility'))
+    } finally {
+      availabilityRequests.current.delete(item.id)
+      setAvailabilityBusy((current) => current.filter((id) => id !== item.id))
+    }
   }
 
   async function toggleHighlight(item: MenuItem) {
@@ -435,7 +489,7 @@ export function DashboardPage() {
     try {
       await updateRestaurant(menu.restaurant.id, { template_id: templateId, primary_color: color, show_item_images: showItemImages })
       const restaurant = { ...menu.restaurant, template_id: templateId, primary_color: color, show_item_images: showItemImages }
-      setMenu({ ...menu, restaurant })
+      setMenu((current) => current?.restaurant.id === menu.restaurant.id ? { ...current, restaurant: { ...current.restaurant, template_id: templateId, primary_color: color, show_item_images: showItemImages } } : current)
       syncRestaurantSummary(restaurant)
       setTemplateDraft(''); setColorDraft(''); setImageVisibilityDraft(null)
       showSuccess(dashboardText(dashboardLanguage, 'Menu design updated.'))
@@ -456,7 +510,7 @@ export function DashboardPage() {
       await updateRestaurant(menu.restaurant.id, { logo_url: uploadedUrl })
       await discardAsset(menu.restaurant.id, menu.restaurant.logo_url)
       const restaurant = { ...menu.restaurant, logo_url: uploadedUrl }
-      setMenu({ ...menu, restaurant })
+      setMenu((current) => current?.restaurant.id === menu.restaurant.id ? { ...current, restaurant: { ...current.restaurant, logo_url: uploadedUrl } } : current)
       syncRestaurantSummary(restaurant)
       showSuccess(dashboardText(dashboardLanguage, 'Restaurant logo updated.'))
     } catch (caught) {
@@ -474,7 +528,7 @@ export function DashboardPage() {
       uploadedUrl = await uploadRestaurantAsset(menu.restaurant.id, file, 'cover')
       await updateRestaurant(menu.restaurant.id, { cover_image_url: uploadedUrl })
       await discardAsset(menu.restaurant.id, menu.restaurant.cover_image_url)
-      setMenu({ ...menu, restaurant: { ...menu.restaurant, cover_image_url: uploadedUrl } })
+      setMenu((current) => current?.restaurant.id === menu.restaurant.id ? { ...current, restaurant: { ...current.restaurant, cover_image_url: uploadedUrl } } : current)
       showSuccess(dashboardText(dashboardLanguage, 'Menu cover photo updated.'))
     } catch (caught) {
       await discardAsset(menu.restaurant.id, uploadedUrl)
@@ -493,7 +547,7 @@ export function DashboardPage() {
     try {
       await deleteItem(item.id)
       await discardAsset(menu.restaurant.id, item.image_url)
-      setMenu({ ...menu, items: menu.items.filter((entry) => entry.id !== item.id) })
+      setMenu((current) => current?.restaurant.id === menu.restaurant.id ? { ...current, items: current.items.filter((entry) => entry.id !== item.id) } : current)
       showSuccess(dashboardText(dashboardLanguage, 'Menu item deleted.'))
     }
     catch (caught) { setError(caught instanceof Error ? caught.message : dashboardText(dashboardLanguage, 'Could not delete item')) }
@@ -679,7 +733,7 @@ export function DashboardPage() {
           sort_order: nextSortOrder,
         }
       }))
-      setMenu({ ...menu, categories: allCategories, items: [...menu.items, ...importedItems] })
+      setMenu((current) => current?.restaurant.id === menu.restaurant.id ? { ...current, categories: [...current.categories, ...newCategories], items: [...current.items, ...importedItems] } : current)
       closeWorkbookTools()
       showSuccess(`${importedItems.length} ${t(importedItems.length === 1 ? 'item imported successfully.' : 'items imported successfully.')}`)
     } catch (caught) {
@@ -694,8 +748,8 @@ export function DashboardPage() {
   function addExtra() { setItemDraft((current) => ({ ...current, extras: [...current.extras, { id: crypto.randomUUID(), name_en: '', name_ar: '', price: 0 }] })) }
   function updateExtra(index: number, key: keyof ItemExtra, value: string | number) { setItemDraft((current) => ({ ...current, extras: current.extras.map((extra, position) => position === index ? { ...extra, [key]: value } : extra) })) }
 
-  if (loading) return <main className="dashboard-loading" dir={dashboardLanguage === 'ar' ? 'rtl' : 'ltr'}><Loading label={t('Loading your restaurant…')} /></main>
-  if (!menu) return <main className="dashboard-loading" dir={dashboardLanguage === 'ar' ? 'rtl' : 'ltr'}><div className="dashboard-load-error"><Store /><h1>{t('We couldn’t open your restaurant.')}</h1><p>{error || t('Please check your connection and try again.')}</p><button className="button button-primary" onClick={() => window.location.reload()}>{t('Try again')}</button></div></main>
+  if (loading || workspaceAccount !== accountKey) return <main className="dashboard-loading" dir={dashboardLanguage === 'ar' ? 'rtl' : 'ltr'}><Loading label={t('Loading your restaurant…')} /></main>
+  if (!menu) return <main className="dashboard-loading" dir={dashboardLanguage === 'ar' ? 'rtl' : 'ltr'}><div className="dashboard-load-error"><Store /><h1>{t('We couldn’t open your restaurant.')}</h1><p>{error || t('Please check your connection and try again.')}</p><button className="button button-primary" onClick={() => setLoadAttempt((attempt) => attempt + 1)}>{t('Try again')}</button></div></main>
   // Built from the same rule the database uses, so this card can never claim
   // "active" while the menu is actually offline.
   const subscription = subscriptionState(menu.restaurant)
@@ -911,7 +965,7 @@ export function DashboardPage() {
             {menu.items.length > 0 && <p className="menu-highlight-help"><Star aria-hidden="true" /> {t('Tap the star beside an item to mark it as recommended.')}</p>}
             {!menu.categories.length ? <div className="empty-card"><Store /><h2>{t('Create your first category')}</h2><p>{t('Start with Pizza, Drinks, Desserts or any section that fits your menu.')}</p><button className="button button-primary" onClick={() => openCategory()}><Plus /> {t('Add category')}</button></div> : <div className="category-list">{menu.categories.map((category, categoryIndex) => <section className="dashboard-card category-card" key={category.id}><div className="category-heading"><div><h2>{category.name_en}<small>{category.name_ar}</small></h2><span>{menu.items.filter((item) => item.category_id === category.id).length} {t('items')}</span></div><div className="category-actions"><button type="button" className="icon-button category-move category-move-up" disabled={categoryIndex === 0 || Boolean(categoryMoveBusy)} onClick={() => void moveCategory(category, 'up')} title={t('Move category up')} aria-label={`${t('Move category up')}: ${dashboardLanguage === 'ar' ? category.name_ar : category.name_en}`} aria-busy={categoryMoveBusy?.id === category.id && categoryMoveBusy.direction === 'up'}>{categoryMoveBusy?.id === category.id && categoryMoveBusy.direction === 'up' ? <LoaderCircle className="spin" aria-hidden="true" /> : <ArrowUp aria-hidden="true" />}</button><button type="button" className="icon-button category-move category-move-down" disabled={categoryIndex === menu.categories.length - 1 || Boolean(categoryMoveBusy)} onClick={() => void moveCategory(category, 'down')} title={t('Move category down')} aria-label={`${t('Move category down')}: ${dashboardLanguage === 'ar' ? category.name_ar : category.name_en}`} aria-busy={categoryMoveBusy?.id === category.id && categoryMoveBusy.direction === 'down'}>{categoryMoveBusy?.id === category.id && categoryMoveBusy.direction === 'down' ? <LoaderCircle className="spin" aria-hidden="true" /> : <ArrowDown aria-hidden="true" />}</button><button className="icon-button" disabled={Boolean(categoryMoveBusy)} onClick={() => openCategory(category)} title={t('Edit category')}><Pencil /></button><button className="icon-button danger" disabled={Boolean(categoryMoveBusy)} onClick={() => removeCategory(category)} title={t('Delete category')}><Trash2 /></button><button className="button button-small button-outline" onClick={() => openItem(category.id)}><Plus /> {t('Add item')}</button></div></div><div className="dashboard-items">{menu.items.filter((item) => item.category_id === category.id).sort((a, b) => a.sort_order - b.sort_order || a.id.localeCompare(b.id)).map((item, itemIndex, siblings) => <article key={item.id} className={!item.available ? 'unavailable' : ''}>
               {item.image_url ? <button type="button" className="item-icon item-icon-button" onClick={() => setImagePreview({ url: item.image_url!, name: dashboardLanguage === 'ar' ? item.name_ar : item.name_en })} aria-label={`${t('View photo')}: ${dashboardLanguage === 'ar' ? item.name_ar : item.name_en}`}><img src={item.image_url} alt="" /><Maximize2 aria-hidden="true" /></button> : <div className="item-icon">{item.name_en.slice(0, 1)}</div>}
-              <div className="dashboard-item-info"><b>{item.name_en}<small>{item.name_ar}</small></b><span>{item.variants.length ? `${item.variants.length} ${t('sizes')} · ${t('from')} ${formatMoney(Math.min(...item.variants.map((variant) => variant.price)), currency)}` : formatMoney(item.price, currency)}{(item.extras?.length ?? 0) > 0 ? ` · ${item.extras.length} ${t('extras')}` : ''}</span></div><button className="visibility" title={t(item.available ? 'Visible' : 'Hidden')} onClick={() => requestAvailabilityToggle(item)}>{item.available ? <><Eye /> {t('Visible')}</> : <><EyeOff /> {t('Hidden')}</>}</button><div className="item-actions"><button type="button" className={`icon-button item-highlight-toggle ${item.highlighted ? 'is-highlighted' : ''}`} aria-pressed={Boolean(item.highlighted)} aria-label={`${t(item.highlighted ? 'Remove highlight' : 'Highlight item')}: ${dashboardLanguage === 'ar' ? item.name_ar : item.name_en}`} title={t(item.highlighted ? 'Remove highlight' : 'Highlight item')} disabled={highlightBusy.includes(item.id)} aria-busy={highlightBusy.includes(item.id)} onClick={() => void toggleHighlight(item)}><Star fill={item.highlighted ? 'currentColor' : 'none'} aria-hidden="true" /></button><button type="button" className="icon-button item-move item-move-up" onClick={() => void moveItem(item, 'up')} disabled={itemIndex === 0 || Boolean(itemMoveBusy)} title={t('Move item up')} aria-label={`${t('Move item up')}: ${dashboardLanguage === 'ar' ? item.name_ar : item.name_en}`} aria-busy={itemMoveBusy?.id === item.id && itemMoveBusy.direction === 'up'}>{itemMoveBusy?.id === item.id && itemMoveBusy.direction === 'up' ? <LoaderCircle className="spin" aria-hidden="true" /> : <ArrowUp aria-hidden="true" />}</button><button type="button" className="icon-button item-move item-move-down" onClick={() => void moveItem(item, 'down')} disabled={itemIndex === siblings.length - 1 || Boolean(itemMoveBusy)} title={t('Move item down')} aria-label={`${t('Move item down')}: ${dashboardLanguage === 'ar' ? item.name_ar : item.name_en}`} aria-busy={itemMoveBusy?.id === item.id && itemMoveBusy.direction === 'down'}>{itemMoveBusy?.id === item.id && itemMoveBusy.direction === 'down' ? <LoaderCircle className="spin" aria-hidden="true" /> : <ArrowDown aria-hidden="true" />}</button><button className="icon-button" disabled={Boolean(itemMoveBusy)} onClick={() => openItem(category.id, item)} title={t('Edit item')}><Pencil /></button><button className="icon-button danger" disabled={Boolean(itemMoveBusy)} onClick={() => removeItem(item)} title={t('Delete item')}><Trash2 /></button></div></article>)}{!menu.items.some((item) => item.category_id === category.id) && <p className="empty-row">{t('No items in this category yet.')}</p>}</div></section>)}</div>}
+              <div className="dashboard-item-info"><b>{item.name_en}<small>{item.name_ar}</small></b><span>{item.variants.length ? `${item.variants.length} ${t('sizes')} · ${t('from')} ${formatMoney(Math.min(...item.variants.map((variant) => variant.price)), currency)}` : formatMoney(item.price, currency)}{(item.extras?.length ?? 0) > 0 ? ` · ${item.extras.length} ${t('extras')}` : ''}</span></div><button className="visibility" disabled={availabilityBusy.includes(item.id)} aria-busy={availabilityBusy.includes(item.id)} title={t(item.available ? 'Visible' : 'Hidden')} onClick={() => requestAvailabilityToggle(item)}>{item.available ? <><Eye /> {t('Visible')}</> : <><EyeOff /> {t('Hidden')}</>}</button><div className="item-actions"><button type="button" className={`icon-button item-highlight-toggle ${item.highlighted ? 'is-highlighted' : ''}`} aria-pressed={Boolean(item.highlighted)} aria-label={`${t(item.highlighted ? 'Remove highlight' : 'Highlight item')}: ${dashboardLanguage === 'ar' ? item.name_ar : item.name_en}`} title={t(item.highlighted ? 'Remove highlight' : 'Highlight item')} disabled={highlightBusy.includes(item.id)} aria-busy={highlightBusy.includes(item.id)} onClick={() => void toggleHighlight(item)}><Star fill={item.highlighted ? 'currentColor' : 'none'} aria-hidden="true" /></button><button type="button" className="icon-button item-move item-move-up" onClick={() => void moveItem(item, 'up')} disabled={itemIndex === 0 || Boolean(itemMoveBusy)} title={t('Move item up')} aria-label={`${t('Move item up')}: ${dashboardLanguage === 'ar' ? item.name_ar : item.name_en}`} aria-busy={itemMoveBusy?.id === item.id && itemMoveBusy.direction === 'up'}>{itemMoveBusy?.id === item.id && itemMoveBusy.direction === 'up' ? <LoaderCircle className="spin" aria-hidden="true" /> : <ArrowUp aria-hidden="true" />}</button><button type="button" className="icon-button item-move item-move-down" onClick={() => void moveItem(item, 'down')} disabled={itemIndex === siblings.length - 1 || Boolean(itemMoveBusy)} title={t('Move item down')} aria-label={`${t('Move item down')}: ${dashboardLanguage === 'ar' ? item.name_ar : item.name_en}`} aria-busy={itemMoveBusy?.id === item.id && itemMoveBusy.direction === 'down'}>{itemMoveBusy?.id === item.id && itemMoveBusy.direction === 'down' ? <LoaderCircle className="spin" aria-hidden="true" /> : <ArrowDown aria-hidden="true" />}</button><button className="icon-button" disabled={Boolean(itemMoveBusy)} onClick={() => openItem(category.id, item)} title={t('Edit item')}><Pencil /></button><button className="icon-button danger" disabled={Boolean(itemMoveBusy)} onClick={() => removeItem(item)} title={t('Delete item')}><Trash2 /></button></div></article>)}{!menu.items.some((item) => item.category_id === category.id) && <p className="empty-row">{t('No items in this category yet.')}</p>}</div></section>)}</div>}
           </>}
 
           {panel === 'design' && <>

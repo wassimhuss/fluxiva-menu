@@ -1,7 +1,8 @@
 import type { Session } from '@supabase/supabase-js'
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
+import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { getAdminRole } from './api'
 import { isSupabaseConfigured, supabase } from './supabase'
+import { clearOwnerCache } from './queryClient'
 import type { AdminRole } from './types'
 
 interface AuthValue {
@@ -26,6 +27,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   /** Which auth state the role above was resolved for. */
   const [resolvedFor, setResolvedFor] = useState<string | null>(null)
   const demoMode = !isSupabaseConfigured
+  const accountRef = useRef<string | null>(null)
 
   const authKey = demoMode ? 'demo' : session?.user.id ?? 'anonymous'
 
@@ -40,16 +42,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!supabase) return
+    let cancelled = false
+    let authEventReceived = false
+    const applySession = (nextSession: Session | null) => {
+      if (cancelled) return
+      const nextAccount = nextSession?.user.id ?? null
+      if (accountRef.current !== nextAccount) clearOwnerCache()
+      accountRef.current = nextAccount
+      setSession(nextSession)
+    }
     supabase.auth.getSession()
-      .then(({ data }) => setSession(data.session))
+      .then(({ data }) => { if (!authEventReceived) applySession(data.session) })
       // A rejection here — a network blip, or a browser that throws on blocked
       // site data — must still end the loading state. Otherwise every guard
       // that waits on it renders nothing and the dashboard is a blank page
       // with no error and no way back.
-      .catch(() => setSession(null))
-      .finally(() => setLoading(false))
-    const { data } = supabase.auth.onAuthStateChange((_event, nextSession) => setSession(nextSession))
-    return () => data.subscription.unsubscribe()
+      .catch(() => { if (!authEventReceived) applySession(null) })
+      .finally(() => { if (!cancelled) setLoading(false) })
+    const { data } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+      authEventReceived = true
+      applySession(nextSession)
+    })
+    return () => { cancelled = true; data.subscription.unsubscribe() }
   }, [])
 
   // Resolved per session: signing out must drop the role, and signing in as a
@@ -59,17 +73,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Wait for the session to settle, so "no session yet" is never mistaken
     // for "signed out".
     if (loading) return
-    if (!session) { setAdminRole(null); setResolvedFor('anonymous'); return }
+    if (authKey === 'anonymous') { setAdminRole(null); setResolvedFor('anonymous'); return }
 
     let cancelled = false
     const settle = (role: AdminRole | null) => {
       if (cancelled) return
       setAdminRole(role)
-      setResolvedFor(session.user.id)
+      setResolvedFor(authKey)
     }
     getAdminRole().then(settle, () => settle(null))
     return () => { cancelled = true }
-  }, [session, demoMode, loading])
+  }, [authKey, demoMode, loading])
 
   const value = useMemo(() => ({
     session,
@@ -77,7 +91,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     demoMode,
     adminRole,
     adminLoading,
-    signOut: async () => { if (supabase) await supabase.auth.signOut() },
+    signOut: async () => { clearOwnerCache(); if (supabase) await supabase.auth.signOut() },
   }), [session, loading, demoMode, adminRole, adminLoading])
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

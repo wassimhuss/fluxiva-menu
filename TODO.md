@@ -9,6 +9,18 @@ This file is the working product backlog for developers and AI agents. Keep it u
 - `[x]` Complete
 - `[!]` Blocked or waiting for a prerequisite
 
+## API experience — first phase
+
+**Status:** `[x]` Implemented and verified locally and with read-only production queries. Frontend deployment remains pending; no migration is needed.
+
+- [x] Load public menus, owner menus and public branch lists in one data request each, retaining RLS, eligibility checks and deterministic ordering.
+- [x] Add a lazy-loaded owner cache with account/branch isolation, in-flight deduplication, 30-second freshness, five-minute retention, confirmed-save reconciliation and clearing/cancellation on sign-out.
+- [x] Show cached branches immediately; prevent obsolete reads, analytics or background refreshes from replacing the active branch, drafts or newer saves.
+- [x] Stop same-account session refreshes from reloading workspace data and roles. Scope availability rollback to the affected field and prevent repeated taps.
+- [x] Add request deadlines/cancellation and bilingual connection-error Retry controls. Confirm matching rows for item/category/restaurant updates and item/category deletes.
+- [x] Add API/cache regression tests; verify English/Arabic mobile/desktop owner and public routes, failed-connection recovery, lint/build, clean installation, and one-request production reads (2 branches, 6 categories, 23 items).
+- [ ] Follow-up: folder-based owner-gallery loading, atomic Excel imports, rank-only category RPC, batched/background photo cleanup, progressive photo display, stable design-preview iframe, and measured database/index tuning.
+
 ## Move whole categories one position up or down
 
 **Status:** `[x]` Implemented and verified locally. Frontend deployment remains pending; no database migration is needed.

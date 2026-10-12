@@ -23,6 +23,7 @@ Requirements and expectations:
 ## 2. Establish a baseline
 
 ```bash
+npm run test
 npm run lint
 npm run build
 npm run dev
@@ -63,6 +64,12 @@ Do not silently depend on a field that is absent from the demo data or existing 
 For item positioning, verify **Menu editor → Move item up / Move item down** moves exactly one position per tap within the current category. Check middle/first/last items, a one-item category, 320/390 px mobile and desktop in English/Arabic, keyboard labels, saving/error feedback, tied ranks, unchanged other categories/branches, public-menu order and newly added/imported items. Migration `025` provides the atomic owner RPC; verify owner access, anonymous/cross-owner denial and rollback on failure. Check preservation of photos, especially cropped/archived gallery references, bilingual content, variants, extras, prices and sold-out/recommendation states. Do not use a full-row item upsert for ordering: its INSERT trigger would revalidate gallery references and replace cropped photos.
 
 For whole-category positioning, verify category-header **Move category up / Move category down** moves exactly one position per tap on desktop and 320/390 px mobile in English/Arabic. Check first/last and single-category disabled states, repeat moves, saving/error feedback, tied ranks, other category relative order, unchanged category items, demo branch isolation, public category-tab order and the initial section, plus adding/importing categories after a move. It uses existing `menu_categories.sort_order` with one atomic batch upsert under owner INSERT/UPDATE RLS; verify a failed batch preserves the entire previous order and cross-owner writes remain denied. No migration is required.
+
+### Change API loading or owner caching
+
+Run `npm run test` as well as lint/build. Tests use the real transpiled API with a controlled client and never write to production. Cache keys must include account and branch IDs, public eligibility must be rechecked on every open, and confirmed item changes must patch only affected fields. Do not persist dashboard form drafts in the cache. Keep the TanStack import lazy so guest entry bundles do not include owner-cache code. Keep both npm and pnpm lockfiles aligned when adding a dependency (Render uses pnpm).
+
+Verify login → dashboard in demo mode, save an item/recommendation/order change, switch branches and return, and confirm edits persist independently. Also check English/Arabic at 390 and 1280 px, connection failure → bilingual Retry → successful recovery, sign-out/account isolation, overlapping saves, and late branch/analytics responses. Same-account auth refresh and returning browser focus must preserve unsaved drafts. Public menus and branch lists each use one data request; analytics is separate. Query retries remain disabled to avoid stacking them with SDK retries. No migration is needed for the initial API/cache enhancement phase.
 
 ### Change the public menu
 
@@ -135,6 +142,7 @@ Check internal links and command accuracy.
 ### UI or client-logic changes
 
 ```bash
+npm run test
 npm run lint
 npm run build
 ```

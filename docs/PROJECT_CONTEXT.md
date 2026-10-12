@@ -16,6 +16,7 @@ The current commercial model is one plan at **$60 USD per year** after a **14-da
 | Build tool | Vite 6 |
 | Routing | React Router 7 |
 | Backend | Supabase Auth, Postgres, Storage, and RPC |
+| Owner data cache | TanStack Query, loaded only for owner-menu requests |
 | Icons | Lucide React |
 | QR generation | `qrcode` |
 | Styling | A central responsive stylesheet in `src/styles.css` |
@@ -152,6 +153,18 @@ The shared Fluxiva Gallery uses `public.gallery_categories` as real bilingual fo
 - The `menu-assets` bucket is public for reads, but authenticated writes are allowed only under a folder whose name is the owner's restaurant UUID.
 - Platform RPCs use `security definer`, an empty `search_path`, and explicit admin checks.
 
+## API loading and owner cache
+
+Public menus load the restaurant, categories and items together in one nested Supabase SELECT. Public branch choosers likewise load the brand and eligible branch-card fields together. Both retain existing RLS and client publication/subscription checks, and order categories/items by `sort_order`, then ID. Public data is not retained in the owner cache; every guest open rechecks eligibility. Sold-out items remain readable. These changes need no migration.
+
+Owner menus use the same single-request shape with an explicit `owner_id` filter. `src/lib/queryClient.ts` lazily imports TanStack Query so the cache library stays out of the initial guest bundle. Menu keys include account and restaurant IDs. Saved menus are fresh for 30 seconds and retained in memory for five minutes; concurrent reads share one request, and callers receive independent clones. Successful item/category/restaurant writes reconcile saved cache data. Item field mutations and reorder results patch only the changed fields, preserving independent saves. Failed or zero-row updates do not change the cache. Deleted branches are removed from the cache; sign-out/account changes cancel pending reads and clear all owner data, including loads waiting for the cache library.
+
+Returning to a cached branch displays it immediately and refreshes stale data in the background. Request sequence IDs keep late menu/analytics responses on their originating branch. A menu revision check prevents background refreshes from replacing drafts or newer saves. Same-account token/session refreshes do not reload the workspace or operator-role lookup. There is deliberately no automatic focus refresh of owner drafts. Existing image preloading and design-preview iframe behavior remain unchanged in this phase.
+
+Public menu/branch requests are aborted on route changes or retry, with a 15-second deadline. Workspace metadata, owner menu, analytics and role reads also have deadlines. Network failures show bilingual retry controls separately from genuinely unavailable menus. Availability changes disable repeated taps and merge/restore only the affected item's availability; they cannot restore an obsolete whole-menu snapshot. Query-level retries are disabled because the installed Supabase SDK already retries eligible reads; writes are not automatically retried.
+
+`npm run test` uses Node's test runner and the real transpiled API with a controlled client. It covers request counts, public eligibility, ordering, cache deduplication/account isolation, confirmed and failed saves, cancellation and availability rollback. The new nested queries were also verified read-only against production on 2026-10-12: each used one request and returned the existing 2 eligible branches, 6 categories and 23 items. Production data was not modified. Frontend deployment remains pending.
+
 ## Main workflows
 
 ### Owner onboarding
@@ -221,7 +234,7 @@ Supabase migrations are currently expected to be run manually in sequence in the
 ## Known constraints and technical debt
 
 - On wide desktop Carousel layouts, multiple fully visible cards can keep the active caption on the previous dish after a navigation step. Centre-aware tracking is recorded in `TODO.md`; Reel's vertical native-scrolling change does not alter the shared observer or Carousel gesture lock.
-- There is no automated test suite yet.
+- API/cache regression tests exist; full browser automation and database-policy tests are still separate verification work.
 - Vite currently reports a JavaScript chunk slightly over 500 kB after minification. Consider route-based lazy loading before the application grows substantially.
 - All styling is in one large file. Page-level CSS modules or organized stylesheet splits would lower regression risk.
 - `DashboardPage.tsx` owns many workflows and is a strong candidate for component/hook extraction.

@@ -74,18 +74,28 @@ export function PublicMenuPage() {
   const [contact, setContact] = useState<MenuContactCard | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [loadAttempt, setLoadAttempt] = useState(0)
+  const [settledSlug, setSettledSlug] = useState('')
   const [language, setLanguage] = useState<Language>('en')
   const [activeCategory, setActiveCategory] = useState('')
   const [switchingTemplate, setSwitchingTemplate] = useState<string | null>(null)
 
   useEffect(() => {
-    getPublicMenu(slug).then(async (data) => {
+    const controller = new AbortController()
+    let cancelled = false
+    setLoading(true); setError(''); setMenu(null); setContact(null)
+    getPublicMenu(slug, controller.signal).then(async (data) => {
+      if (cancelled) return
       setMenu(data)
       if (data) { setLanguage(data.restaurant.default_language); setActiveCategory(data.categories[0]?.id ?? '') }
-      // No servable menu: fetch just enough to point the customer at a human.
-      else setContact(await getMenuContactCard(slug))
-    }).catch(() => setError('This menu could not be loaded.')).finally(() => setLoading(false))
-  }, [slug])
+      else {
+        const card = await getMenuContactCard(slug, controller.signal)
+        if (!cancelled) setContact(card)
+      }
+    }).catch(() => { if (!cancelled) setError('This menu could not be loaded.') })
+      .finally(() => { if (!cancelled) { setSettledSlug(slug); setLoading(false) } })
+    return () => { cancelled = true; controller.abort() }
+  }, [slug, loadAttempt])
 
   /* The design panel previews an unsaved brand colour the same way it already
      previews an unsaved template. Validated as a hex literal first: this value
@@ -287,8 +297,12 @@ export function PublicMenuPage() {
 
   // The restaurant language arrives with the menu response. Keep this first
   // network-loading frame language-neutral so Arabic menus never flash English.
-  if (loading) return <MenuLoadingState />
-  if (error || !menu) return <MenuUnavailable contact={contact} />
+  if (loading || settledSlug !== slug) return <MenuLoadingState />
+  if (error) return <main className="public-menu-loading"><div className="public-menu-loading-card">
+    <h1>Connection interrupted</h1><p dir="rtl" lang="ar">تعذّر الاتصال. حاول مجددًا.</p>
+    <button className="button button-primary" onClick={() => setLoadAttempt((attempt) => attempt + 1)}>Try again / حاول مجددًا</button>
+  </div></main>
+  if (!menu) return <MenuUnavailable contact={contact} />
   // Hold the branded loader until the first screen can render complete.
   if (!imagesReady) return <MenuLoadingState language={language} />
 

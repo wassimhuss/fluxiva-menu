@@ -1,6 +1,8 @@
 import type { Session } from '@supabase/supabase-js'
 import { demoBrand, demoContactCard, demoGalleryCategories, demoGalleryImages, demoMenu, demoMenus, demoMenuViewStats, demoPlatformAudit, demoPlatformRestaurants, demoRestaurants } from './demo'
 import { supabase } from './supabase'
+import { getCachedOwnerQueryClient, getOwnerQueryClient, ownerCacheGeneration } from './queryClient'
+import { patchMenuItem } from './menuState'
 import { subscriptionState } from './subscription'
 import type { AdminRole, BrandGroup, BrandPlaces, Category, GalleryCategory, GalleryImage, ItemExtra, MenuContactCard, MenuItem, MenuViewDay, MenuViewStats, PlatformAuditEntry, PlatformRestaurant, Restaurant, RestaurantMenu, Variant } from './types'
 
@@ -86,44 +88,43 @@ async function optimizeImage(file: File, purpose: AssetPurpose) {
   return new File([blob], `${filename}.webp`, { type: 'image/webp' })
 }
 
-export async function getPublicMenu(slug: string): Promise<RestaurantMenu | null> {
-  if (!supabase) return demoMenus.find((menu) => menu.restaurant.slug === slug && isPublicPlace(menu.restaurant)) ?? null
+const readSignal = (signal?: AbortSignal) => signal
+  ? AbortSignal.any([signal, AbortSignal.timeout(15_000)])
+  : AbortSignal.timeout(15_000)
 
-  const { data: restaurant, error } = await supabase
-    .from('restaurants')
-    .select('*')
-    .eq('slug', slug)
-    .eq('is_published', true)
-    .in('subscription_status', ['trial', 'active'])
-    .maybeSingle()
-  if (error) throw error
-  if (!restaurant || !isPublicPlace(restaurant)) return null
+const CATEGORY_COLUMNS = 'id,restaurant_id,name_en,name_ar,sort_order'
+const ITEM_COLUMNS = 'id,restaurant_id,category_id,name_en,name_ar,description_en,description_ar,price,image_url,gallery_image_id,variants,extras,available,highlighted,sort_order'
+const RESTAURANT_COLUMNS = 'id,owner_id,brand_id,slug,name_en,name_ar,description_en,description_ar,logo_url,cover_image_url,primary_color,phone,whatsapp,instagram,maps_url,address_en,address_ar,currency,temporarily_closed,is_published,menu_copy_pending,template_id,show_item_images,takeaway_enabled,default_language,subscription_status,trial_ends_at,subscription_ends_at'
+const MENU_COLUMNS = `${RESTAURANT_COLUMNS},categories:menu_categories(${CATEGORY_COLUMNS}),items:menu_items(${ITEM_COLUMNS})`
+const orderRows = <T extends { sort_order: number; id: string }>(rows: T[]) => [...rows].sort((a, b) => a.sort_order - b.sort_order || a.id.localeCompare(b.id))
 
-  const [categoriesResult, itemsResult] = await Promise.all([
-    supabase.from('menu_categories').select('*').eq('restaurant_id', restaurant.id).order('sort_order').order('id'),
-    supabase.from('menu_items').select('*').eq('restaurant_id', restaurant.id).order('sort_order').order('id'),
-  ])
-  if (categoriesResult.error) throw categoriesResult.error
-  if (itemsResult.error) throw itemsResult.error
-  return { restaurant, categories: categoriesResult.data ?? [], items: itemsResult.data ?? [] }
+/** One response contains the restaurant and both ordered child collections, under RLS. */
+function unpackMenu(data: Restaurant & { categories: Category[]; items: MenuItem[] }): RestaurantMenu {
+  const { categories, items, ...restaurant } = data
+  return { restaurant, categories: orderRows(categories ?? []), items: orderRows(items ?? []) }
 }
 
-/** Loads the lightweight branch chooser reached by a brand-level QR code. */
-export async function getPublicBrand(slug: string): Promise<BrandPlaces | null> {
-  if (!supabase) return ['demo', demoBrand.slug].includes(slug) ? { brand: demoBrand, restaurants: demoRestaurants.filter(isPublicPlace) } : null
-
-  const { data: brand, error } = await supabase.from('brands').select('*').eq('slug', slug).maybeSingle()
+export async function getPublicMenu(slug: string, signal?: AbortSignal): Promise<RestaurantMenu | null> {
+  if (!supabase) return demoMenus.find((menu) => menu.restaurant.slug === slug && isPublicPlace(menu.restaurant)) ?? null
+  const { data, error } = await supabase.from('restaurants').select(MENU_COLUMNS)
+    .eq('slug', slug).eq('is_published', true).in('subscription_status', ['trial', 'active'])
+    .abortSignal(readSignal(signal)).maybeSingle()
   if (error) throw error
-  if (!brand) return null
-  const { data: restaurants, error: restaurantsError } = await supabase
-    .from('restaurants')
-    .select('*')
-    .eq('brand_id', brand.id)
-    .eq('is_published', true)
-    .in('subscription_status', ['trial', 'active'])
-    .order('name_en')
-  if (restaurantsError) throw restaurantsError
-  return { brand: brand as BrandGroup, restaurants: ((restaurants ?? []) as Restaurant[]).filter(isPublicPlace) }
+  if (!data || !isPublicPlace(data as unknown as Restaurant)) return null
+  return unpackMenu(data as unknown as Restaurant & { categories: Category[]; items: MenuItem[] })
+}
+
+/** Loads only the public branch-card fields in the same request as its brand. */
+export async function getPublicBrand(slug: string, signal?: AbortSignal): Promise<BrandPlaces | null> {
+  if (!supabase) return ['demo', demoBrand.slug].includes(slug) ? { brand: demoBrand, restaurants: demoRestaurants.filter(isPublicPlace) } : null
+  const { data, error } = await supabase.from('brands')
+    .select(`id,slug,name_en,name_ar,logo_url,primary_color,default_language,restaurants(id,slug,name_en,name_ar,primary_color,default_language,address_en,address_ar,temporarily_closed,is_published,subscription_status,trial_ends_at,subscription_ends_at)`)
+    .eq('slug', slug).eq('restaurants.is_published', true).in('restaurants.subscription_status', ['trial', 'active'])
+    .abortSignal(readSignal(signal)).maybeSingle()
+  if (error) throw error
+  if (!data) return null
+  const { restaurants, ...brand } = data
+  return { brand: brand as BrandGroup, restaurants: (restaurants as Restaurant[]).filter(isPublicPlace).sort((a, b) => a.name_en.localeCompare(b.name_en)) }
 }
 
 function isPublicPlace(restaurant: Restaurant) {
@@ -134,9 +135,9 @@ function isPublicPlace(restaurant: Restaurant) {
  * Contact details for a slug whose menu is not being served. Returns null when
  * the slug does not exist at all.
  */
-export async function getMenuContactCard(slug: string): Promise<MenuContactCard | null> {
+export async function getMenuContactCard(slug: string, signal?: AbortSignal): Promise<MenuContactCard | null> {
   if (!supabase) return slug === 'demo' && demoRestaurants.some((restaurant) => restaurant.slug === slug && restaurant.is_published !== false) ? demoContactCard : null
-  const { data, error } = await supabase.rpc('menu_contact_card', { slug_input: slug })
+  const { data, error } = await supabase.rpc('menu_contact_card', { slug_input: slug }).abortSignal(readSignal(signal))
   if (error) return null
   const card = (data as MenuContactCard[] | null)?.[0]
   return card ?? null
@@ -156,7 +157,7 @@ export async function recordMenuView(restaurantId: string) {
   try { await supabase.rpc('record_menu_view', { restaurant_id_input: restaurantId }) } catch { /* ignore */ }
 }
 
-export async function getMenuViewStats(restaurantId: string): Promise<MenuViewStats> {
+export async function getMenuViewStats(restaurantId: string, signal?: AbortSignal): Promise<MenuViewStats> {
   const empty: MenuViewStats = { days: [], total: 0, previousTotal: 0 }
   if (!supabase) return restaurantId.startsWith('demo-restaurant') ? demoMenuViewStats : empty
 
@@ -165,7 +166,7 @@ export async function getMenuViewStats(restaurantId: string): Promise<MenuViewSt
     .select('viewed_on, views')
     .eq('restaurant_id', restaurantId)
     .gte('viewed_on', isoDate(VIEW_WINDOW_DAYS * 2 - 1))
-    .order('viewed_on')
+    .order('viewed_on').abortSignal(readSignal(signal))
   if (error) return empty
 
   const rows = (data ?? []) as MenuViewDay[]
@@ -189,37 +190,81 @@ export async function getMenuViewStats(restaurantId: string): Promise<MenuViewSt
   }
 }
 
-export async function getOwnerBrand(session: Session | null): Promise<BrandGroup | null> {
+export async function getOwnerBrand(session: Session | null, signal?: AbortSignal): Promise<BrandGroup | null> {
   if (!supabase) return demoBrand
   if (!session) return null
-  const { data, error } = await supabase.from('brands').select('*').eq('owner_id', session.user.id).maybeSingle()
+  const { data, error } = await supabase.from('brands').select('*').eq('owner_id', session.user.id).abortSignal(readSignal(signal)).maybeSingle()
   if (error) throw error
   return data as BrandGroup | null
 }
 
-export async function getOwnerRestaurants(session: Session | null): Promise<Restaurant[]> {
+export async function getOwnerRestaurants(session: Session | null, signal?: AbortSignal): Promise<Restaurant[]> {
   if (!supabase) return [...demoRestaurants]
   if (!session) return []
-  const { data, error } = await supabase.from('restaurants').select('*').eq('owner_id', session.user.id).order('created_at')
+  const { data, error } = await supabase.from('restaurants').select('*').eq('owner_id', session.user.id).order('created_at').abortSignal(readSignal(signal))
   if (error) throw error
   return (data ?? []) as Restaurant[]
 }
 
+const ownerMenuKey = (session: Session | null, restaurantId?: string) => ['owner-menu', session?.user.id ?? 'demo', restaurantId ?? 'first'] as const
+
+export function getCachedOwnerMenu(session: Session | null, restaurantId: string) {
+  const cached = getCachedOwnerQueryClient()?.getQueryData<RestaurantMenu | null>(ownerMenuKey(session, restaurantId))
+  return cached ? structuredClone(cached) : null
+}
+
+/** Fresh branch visits share one in-flight request and reuse data for 30 seconds. */
 export async function getOwnerMenu(session: Session | null, restaurantId?: string): Promise<RestaurantMenu | null> {
-  if (!supabase) return demoMenus.find((entry) => entry.restaurant.id === restaurantId) ?? demoMenus[0]
-  if (!session) return null
-  let query = supabase.from('restaurants').select('*').eq('owner_id', session.user.id)
-  if (restaurantId) query = query.eq('id', restaurantId)
-  const { data: restaurant, error } = await query.order('created_at').limit(1).maybeSingle()
-  if (error) throw error
-  if (!restaurant) return null
-  const [categories, items] = await Promise.all([
-    supabase.from('menu_categories').select('*').eq('restaurant_id', restaurant.id).order('sort_order').order('id'),
-    supabase.from('menu_items').select('*').eq('restaurant_id', restaurant.id).order('sort_order').order('id'),
-  ])
-  if (categories.error) throw categories.error
-  if (items.error) throw items.error
-  return { restaurant, categories: categories.data ?? [], items: items.data ?? [] }
+  if (supabase && !session) return null
+  const generation = ownerCacheGeneration()
+  const queryClient = await getOwnerQueryClient()
+  if (generation !== ownerCacheGeneration()) throw new Error('Account changed while loading.')
+  const data = await queryClient.fetchQuery({
+    queryKey: ownerMenuKey(session, restaurantId),
+    queryFn: async ({ signal }) => {
+      if (!supabase) return structuredClone(demoMenus.find((entry) => entry.restaurant.id === restaurantId) ?? demoMenus[0])
+      let query = supabase.from('restaurants').select(MENU_COLUMNS).eq('owner_id', session!.user.id)
+      if (restaurantId) query = query.eq('id', restaurantId)
+      const { data, error } = await query.order('created_at').limit(1)
+        .abortSignal(AbortSignal.any([signal, AbortSignal.timeout(15_000)])).maybeSingle()
+      if (error) throw error
+      return data ? unpackMenu(data as unknown as Restaurant & { categories: Category[]; items: MenuItem[] }) : null
+    },
+  })
+  return data ? structuredClone(data) : null
+}
+
+/** Patch confirmed saved data, never dashboard form drafts, into matching branches. */
+function patchOwnerMenus(matches: (menu: RestaurantMenu) => boolean, change: (menu: RestaurantMenu) => RestaurantMenu) {
+  const queryClient = getCachedOwnerQueryClient()
+  if (!queryClient) return
+  for (const [key, menu] of queryClient.getQueriesData<RestaurantMenu | null>({ queryKey: ['owner-menu'] })) {
+    if (!menu || !matches(menu)) continue
+    void queryClient.cancelQueries({ queryKey: key, exact: true })
+    queryClient.setQueryData(key, change(structuredClone(menu)))
+  }
+}
+
+function patchRestaurant(restaurant: Restaurant) {
+  patchOwnerMenus((menu) => menu.restaurant.id === restaurant.id, (menu) => ({ ...menu, restaurant }))
+}
+function patchCategories(categories: Category[]) {
+  if (!categories.length) return
+  patchOwnerMenus((menu) => categories.some((category) => category.restaurant_id === menu.restaurant.id), (menu) => ({
+    ...menu, categories: orderRows([...menu.categories.filter((entry) => !categories.some((category) => category.id === entry.id)), ...categories.filter((entry) => entry.restaurant_id === menu.restaurant.id)]),
+  }))
+}
+function patchItems(items: MenuItem[]) {
+  if (!items.length) return
+  patchOwnerMenus((menu) => items.some((item) => item.restaurant_id === menu.restaurant.id), (menu) => ({
+    ...menu, items: orderRows([...menu.items.filter((entry) => !items.some((item) => item.id === entry.id)), ...items.filter((entry) => entry.restaurant_id === menu.restaurant.id)]),
+  }))
+}
+
+function patchItemFields(item: MenuItem, fields: Partial<MenuItem>) {
+  const patch = Object.fromEntries(Object.keys(fields).map((key) => [key, item[key as keyof MenuItem]])) as Partial<MenuItem>
+  if ('gallery_image_id' in fields) patch.image_url = item.image_url
+  patchOwnerMenus((menu) => menu.restaurant.id === item.restaurant_id, (menu) => patchMenuItem(menu, item.restaurant_id, item.id, patch)!)
 }
 
 async function ensureOwnerBrand(session: Session, input: RestaurantInput) {
@@ -361,11 +406,15 @@ function restaurantCopyAsset(publicUrl: string): { bucket: 'menu-assets' | 'gall
 export async function updateRestaurant(id: string, values: Partial<Restaurant>) {
   if (!supabase) {
     const restaurant = demoRestaurants.find((place) => place.id === id)
-    if (restaurant) Object.assign(restaurant, values)
-    return
+    if (!restaurant) throw new Error('Restaurant not found.')
+    Object.assign(restaurant, values)
+    patchRestaurant(structuredClone(restaurant))
+    return structuredClone(restaurant)
   }
-  const { error } = await supabase.from('restaurants').update(values).eq('id', id)
+  const { data, error } = await supabase.from('restaurants').update(values).eq('id', id).select().single()
   if (error) throw error
+  patchRestaurant(data as Restaurant)
+  return data as Restaurant
 }
 
 /** Persist before changing dashboard state; owners retain access to hidden places. */
@@ -375,10 +424,12 @@ export async function setPlacePublished(id: string, published: boolean): Promise
     if (!restaurant) throw new Error('Could not update branch visibility.')
     if (published && restaurant.menu_copy_pending) throw new Error('Could not update branch visibility.')
     restaurant.is_published = published
+    patchRestaurant(structuredClone(restaurant))
     return { ...restaurant }
   }
   const { data, error } = await supabase.from('restaurants').update({ is_published: published }).eq('id', id).select().single()
   if (error) throw error
+  patchRestaurant(data as Restaurant)
   return data as Restaurant
 }
 
@@ -391,10 +442,22 @@ export async function deleteRestaurant(id: string, slugConfirmation: string) {
     demoRestaurants.splice(index, 1)
     const menuIndex = demoMenus.findIndex((entry) => entry.restaurant.id === id)
     if (menuIndex >= 0) demoMenus.splice(menuIndex, 1)
+    for (const query of getCachedOwnerQueryClient()?.getQueryCache().findAll({ queryKey: ['owner-menu'] }) ?? []) {
+      if (query.queryKey[2] === id || (query.state.data as RestaurantMenu | null)?.restaurant.id === id) {
+        void getCachedOwnerQueryClient()?.cancelQueries({ queryKey: query.queryKey, exact: true })
+        getCachedOwnerQueryClient()?.removeQueries({ queryKey: query.queryKey, exact: true })
+      }
+    }
     return
   }
   const { error } = await supabase.rpc('owner_delete_place', { restaurant_id_input: id, slug_confirmation: slugConfirmation })
   if (error) throw error
+  for (const query of getCachedOwnerQueryClient()?.getQueryCache().findAll({ queryKey: ['owner-menu'] }) ?? []) {
+      if (query.queryKey[2] === id || (query.state.data as RestaurantMenu | null)?.restaurant.id === id) {
+        void getCachedOwnerQueryClient()?.cancelQueries({ queryKey: query.queryKey, exact: true })
+        getCachedOwnerQueryClient()?.removeQueries({ queryKey: query.queryKey, exact: true })
+      }
+    }
 }
 
 /** Stores the owner's chosen public menu design. */
@@ -406,10 +469,12 @@ export async function createCategory(input: CategoryInput) {
   if (!supabase) {
     const category = { ...input, id: crypto.randomUUID() } as Category
     demoMenus.find((entry) => entry.restaurant.id === input.restaurant_id)?.categories.push(structuredClone(category))
+    patchCategories([structuredClone(category)])
     return category
   }
   const { data, error } = await supabase.from('menu_categories').insert(input).select().single()
   if (error) throw error
+  patchCategories([data as Category])
   return data as Category
 }
 
@@ -419,17 +484,22 @@ export async function createCategories(inputs: CategoryInput[]) {
   if (!supabase) return Promise.all(inputs.map(createCategory))
   const { data, error } = await supabase.from('menu_categories').insert(inputs).select()
   if (error) throw error
+  patchCategories((data ?? []) as Category[])
   return data as Category[]
 }
 
 export async function updateCategory(id: string, values: Partial<Category>) {
   if (!supabase) {
     const category = demoMenus.flatMap((entry) => entry.categories).find((entry) => entry.id === id)
-    if (category) Object.assign(category, structuredClone(values))
-    return
+    if (!category) throw new Error('Category not found.')
+    Object.assign(category, structuredClone(values))
+    patchCategories([structuredClone(category)])
+    return structuredClone(category)
   }
-  const { error } = await supabase.from('menu_categories').update(values).eq('id', id)
+  const { data, error } = await supabase.from('menu_categories').update(values).eq('id', id).select().single()
   if (error) throw error
+  patchCategories([data as Category])
+  return data as Category
 }
 
 /** Persists a one-position move in one batch, including any tied-rank normalization. */
@@ -458,12 +528,14 @@ export async function moveCategoryByOne(restaurantId: string, categoryId: string
   if (!supabase) {
     const updated = new Map(changed.map((category) => [category.id, category.sort_order]))
     demo!.categories = categories.map((category) => ({ ...category, sort_order: updated.get(category.id) ?? category.sort_order }))
+    patchCategories(changed)
     return changed
   }
   // Include the existing records so the database can swap their ranks atomically.
   // Owner INSERT/UPDATE RLS applies to the complete statement, as with Excel imports.
   const { data, error } = await supabase.from('menu_categories').upsert(changed, { onConflict: 'id' }).select()
   if (error) throw error
+  patchCategories((data ?? []) as Category[])
   return (data ?? []) as Category[]
 }
 
@@ -473,20 +545,24 @@ export async function deleteCategory(id: string) {
       entry.categories = entry.categories.filter((category) => category.id !== id)
       entry.items = entry.items.filter((item) => item.category_id !== id)
     }
+    patchOwnerMenus((menu) => menu.categories.some((category) => category.id === id), (menu) => ({ ...menu, categories: menu.categories.filter((category) => category.id !== id), items: menu.items.filter((item) => item.category_id !== id) }))
     return
   }
-  const { error } = await supabase.from('menu_categories').delete().eq('id', id)
+  const { error } = await supabase.from('menu_categories').delete().eq('id', id).select('id').single()
   if (error) throw error
+  patchOwnerMenus((menu) => menu.categories.some((category) => category.id === id), (menu) => ({ ...menu, categories: menu.categories.filter((category) => category.id !== id), items: menu.items.filter((item) => item.category_id !== id) }))
 }
 
 export async function createItem(input: ItemInput) {
   if (!supabase) {
     const item = { ...structuredClone(input), id: crypto.randomUUID(), highlighted: input.highlighted ?? false } as MenuItem
     demoMenus.find((entry) => entry.restaurant.id === input.restaurant_id)?.items.push(structuredClone(item))
+    patchItems([structuredClone(item)])
     return item
   }
   const { data, error } = await supabase.from('menu_items').insert(input).select().single()
   if (error) throw error
+  patchItems([data as MenuItem])
   return data as MenuItem
 }
 
@@ -496,17 +572,22 @@ export async function createItems(inputs: ItemInput[]) {
   if (!supabase) return Promise.all(inputs.map(createItem))
   const { data, error } = await supabase.from('menu_items').insert(inputs).select()
   if (error) throw error
+  patchItems((data ?? []) as MenuItem[])
   return data as MenuItem[]
 }
 
 export async function updateItem(id: string, values: Partial<MenuItem>) {
   if (!supabase) {
     const item = demoMenus.flatMap((entry) => entry.items).find((entry) => entry.id === id)
-    if (item) Object.assign(item, structuredClone(values))
-    return
+    if (!item) throw new Error('MenuItem not found.')
+    Object.assign(item, structuredClone(values))
+    patchItemFields(item, values)
+    return structuredClone(item)
   }
-  const { error } = await supabase.from('menu_items').update(values).eq('id', id)
+  const { data, error } = await supabase.from('menu_items').update(values).eq('id', id).select().single()
   if (error) throw error
+  patchItemFields(data as MenuItem, values)
+  return data as MenuItem
 }
 
 /** Moves one position within this category and saves sibling ranks atomically. */
@@ -519,6 +600,7 @@ export async function moveItemByOne(restaurantId: string, categoryId: string, it
       direction_input: direction,
     })
     if (error) throw error
+    for (const item of (data ?? []) as MenuItem[]) patchItemFields(item, { sort_order: item.sort_order })
     return (data ?? []) as MenuItem[]
   }
   const demo = demoMenus.find((menu) => menu.restaurant.id === restaurantId)
@@ -537,6 +619,7 @@ export async function moveItemByOne(restaurantId: string, categoryId: string, it
   const updated = new Map(changed.map((item) => [item.id, item.sort_order]))
   demo!.items = demo!.items.map((item) => ({ ...item, sort_order: updated.get(item.id) ?? item.sort_order }))
     .sort((a, b) => a.sort_order - b.sort_order || a.id.localeCompare(b.id))
+  for (const item of changed) patchItemFields(item, { sort_order: item.sort_order })
   return changed
 }
 
@@ -546,21 +629,25 @@ export async function setItemHighlighted(restaurantId: string, id: string, highl
     const item = demoMenus.find((entry) => entry.restaurant.id === restaurantId)?.items.find((entry) => entry.id === id)
     if (!item) throw new Error('Item not found.')
     item.highlighted = highlighted
+    patchItemFields(item, { highlighted })
     return highlighted
   }
   const { data, error } = await supabase.from('menu_items').update({ highlighted })
-    .eq('restaurant_id', restaurantId).eq('id', id).select('highlighted').single()
+    .eq('restaurant_id', restaurantId).eq('id', id).select().single()
   if (error) throw error
+  patchItemFields(data as MenuItem, { highlighted })
   return data.highlighted as boolean
 }
 
 export async function deleteItem(id: string) {
   if (!supabase) {
     for (const entry of demoMenus) entry.items = entry.items.filter((item) => item.id !== id)
+    patchOwnerMenus((menu) => menu.items.some((item) => item.id === id), (menu) => ({ ...menu, items: menu.items.filter((item) => item.id !== id) }))
     return
   }
-  const { error } = await supabase.from('menu_items').delete().eq('id', id)
+  const { error } = await supabase.from('menu_items').delete().eq('id', id).select('id').single()
   if (error) throw error
+  patchOwnerMenus((menu) => menu.items.some((item) => item.id === id), (menu) => ({ ...menu, items: menu.items.filter((item) => item.id !== id) }))
 }
 
 export async function uploadRestaurantAsset(restaurantId: string, file: File, purpose: AssetPurpose = 'item') {
@@ -623,7 +710,7 @@ export async function deleteRestaurantAsset(restaurantId: string, publicUrl?: st
  */
 export async function getAdminRole(): Promise<AdminRole | null> {
   if (!supabase) return 'super_admin'
-  const { data, error } = await supabase.rpc('platform_admin_role')
+  const { data, error } = await supabase.rpc('platform_admin_role').abortSignal(readSignal())
   // A failure here means "not an operator" as far as the UI is concerned; the
   // database rejects the privileged calls regardless of what this returns.
   if (error) return null
