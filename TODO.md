@@ -9,6 +9,15 @@ This file is the working product backlog for developers and AI agents. Keep it u
 - `[x]` Complete
 - `[!]` Blocked or waiting for a prerequisite
 
+## Move whole categories to menu top or bottom
+
+**Status:** `[x]` Implemented and verified locally. Frontend deployment remains pending; no database migration is needed.
+
+- [x] Replace category step arrows with bilingual Move category to top / Move category to bottom controls.
+- [x] Keep arrows visible on mobile, with consistent 36 px desktop / 44 px mobile icon controls.
+- [x] Persist only the category's existing rank using owner RLS; preserve all items, other categories' relative order and demo branch isolation.
+- [x] Verify UI jumps, boundaries, new category placement after moves, equal 44 px mobile icons, 320/390/1280 px English/Arabic layouts, unchanged items and other category order, plus API repeated/single-category/failure cases, demo public tabs and branch isolation. Lint/build and diff checks pass.
+
 ## Move items to category top or bottom
 
 **Status:** `[x]` Implemented and verified locally; frontend deployment remains pending. No database migration is needed.

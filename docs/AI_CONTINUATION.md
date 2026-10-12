@@ -62,6 +62,8 @@ Do not silently depend on a field that is absent from the demo data or existing 
 
 For item positioning, verify **Menu editor → Move to top / Move to bottom** using a middle item and a first/last item, with first/last disabled states and a one-item category. Check 320/390 px mobile and desktop in English/Arabic, keyboard labels, visible mobile controls, saving/error feedback, original sibling order, other categories/branches, public-menu order and newly added/imported items. This feature uses the existing integer `sort_order`; no new migration is needed. Public/owner queries break tied item ranks by ID, and demo updates preserve the same order in its runtime menu.
 
+For whole-category positioning, verify category-header **Move category to top / Move category to bottom** on desktop and 320/390 px mobile in English/Arabic. Check first/last and single-category disabled states, repeat moves, saving/error feedback, other category relative order, unchanged category items, demo branch isolation, public category-tab order and the initial section, plus adding/importing categories after a move. It uses existing `menu_categories.sort_order` and owner RLS, so no migration is required.
+
 ### Change the public menu
 
 1. Test English and Arabic.

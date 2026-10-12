@@ -100,7 +100,7 @@ export async function getPublicMenu(slug: string): Promise<RestaurantMenu | null
   if (!restaurant || !isPublicPlace(restaurant)) return null
 
   const [categoriesResult, itemsResult] = await Promise.all([
-    supabase.from('menu_categories').select('*').eq('restaurant_id', restaurant.id).order('sort_order'),
+    supabase.from('menu_categories').select('*').eq('restaurant_id', restaurant.id).order('sort_order').order('id'),
     supabase.from('menu_items').select('*').eq('restaurant_id', restaurant.id).order('sort_order').order('id'),
   ])
   if (categoriesResult.error) throw categoriesResult.error
@@ -214,7 +214,7 @@ export async function getOwnerMenu(session: Session | null, restaurantId?: strin
   if (error) throw error
   if (!restaurant) return null
   const [categories, items] = await Promise.all([
-    supabase.from('menu_categories').select('*').eq('restaurant_id', restaurant.id).order('sort_order'),
+    supabase.from('menu_categories').select('*').eq('restaurant_id', restaurant.id).order('sort_order').order('id'),
     supabase.from('menu_items').select('*').eq('restaurant_id', restaurant.id).order('sort_order').order('id'),
   ])
   if (categories.error) throw categories.error
@@ -430,6 +430,36 @@ export async function updateCategory(id: string, values: Partial<Category>) {
   }
   const { error } = await supabase.from('menu_categories').update(values).eq('id', id)
   if (error) throw error
+}
+
+/** Moves a whole category without changing its items or other categories' relative order. */
+export async function moveCategoryToEdge(restaurantId: string, categoryId: string, edge: 'top' | 'bottom'): Promise<number> {
+  const demo = !supabase ? demoMenus.find((menu) => menu.restaurant.id === restaurantId) : undefined
+  let categories: Pick<Category, 'id' | 'sort_order'>[]
+  if (!supabase) {
+    categories = demo?.categories ?? []
+  } else {
+    const { data, error } = await supabase.from('menu_categories').select('id, sort_order')
+      .eq('restaurant_id', restaurantId).order('sort_order').order('id')
+    if (error) throw error
+    categories = data ?? []
+  }
+  categories = [...categories].sort((a, b) => a.sort_order - b.sort_order || a.id.localeCompare(b.id))
+  const category = categories.find((entry) => entry.id === categoryId)
+  if (!category) throw new Error('Category not found in this restaurant.')
+  const boundary = edge === 'top' ? categories[0] : categories[categories.length - 1]
+  if (boundary.id === categoryId) return category.sort_order
+  const sortOrder = boundary.sort_order + (edge === 'top' ? -1 : 1)
+  if (sortOrder < -2147483648 || sortOrder > 2147483647) throw new Error('Could not reorder categories.')
+  if (!supabase) {
+    category.sort_order = sortOrder
+    demo!.categories = [...demo!.categories].sort((a, b) => a.sort_order - b.sort_order || a.id.localeCompare(b.id))
+    return sortOrder
+  }
+  const { data, error } = await supabase.from('menu_categories').update({ sort_order: sortOrder })
+    .eq('restaurant_id', restaurantId).eq('id', categoryId).select('sort_order').single()
+  if (error) throw error
+  return data.sort_order as number
 }
 
 export async function deleteCategory(id: string) {

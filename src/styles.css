@@ -129,7 +129,6 @@
   .restaurant-monogram,.restaurant-identity>img{width:58px;height:58px;font-size:21px;margin-bottom:9px}
   .restaurant-identity h1{font-size:29px;margin:5px 0 2px}
   .restaurant-identity>p{font-size:12px}
-  .category-actions .icon-button:nth-child(-n+2){display:none}
   .category-actions{flex-wrap:wrap;justify-content:flex-end}
   .dashboard-items article{grid-template-columns:39px 1fr auto auto;gap:7px}
   .item-actions{gap:3px}
@@ -1001,4 +1000,17 @@ html.menu-preview-document::-webkit-scrollbar,body.menu-preview-document::-webki
   .dashboard-items article{grid-template-columns:48px minmax(0,1fr) var(--item-control-size);gap:8px;padding:12px}
   .dashboard-items article>.item-actions{grid-column:1 / -1;gap:6px;padding-top:4px;justify-content:flex-end}
 }
-@media(prefers-reduced-motion:reduce){.item-move .spin{animation:none}}
+@media(prefers-reduced-motion:reduce){.item-move .spin,.category-move .spin{animation:none}}
+
+/* Whole-category positioning uses the same icon sizes as item controls. */
+.category-card{--category-control-size:36px}
+.category-card .category-actions .icon-button{display:flex;align-items:center;justify-content:center;width:var(--category-control-size);min-width:var(--category-control-size);height:var(--category-control-size);padding:0;flex-shrink:0}
+.category-card .category-actions .icon-button svg{display:block;width:18px;height:18px;margin:0;flex:none}
+.category-card .category-move{color:var(--green);border:1px solid var(--line)}
+.category-card .category-move:focus-visible{outline:2px solid var(--green);outline-offset:3px}
+@media(max-width:600px){
+  .category-card{--category-control-size:44px}
+  .category-card .category-heading>.category-actions{grid-template-columns:repeat(4,minmax(44px,1fr));gap:8px}
+  .category-card .category-actions .icon-button{justify-self:center}
+  .category-card .category-actions>.button{grid-column:1 / -1;min-height:44px}
+}
