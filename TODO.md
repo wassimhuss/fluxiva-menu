@@ -23,9 +23,10 @@ This file is the working product backlog for developers and AI agents. Keep it u
 **Status:** `[x]` Implemented and verified; migration `024` applied to the configured production Supabase project on 2026-10-12. Frontend deployment remains pending.
 
 - [x] Add a star toggle beside each owner menu item with bilingual labels and saving/error feedback.
-- [x] Show a first Recommended / مننصحك فيه section and badges across all eight public-menu designs, keeping items in their original categories and preserving sold-out and takeaway behavior.
+- [x] Show only a Recommended / مننصحك فيه badge across all eight public-menu designs. Star toggles preserve category tabs, initial category selection, category membership and item order, along with sold-out and takeaway behavior.
+- [x] Remove the virtual Recommended category; keep recommendations as badges only. Verify star on/off preserves the owner category/item order, unchanged public tabs and first category with multiple recommendations, and English/Arabic badges across all eight designs (2026-10-12).
 - [x] Add migration `024_item_highlights.sql` with owner RLS unchanged and preserve highlights when copying branches.
-- [x] Verify owner workflows at 320/390/1280 px, all eight public designs in English/Arabic at 390/1280 px, saving/failure/retry states, sold-out display, sizes/extras ordering, last-highlight removal, photos-off behavior, lint/build, and all migrations with owner/anonymous/cross-owner access checks in isolated PostgreSQL.
+- [x] Verify owner workflows at 320/390/1280 px, all eight public designs in English/Arabic at 390/1280 px, saving/failure/retry states, sold-out display, sizes/extras ordering, badge removal, photos-off behavior, lint/build, and all migrations with owner/anonymous/cross-owner access checks in isolated PostgreSQL.
 - [x] Apply migration `024` to production, preserving 2 branches, 6 categories and 23 items; verify the boolean/default, branch-copy definition, RLS and function privileges (2026-10-12).
 - [ ] Deploy the updated frontend.
 

@@ -7,8 +7,8 @@ import type { Language } from './types'
 const arabic: Record<string, string> = {
   'Highlight item': 'ميّز الصنف',
   'Remove highlight': 'إزالة التمييز',
-  'Tap the star beside an item to recommend it at the top of your menu.': 'اضغط النجمة بجانب الصنف ليظهر بأول القائمة ضمن مننصحك فيه.',
-  'Item highlighted. It now appears in Recommended.': 'تم تمييز الصنف. صار يظهر ضمن مننصحك فيه.',
+  'Tap the star beside an item to mark it as recommended.': 'اضغط النجمة بجانب الصنف لتظهر عليه علامة مننصحك فيه.',
+  'Item marked as recommended.': 'صار الصنف معلّم بمننصحك فيه.',
   'Highlight removed.': 'تمت إزالة التمييز.',
   'Could not update the highlight. Please try again.': 'تعذّر تغيير التمييز. حاول مجددًا.',
   'Restaurant dashboard': 'لوحة تحكم المطعم',

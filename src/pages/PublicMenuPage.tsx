@@ -11,10 +11,8 @@ import { formatMoney, localText } from '../lib/format'
 import { deriveTheme } from '../lib/theme'
 import { useImagePreload } from '../lib/useImagePreload'
 import { useOrder } from '../lib/useOrder'
-import type { Category, Language, MenuContactCard, RestaurantMenu, ServiceMode } from '../lib/types'
+import type { Language, MenuContactCard, RestaurantMenu, ServiceMode } from '../lib/types'
 import { DEFAULT_TEMPLATE, resolveTemplateId, TEMPLATES, templateComponents } from '../templates/registry'
-
-const RECOMMENDED_CATEGORY_ID = 'fluxiva-recommended'
 
 /**
  * The loader renders before any data has arrived, so it cannot know the
@@ -83,7 +81,7 @@ export function PublicMenuPage() {
   useEffect(() => {
     getPublicMenu(slug).then(async (data) => {
       setMenu(data)
-      if (data) { setLanguage(data.restaurant.default_language); setActiveCategory(data.items.some((item) => item.highlighted) ? RECOMMENDED_CATEGORY_ID : data.categories[0]?.id ?? '') }
+      if (data) { setLanguage(data.restaurant.default_language); setActiveCategory(data.categories[0]?.id ?? '') }
       // No servable menu: fetch just enough to point the customer at a human.
       else setContact(await getMenuContactCard(slug))
     }).catch(() => setError('This menu could not be loaded.')).finally(() => setLoading(false))
@@ -144,15 +142,8 @@ export function PublicMenuPage() {
       : menu?.items.map((item) => ({ ...item, image_url: undefined })) ?? [],
     [menu, showItemImages],
   )
-  // A presentation-only section: highlighted dishes keep their real category,
-  // item IDs, availability and ordering controls in every template.
-  const displayCategories = useMemo<Category[]>(() => {
-    if (!menu) return []
-    if (!displayItems.some((item) => item.highlighted)) return menu.categories
-    return [{ id: RECOMMENDED_CATEGORY_ID, restaurant_id: menu.restaurant.id, name_en: 'Recommended', name_ar: 'مننصحك فيه', sort_order: -1 }, ...menu.categories]
-  }, [menu, displayItems])
   const visibleItems = useMemo(
-    () => displayItems.filter((item) => activeCategory === RECOMMENDED_CATEGORY_ID ? item.highlighted : !activeCategory || item.category_id === activeCategory),
+    () => displayItems.filter((item) => !activeCategory || item.category_id === activeCategory),
     [displayItems, activeCategory],
   )
 
@@ -211,13 +202,13 @@ export function PublicMenuPage() {
    */
   const criticalImages = useMemo(() => {
     if (!menu) return []
-    const firstCategory = displayCategories[0]?.id
+    const firstCategory = menu.categories[0]?.id
     const opening = displayItems
-      .filter((item) => firstCategory === RECOMMENDED_CATEGORY_ID ? item.highlighted : item.category_id === firstCategory)
+      .filter((item) => item.category_id === firstCategory)
       .slice(0, 4)
       .map((item) => item.image_url)
     return [menu.restaurant.logo_url, coverUrl, ...opening]
-  }, [menu, coverUrl, displayItems, displayCategories])
+  }, [menu, coverUrl, displayItems])
 
   const imagesReady = useImagePreload(criticalImages)
 
@@ -276,7 +267,7 @@ export function PublicMenuPage() {
      Instant rather than smooth: the stylesheet sets `scroll-behavior: smooth`
      globally, which would otherwise animate the whole way back up from deep in
      a long menu. */
-  const firstCategoryId = displayCategories[0]?.id ?? ''
+  const firstCategoryId = menu?.categories[0]?.id ?? ''
   useEffect(() => {
     setActiveCategory(firstCategoryId)
     window.scrollTo({ top: 0, behavior: 'instant' })
@@ -301,7 +292,7 @@ export function PublicMenuPage() {
   // Hold the branded loader until the first screen can render complete.
   if (!imagesReady) return <MenuLoadingState language={language} />
 
-  const { restaurant } = menu
+  const { restaurant, categories } = menu
   const Template = templateComponents[templateId]
 
   // The choice comes before the menu.
@@ -331,7 +322,7 @@ export function PublicMenuPage() {
       <Suspense fallback={<MenuLoadingState language={language} />}>
         <Template
           restaurant={restaurant}
-          categories={displayCategories}
+          categories={categories}
           items={displayItems}
           visibleItems={visibleItems}
           activeCategory={activeCategory}
