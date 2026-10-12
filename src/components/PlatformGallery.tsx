@@ -1,6 +1,6 @@
 import { Archive, ArrowDown, ArrowUp, Folder, FolderOpen, FolderPlus, ImagePlus, Maximize2, Pencil, Plus, RotateCcw, Trash2, X } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
-import { clearGalleryImages, createGalleryCategory, createGalleryImage, deleteGalleryCategory, deleteGalleryImage, discardGalleryAssets, ITEM_IMAGE_HEIGHT, ITEM_IMAGE_WIDTH, listPlatformGalleryCategories, listPlatformGalleryImages, updateGalleryCategory, updateGalleryImage, uploadGalleryAssets, validateGalleryImage, validateGallerySource } from '../lib/api'
+import { createGalleryCategory, createGalleryImage, deleteGalleryCategory, deleteGalleryImage, discardGalleryAssets, ITEM_IMAGE_HEIGHT, ITEM_IMAGE_WIDTH, listPlatformGalleryCategories, listPlatformGalleryImages, updateGalleryCategory, updateGalleryImage, uploadGalleryAssets, validateGalleryImage, validateGallerySource } from '../lib/api'
 import { galleryText } from '../lib/galleryI18n'
 import type { GalleryCategory, GalleryImage, Language } from '../lib/types'
 import styles from '../pages/Platform.module.css'
@@ -40,7 +40,6 @@ export function PlatformGallery({ language = 'en' }: { language?: Language }) {
   const [success, setSuccess] = useState('')
   const [fileCheck, setFileCheck] = useState<FileCheck>({ state: 'idle', message: '' })
   const [pendingCrop, setPendingCrop] = useState<File | null>(null)
-  const [clearGalleryOpen, setClearGalleryOpen] = useState(false)
   const [previewImage, setPreviewImage] = useState<GalleryImage | null>(null)
 
   async function refreshCategories() {
@@ -131,18 +130,6 @@ export function PlatformGallery({ language = 'en' }: { language?: Language }) {
     catch (caught) { setError(caught instanceof Error ? caught.message : t("Could not delete this image")) }
   }
 
-  async function clearGallery() {
-    setSaving(true); setError(''); setSuccess('')
-    try {
-      const allImages = await listPlatformGalleryImages()
-      const deletedCount = await clearGalleryImages(allImages)
-      await refreshCategories(); closeFolderContents(); setClearGalleryOpen(false)
-      setSuccess(`${count(deletedCount)} · ${t('Images removed. Menu items that used them no longer have an image.')}`)
-    } catch (caught) {
-      setError(caught instanceof Error ? caught.message : t("Could not clear the gallery"))
-    } finally { setSaving(false) }
-  }
-
   function openFolderForm(category?: GalleryCategory) {
     setEditingFolder(category ?? null); setFolderDraft(category ? { name_en: category.name_en, name_ar: category.name_ar } : emptyFolder()); setFolderFormOpen(true)
   }
@@ -187,11 +174,9 @@ export function PlatformGallery({ language = 'en' }: { language?: Language }) {
     catch (caught) { setError(caught instanceof Error ? caught.message : t("Could not delete this folder")) }
   }
 
-  const totalImageCount = categories.reduce((total, category) => total + (category.image_count ?? 0), 0)
-
   return (
     <section className={styles.gallerySection}>
-      <div className={styles.galleryHeading}><div><span>{t("Shared assets")}</span><h2>{t("Fluxiva Gallery")}</h2><p>{t("Organize reusable food photography into bilingual folders.")}</p></div><div className={styles.galleryHeadingActions}><button className={styles.action} disabled={!totalImageCount} onClick={() => setClearGalleryOpen(true)}><Trash2 /> {t("Clear gallery")}</button><button className={styles.action} onClick={() => openFolderForm()}><FolderPlus /> {t("New folder")}</button><button className={`${styles.action} ${styles.actionPrimary}`} disabled={!categories.some((category) => category.active)} onClick={() => openNewImage()}><Plus /> {t("Add image")}</button></div></div>
+      <div className={styles.galleryHeading}><div><span>{t("Shared assets")}</span><h2>{t("Fluxiva Gallery")}</h2><p>{t("Organize reusable food photography into bilingual folders.")}</p></div><div className={styles.galleryHeadingActions}><button className={styles.action} onClick={() => openFolderForm()}><FolderPlus /> {t("New folder")}</button><button className={`${styles.action} ${styles.actionPrimary}`} disabled={!categories.some((category) => category.active)} onClick={() => openNewImage()}><Plus /> {t("Add image")}</button></div></div>
       {error && <p className={styles.galleryError}>{error}</p>}{success && <p className={styles.gallerySuccess}>{success}</p>}
       {loading ? <p className={styles.empty}>{t("Loading gallery…")}</p> : <>
         <div className={styles.folderSectionTitle}><Folder /><div><h3>{t("Folders")}</h3><p>{t("Owners browse these folders before choosing a photo.")}</p></div></div>
@@ -216,7 +201,6 @@ export function PlatformGallery({ language = 'en' }: { language?: Language }) {
         <label className={styles.galleryFile}>{t("Folder")}<select required disabled={Boolean(editing)} value={draft.category_id} onChange={(event) => setDraft({ ...draft, category_id: event.target.value })}><option value="">{t("Choose a folder")}</option>{categories.map((category) => <option key={category.id} value={category.id} disabled={!category.active && category.id !== draft.category_id}>{category.name_en} · {category.name_ar}</option>)}</select>{editing && <small>{t("To keep Storage organized, an existing image stays in its original folder.")}</small>}</label>
         <label>{t("English name")}<input required value={draft.name_en} onChange={(event) => setDraft({ ...draft, name_en: event.target.value })} /></label><label dir="rtl">{t("Arabic name")}<input required dir="rtl" value={draft.name_ar} onChange={(event) => setDraft({ ...draft, name_ar: event.target.value })} /></label><label>{t("English tags")}<small>{t("Comma separated")}</small><input value={draft.tags_en} onChange={(event) => setDraft({ ...draft, tags_en: event.target.value })} /></label><label dir="rtl">{t("Arabic tags")}<small>{t('Comma separated')}</small><input dir="rtl" value={draft.tags_ar} onChange={(event) => setDraft({ ...draft, tags_ar: event.target.value })} /></label><label>{t("Source / owner")}<input value={draft.source} onChange={(event) => setDraft({ ...draft, source: event.target.value })} /></label><label>{t("License notes")}<input value={draft.license_notes} onChange={(event) => setDraft({ ...draft, license_notes: event.target.value })} /></label>
       </div><button className="button button-primary full" disabled={saving || (!editing && fileCheck.state !== 'valid')}>{saving ? t("Saving…") : editing ? t("Save details") : t("Upload to folder")}</button></form></div>}
-      {clearGalleryOpen && <div className="modal-backdrop"><div className={`modal-card ${styles.galleryForm}`} role="dialog" aria-modal="true" aria-labelledby="clear-gallery-title"><button type="button" aria-label={t('Close')} className="modal-close" disabled={saving} onClick={() => setClearGalleryOpen(false)}><X /></button><span className="eyebrow"><span /> {t("Permanent action")}</span><h2 id="clear-gallery-title">{t("Clear all gallery images?")}</h2><p>{t("This permanently removes")}{' '}{count(totalImageCount)} {t('images')}{t(", including their thumbnails, and clears them from every menu item. Your bilingual gallery folders will stay ready for the replacement photos.")}</p><div className={styles.clearGalleryActions}><button type="button" className="button button-outline" disabled={saving} onClick={() => setClearGalleryOpen(false)}>{t("Cancel")}</button><button type="button" className={`button ${styles.clearGalleryButton}`} disabled={saving} onClick={() => void clearGallery()}><Trash2 /> {saving ? t("Removing…") : t("Remove all images")}</button></div></div></div>}
       {pendingCrop && <PortraitImageCropper language={language} file={pendingCrop} onCancel={() => { setPendingCrop(null); setFileCheck(draft.file ? { state: 'valid', message: cropReady } : { state: 'idle', message: '' }) }} onConfirm={(file) => void acceptCrop(file)} />}
       {previewImage && <ImageLightbox url={previewImage.image_url} name={name(previewImage)} closeLabel={t("Close image preview")} onClose={() => setPreviewImage(null)} />}
     </section>

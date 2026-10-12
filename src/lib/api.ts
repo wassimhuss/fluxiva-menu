@@ -1,5 +1,5 @@
 import type { Session } from '@supabase/supabase-js'
-import { demoBrand, demoContactCard, demoGalleryCategories, demoGalleryImages, demoMenu, demoMenus, demoMenuViewStats, demoPlatformAudit, demoPlatformRestaurants, demoRestaurants } from './demo'
+import { demoBrand, demoContactCard, demoGalleryCategories, demoGalleryImages, demoMenus, demoMenuViewStats, demoPlatformAudit, demoPlatformRestaurants, demoRestaurants } from './demo'
 import { supabase } from './supabase'
 import { getCachedOwnerQueryClient, getOwnerQueryClient, ownerCacheGeneration } from './queryClient'
 import { patchMenuItem } from './menuState'
@@ -956,42 +956,6 @@ export async function deleteGalleryImage(image: GalleryImage) {
   await supabase.storage.from('gallery-assets').remove([
     galleryStoragePath(image.image_url), galleryStoragePath(image.thumbnail_url),
   ].filter((path): path is string => Boolean(path)))
-}
-
-/**
- * Removes the curated gallery as a deliberate admin-only reset. The RPC clears
- * every linked menu item before deleting gallery records; this client then
- * removes only the matching files from the separate shared-assets bucket.
- */
-export async function clearGalleryImages(images: GalleryImage[]) {
-  if (!supabase) {
-    for (const item of demoMenu.items) {
-      if (item.gallery_image_id) {
-        item.gallery_image_id = null
-        item.image_url = null
-      }
-    }
-    for (const image of demoGalleryImages) {
-      for (const url of [image.image_url, image.thumbnail_url]) if (url.startsWith('blob:')) URL.revokeObjectURL(url)
-    }
-    const deletedCount = demoGalleryImages.length
-    demoGalleryImages.splice(0, demoGalleryImages.length)
-    return deletedCount
-  }
-
-  const { data, error } = await supabase.rpc('platform_clear_gallery_images')
-  if (error) throw error
-
-  const paths = [...new Set(images.flatMap((image) => [
-    galleryStoragePath(image.image_url), galleryStoragePath(image.thumbnail_url),
-  ].filter((path): path is string => Boolean(path))))]
-  if (paths.length) {
-    const { error: storageError } = await supabase.storage.from('gallery-assets').remove(paths)
-    if (storageError) {
-      throw new Error(`Gallery records and menu references were cleared, but some stored files could not be removed: ${storageError.message}`)
-    }
-  }
-  return Number(data ?? images.length)
 }
 
 export async function discardGalleryAssets(id: string, urls?: Partial<Pick<GalleryImage, 'image_url' | 'thumbnail_url'>>) {
