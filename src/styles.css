@@ -421,6 +421,7 @@
 .cash-subscriber{border:1px solid #d5ddd7;border-radius:12px;background:#fff;overflow:hidden}
 .cash-subscriber>header{display:flex;align-items:center;gap:18px;flex-wrap:wrap;padding:18px 22px;background:#edf2ed}
 .cash-subscriber h2{font-size:16px;margin:0;overflow-wrap:anywhere;flex:1;min-width:0}.cash-subscriber>header>span{font-size:12px;color:#496256}
+.cash-account-actions{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-inline-start:auto}.cash-account-actions .danger{color:#a24734}
 .cash-shop-row{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,.8fr) minmax(0,1fr) auto;gap:24px;align-items:center;padding:22px;border-top:1px solid #e3e8e1;font-size:14px}
 .cash-shop-row>div{min-width:0;overflow-wrap:anywhere}.cash-shop-row strong{font-size:16px}.cash-shop-row p{font-size:12px;margin:6px 0;color:#52675d}
 .cash-label{display:block;font-size:12px;color:#52675d;margin:6px 0}.cash-tags{display:flex;gap:12px;align-items:center;flex-wrap:wrap;font-size:12px;margin-top:10px;color:#496256}

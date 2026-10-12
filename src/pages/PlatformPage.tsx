@@ -5,7 +5,7 @@ import { Brand } from '../components/Brand'
 import { PlatformGallery } from '../components/PlatformGallery'
 import { ShopBillingPanel } from '../components/ShopBillingPanel'
 import { Loading, Notice } from '../components/Status'
-import { getCashCollections, getPlatformAudit, getShopBilling, listSubscribers, setSubscription } from '../lib/api'
+import { deleteSubscriber, getCashCollections, getPlatformAudit, getShopBilling, listSubscribers, setSubscriberStatus, setSubscription } from '../lib/api'
 import { useAuth } from '../lib/auth'
 import { beirutInput, billingStatus, cashDate, cashMoney, parseBeirutInput } from '../lib/billing'
 import { billingError, billingText } from '../lib/billingI18n'
@@ -34,12 +34,16 @@ export function PlatformPage() {
   const selectedId = selected?.restaurant_id
   const [billingRefresh, setBillingRefresh] = useState(0)
   const [suspending, setSuspending] = useState(false)
+  const [accountAction, setAccountAction] = useState<{ owner: SubscriberPage['subscribers'][number]; kind: 'suspend' | 'restore' | 'delete' } | null>(null)
+  const [accountConfirmation, setAccountConfirmation] = useState('')
+  const [accountBusy, setAccountBusy] = useState(false)
   const [busy, setBusy] = useState(false)
   const today = beirutInput().slice(0, 10)
   const [fromDraft, setFromDraft] = useState(today.slice(0, 8) + '01')
   const [untilDraft, setUntilDraft] = useState(today)
   const [dates, setDates] = useState({ from: fromDraft, until: untilDraft })
   const dialog = useRef<HTMLDialogElement>(null)
+  const accountDialog = useRef<HTMLDialogElement>(null)
   const canManage = adminRole === 'super_admin'
   const money = (value: number | null) => cashMoney(value, language)
   const date = (value: string | null, time = false) => cashDate(value, language, time)
@@ -59,6 +63,10 @@ export function PlatformPage() {
     return () => controller.abort()
   }, [view, search, page, dates, reload])
   useEffect(() => { if (suspending) dialog.current?.showModal() }, [suspending])
+  useEffect(() => {
+    if (accountAction) accountDialog.current?.showModal()
+    else accountDialog.current?.close()
+  }, [accountAction])
   useEffect(() => { window.scrollTo(0, 0) }, [selectedId])
   function changeLanguage() {
     const next = language === 'en' ? 'ar' : 'en'
@@ -75,6 +83,19 @@ export function PlatformPage() {
       setSuspending(false); dialog.current?.close()
     } catch (caught) { setError(caught) }
     finally { setBusy(false) }
+  }
+  async function changeAccount() {
+    if (!accountAction) return
+    setAccountBusy(true); setError(null)
+    try {
+      if (accountAction.kind === 'delete') await deleteSubscriber(accountAction.owner.id, accountConfirmation)
+      else await setSubscriberStatus(accountAction.owner.id, accountAction.kind === 'suspend' ? 'suspended' : 'active')
+      setAccountAction(null); setAccountConfirmation(''); setReload(n => n + 1)
+    } catch (caught) { setError(caught) }
+    finally { setAccountBusy(false) }
+  }
+  function requestAccountAction(owner: SubscriberPage['subscribers'][number], kind: 'suspend' | 'restore' | 'delete') {
+    setAccountConfirmation(''); setError(null); setAccountAction({ owner, kind })
   }
   function shopRow(shop: ShopBilling) {
     return <div className="cash-shop-row" key={shop.restaurant_id}>
@@ -106,7 +127,7 @@ export function PlatformPage() {
           {loading ? <Loading label={t(view === 'Subscribers' ? 'Loading subscribers…' : 'Loading collections…')} /> : <>
             {view === 'Subscribers' && <section className="cash-directory" aria-label={t('Subscribers')}>
               <p className="cash-result-count">{number(directory?.total ?? 0)} {t('subscribers')}</p>
-              {directory?.subscribers.length ? directory.subscribers.map(owner => <article className="cash-subscriber" key={owner.id}><header><h2><bdi>{owner.email}</bdi></h2><span>{t('Registered')} {date(owner.created_at)}</span>{owner.archived && <span className="cash-tag">{t('Archived')}</span>}</header>{owner.shops.length ? owner.shops.map(shopRow) : <p className="cash-empty">{t('No shop created yet')}</p>}</article>) : <p className="cash-empty">{t('No subscribers match this search.')}</p>}
+              {directory?.subscribers.length ? directory.subscribers.map(owner => <article className="cash-subscriber" key={owner.id}><header><h2><bdi>{owner.email}</bdi></h2><span>{t('Registered')} {date(owner.created_at)}</span>{owner.archived && <span className="cash-tag">{t('Archived')}</span>}{canManage && !owner.archived && <div className="cash-account-actions">{owner.shops.length > 0 && <button className="cash-text-button" onClick={() => requestAccountAction(owner, owner.shops.every(shop => shop.subscription_status === 'suspended') ? 'restore' : 'suspend')}>{t(owner.shops.every(shop => shop.subscription_status === 'suspended') ? 'Restore account access' : 'Suspend account')}</button>}<button className="cash-text-button danger" onClick={() => requestAccountAction(owner, 'delete')}>{t('Delete account')}</button></div>}</header>{owner.shops.length ? owner.shops.map(shopRow) : <p className="cash-empty">{t('No shop created yet')}</p>}</article>) : <p className="cash-empty">{t('No subscribers match this search.')}</p>}
             </section>}
             {view === 'Collections' && collections && <>
               <div className="cash-total"><span>{t('Net cash recorded')}</span><strong><bdi>{money(collections.collected_cents)}</bdi></strong><p>{t('Voided receipts are excluded from the total.')}</p></div>
@@ -124,6 +145,14 @@ export function PlatformPage() {
         <div className="cash-section-heading"><h2 id="cash-suspend-title">{t('Suspend this shop’s public menu?')}</h2><button className="cash-icon-button" aria-label={t('Cancel')} disabled={busy} onClick={() => dialog.current?.close()}><X /></button></div>
         <p>{selected && (language === 'ar' ? selected.name_ar : selected.name_en)}</p><p>{t('Suspension preserves paid time and payment history.')}</p>{Boolean(error) && <Notice tone="error">{billingError(language, error)}</Notice>}
         <div className="cash-actions"><button className="button button-primary" disabled={busy} onClick={() => void changeSuspension(true)}>{busy ? t('Saving…') : t('Suspend menu')}</button><button className="button button-outline" disabled={busy} onClick={() => dialog.current?.close()}>{t('Cancel')}</button></div>
+      </dialog>
+      <dialog ref={accountDialog} className="cash-confirm-dialog" aria-labelledby="account-action-title" onCancel={event => { if (accountBusy) event.preventDefault(); else setAccountAction(null) }} onClose={() => { if (!accountBusy) setAccountAction(null) }}>
+        <div className="cash-section-heading"><h2 id="account-action-title">{t(accountAction?.kind === 'delete' ? 'Delete subscriber account?' : accountAction?.kind === 'restore' ? 'Restore subscriber account?' : 'Suspend subscriber account?')}</h2><button className="cash-icon-button" aria-label={t('Cancel')} disabled={accountBusy} onClick={() => accountDialog.current?.close()}><X /></button></div>
+        <p><bdi>{accountAction?.owner.email}</bdi></p>
+        <p>{t(accountAction?.kind === 'delete' ? 'This permanently deletes the account and its menus. Billing history is retained.' : accountAction?.kind === 'restore' ? 'This restores access for all shops owned by this subscriber.' : 'This suspends every shop owned by this subscriber and hides its public menus.')}</p>
+        {accountAction?.kind === 'delete' && <label>{t('Type the subscriber email to confirm')}<input autoFocus dir="ltr" type="email" value={accountConfirmation} onChange={event => setAccountConfirmation(event.target.value)} disabled={accountBusy} placeholder={accountAction.owner.email} /></label>}
+        {Boolean(error) && <Notice tone="error">{billingError(language, error)}</Notice>}
+        <div className="cash-actions"><button className={`button ${accountAction?.kind === 'delete' ? 'button-danger' : 'button-primary'}`} disabled={accountBusy || (accountAction?.kind === 'delete' && accountConfirmation.trim() !== accountAction.owner.email)} onClick={() => void changeAccount()}>{accountBusy ? t('Saving…') : t(accountAction?.kind === 'delete' ? 'Delete account' : accountAction?.kind === 'restore' ? 'Restore access' : 'Suspend account')}</button><button className="button button-outline" disabled={accountBusy} onClick={() => accountDialog.current?.close()}>{t('Cancel')}</button></div>
       </dialog>
     </main>
   )

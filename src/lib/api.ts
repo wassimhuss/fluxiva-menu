@@ -731,6 +731,16 @@ export async function listSubscribers(search = '', page = 0, signal?: AbortSigna
   if (error) throw error
   return data as SubscriberPage
 }
+export async function setSubscriberStatus(ownerId: string, status: 'active' | 'suspended') {
+  if (!supabase) { (await import('./billingDemo')).demoSetSubscriberStatus(ownerId, status); return }
+  const { error } = await supabase.rpc('platform_set_subscriber_status', { owner_id_input: ownerId, status_input: status })
+  if (error) throw error
+}
+export async function deleteSubscriber(ownerId: string, emailConfirmation: string) {
+  if (!supabase) { (await import('./billingDemo')).demoDeleteSubscriber(ownerId, emailConfirmation); return }
+  const { error } = await supabase.rpc('platform_delete_subscriber', { owner_id_input: ownerId, email_confirmation: emailConfirmation })
+  if (error) throw error
+}
 export async function getShopBilling(shopId: string, admin = false, signal?: AbortSignal): Promise<ShopBilling> {
   if (!supabase) return (await import('./billingDemo')).demoShopBilling(shopId, admin)
   const { data, error } = await supabase.rpc(admin ? 'platform_get_shop_billing' : 'owner_get_shop_billing', { shop_input: shopId }).abortSignal(readSignal(signal))

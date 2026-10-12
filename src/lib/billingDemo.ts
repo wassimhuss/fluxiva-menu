@@ -101,6 +101,19 @@ export function demoSubscribers(search = '', page = 0): SubscriberPage {
   const all = [...grouped.values()].filter(o => (o.email + ' ' + o.shops.map(s => s.name_en + ' ' + s.name_ar + ' ' + s.slug).join(' ')).toLocaleLowerCase().includes(term))
   return { subscribers: all.slice(page * 25, page * 25 + 25), total: all.length, page, page_size: 25 }
 }
+export function demoSetSubscriberStatus(ownerId: string, status: 'active' | 'suspended') {
+  ensureShops()
+  const owned = [...shops.values()].filter(shop => shop.owner_id === ownerId)
+  if (!owned.length) fail('Subscriber account not found')
+  for (const shop of owned) demoSuspension(shop.restaurant_id, status, status === 'suspended' ? null : shop.paid_until)
+}
+export function demoDeleteSubscriber(ownerId: string, emailConfirmation: string) {
+  ensureShops()
+  const owned = [...shops.values()].filter(shop => shop.owner_id === ownerId)
+  if (!owned.length) fail('Subscriber account not found')
+  if (owned[0].email !== emailConfirmation.trim()) fail('Enter the subscriber email to confirm deletion')
+  for (const shop of owned) shops.delete(shop.restaurant_id)
+}
 export function demoSetPrice(id: string, price: number) {
   const shop = get(id)
   if (!Number.isInteger(price) || price < 1 || price > 100000000) fail('Enter a valid annual USD price')

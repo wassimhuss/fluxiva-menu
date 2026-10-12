@@ -140,7 +140,7 @@ Extras are optional bilingual add-ons stored as a JSON array on each menu item, 
 
 ### Platform administrators
 
-Platform admins are stored in `private.platform_admins`. Support operators may read subscriber and billing details; only `super_admin` may set prices, record/void receipts, review undated legacy access, or suspend/restore menus. The console groups all non-operator Auth accounts and their places, including accounts with no place. Search and collections use server pagination (25 rows/accounts per page). Owners see only their selected place's read-only billing, refreshed independently of menu drafts.
+Platform admins are stored in `private.platform_admins`. Support operators may read subscriber and billing details; only `super_admin` may set prices, record/void receipts, review undated legacy access, suspend/restore menus, or suspend/delete subscriber accounts. Account suspension applies to every owned place. Account deletion removes the Auth account and cascaded menu data after an exact email confirmation while retaining the private billing ledger as archived history. The console groups all non-operator Auth accounts and their places, including accounts with no place. Search and collections use server pagination (25 rows/accounts per page). Owners see only their selected place's read-only billing, refreshed independently of menu drafts.
 
 ### Cash billing (migration 026)
 
