@@ -41,7 +41,7 @@ export default function CarouselTemplate(props: MenuTemplateProps) {
   const { restaurant, categories, visibleItems, activeCategory, setActiveCategory, language, setLanguage, rtl, theme, t, formatPrice, ordering } = props
 
   const [setTrack, active, track] = useActiveSlide<HTMLDivElement>(visibleItems.length)
-  // One card per gesture, matching the reel's feel sideways.
+  // This deck keeps deliberate one-card steps; Reel uses native momentum.
   useSnapLock({ container: track, axis: 'x', count: visibleItems.length, activeIndex: active, rtl })
   useDeckProgress(track, visibleItems.length)
 

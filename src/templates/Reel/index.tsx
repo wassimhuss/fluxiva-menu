@@ -5,15 +5,15 @@ import { WhatsAppIcon } from '../../components/WhatsAppIcon'
 import type { Category, MenuItem } from '../../lib/types'
 import type { MenuTemplateProps } from '../types'
 import { useActiveSlide } from '../useActiveSlide'
-import { useSnapLock } from '../useSnapLock'
 import styles from './Reel.module.css'
 
-function ReelSlide({ item, index, total, category, active, t, formatPrice, rtl, ordering }: {
+function ReelSlide({ item, index, total, category, active, nearby, t, formatPrice, rtl, ordering }: {
   item: MenuItem
   index: number
   total: number
   category?: Category
   active: boolean
+  nearby: boolean
   t: MenuTemplateProps['t']
   formatPrice: MenuTemplateProps['formatPrice']
   rtl: boolean
@@ -34,14 +34,16 @@ function ReelSlide({ item, index, total, category, active, t, formatPrice, rtl, 
               src={item.image_url}
               alt=""
               aria-hidden="true"
-              loading={index < 2 ? 'eager' : 'lazy'}
+              loading={index < 2 || nearby ? 'eager' : 'lazy'}
+              decoding="async"
             />
             <img
               className={styles.shot}
               src={item.image_url}
               alt=""
-              // The first screens are the whole first impression, so they load eagerly.
-              loading={index < 2 ? 'eager' : 'lazy'}
+              // Warm the neighbouring dishes before a fast flick reaches them.
+              loading={index < 2 || nearby ? 'eager' : 'lazy'}
+              decoding="async"
             />
           </>
         : <div className={styles.shotEmpty}><span className={styles.shotEmptyMark}>{name.slice(0, 2).toUpperCase()}</span></div>}
@@ -82,9 +84,7 @@ export default function ReelTemplate(props: MenuTemplateProps) {
   const { restaurant, categories, visibleItems, activeCategory, setActiveCategory, language, setLanguage, rtl, theme, t, formatPrice, ordering } = props
   // +1 for the closing restaurant card at the end of the reel.
   const slideCount = visibleItems.length + 1
-  const [setReel, active, reel] = useActiveSlide<HTMLDivElement>(slideCount)
-  // One dish per gesture, however hard the flick.
-  useSnapLock({ container: reel, axis: 'y', count: slideCount, activeIndex: active })
+  const [setReel, active] = useActiveSlide<HTMLDivElement>(slideCount)
 
   const activeCategoryEntry = categories.find((category) => category.id === activeCategory)
   const instagramHandle = restaurant.instagram?.replace(/^@/, '')
@@ -134,7 +134,7 @@ export default function ReelTemplate(props: MenuTemplateProps) {
       )}
 
       {/* Remounting on category change resets the scroller to the first dish. */}
-      <div className={styles.reel} ref={setReel} key={activeCategory}>
+      <div className={styles.reel} ref={setReel} key={activeCategory} tabIndex={0} role="region" aria-label={t('Menu items', 'أصناف القائمة')}>
         {visibleItems.map((item, index) => (
           <ReelSlide
             key={item.id}
@@ -143,6 +143,7 @@ export default function ReelTemplate(props: MenuTemplateProps) {
             total={visibleItems.length}
             category={activeCategoryEntry}
             active={active === index}
+            nearby={Math.abs(active - index) <= 2}
             t={t}
             formatPrice={formatPrice}
             rtl={rtl}

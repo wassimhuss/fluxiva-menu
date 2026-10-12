@@ -72,6 +72,7 @@ Build a curated **Fluxiva Gallery** that lets every restaurant owner either sele
 
 ## Engineering backlog
 
+- [ ] Make desktop Carousel active-card/caption tracking centre-aware: multiple fully visible cards can leave the caption on the previous dish after a navigation step. This existing issue is separate from Reel's native-scrolling improvement.
 - [ ] Add unit tests for formatting, slugging, Excel workbook parsing, and variant cleaning.
 - [ ] Add integration tests for demo onboarding, dashboard editing, and public-menu language switching.
 - [ ] Split `DashboardPage.tsx` into focused components and hooks.
@@ -131,6 +132,7 @@ Build a curated **Fluxiva Gallery** that lets every restaurant owner either sele
 
 ## Completed product improvements
 
+- [x] Replace Reel's forced one-item gesture lock with native momentum and clean CSS snap landing, warm nearby photos with async decoding, shorten caption transitions, and preserve keyboard/RTL/ordering controls; verify fast wheel/touch bursts and direction reversals (2026-10-12).
 - [x] Align Reel footer labels independently of their icon widths, keep every icon in one RTL-aware column, and isolate Instagram handles so `@` stays at the start in Arabic; verify narrow/mobile/desktop layouts and wrapped addresses (2026-10-12).
 - [x] Connect the Reel closing/footer card to the dashboard palette in saved menus and live previews, including contrast-aware text/icons and contact surfaces; verify English/Arabic at 390/1280 px with all presets and light/dark custom colors (2026-10-11).
 - [x] Replace the generic footer chat icon with the WhatsApp brand icon across all eight menu templates, preserving theme colors, contact links, and bilingual responsive layouts (2026-10-11).

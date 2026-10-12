@@ -189,6 +189,8 @@ Image files are validated as JPG, PNG, or WebP and limited to 8 MB. A personal i
 
 The brand page loads eligible places by brand slug, applies the brand color, supports English/Arabic direction changes, and links each branch card to its direct menu. The public menu then loads one place by slug, applies its color as a CSS variable, supports English/Arabic direction changes, groups ordered items by category, presents size variants, shows sold-out states, and exposes configured contact/location links. In takeaway mode, items with extras open one shared bilingual customization sheet across every template. Selected extras update the displayed total and are included in the basket and WhatsApp message.
 
+Reel uses native vertical touch/wheel momentum with CSS snapping at the end of a scroll, not the shared one-slide gesture lock. Fast flicks and repeated swipes may pass multiple dishes without a cooldown or a forced jump back. The active-slide observer keeps the caption and progress in sync; the current dish and its two neighbours on either side load eagerly with asynchronous image decoding, while distant images remain lazy. Its bilingual focusable menu region also supports native keyboard scrolling. Carousel deliberately retains its separate one-card-per-gesture behaviour.
+
 ## Design system and recent landing-page work
 
 The visual language uses forest green, warm cream, and terracotta/orange with DM Sans, Playfair Display, and Tajawal. Shared colors live in `:root` in `src/styles.css`.
@@ -216,6 +218,7 @@ Supabase migrations are currently expected to be run manually in sequence in the
 
 ## Known constraints and technical debt
 
+- On wide desktop Carousel layouts, multiple fully visible cards can keep the active caption on the previous dish after a navigation step. Centre-aware tracking is recorded in `TODO.md`; Reel's vertical native-scrolling change does not alter the shared observer or Carousel gesture lock.
 - There is no automated test suite yet.
 - Vite currently reports a JavaScript chunk slightly over 500 kB after minification. Consider route-based lazy loading before the application grows substantially.
 - All styling is in one large file. Page-level CSS modules or organized stylesheet splits would lower regression risk.

@@ -68,6 +68,7 @@ Do not silently depend on a field that is absent from the demo data or existing 
 4. Keep sold-out items visible but clearly unavailable.
 5. Check long restaurant/item names at 390 px width.
 6. Preserve the restaurant `primary_color` theming and readable contrast.
+7. For Reel, verify fast native touch/wheel gestures and immediate reverse/repeated scrolling, clean snap landing, matching captions/progress, category reset, keyboard navigation, and reduced motion. Do not reattach `useSnapLock` or `scroll-snap-stop: always`: those intentionally prevent the fast multi-item browsing required here. The horizontal Carousel keeps its own gesture lock.
 
 ### Change the landing page
 
