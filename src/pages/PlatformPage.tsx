@@ -1,304 +1,130 @@
-import { ArrowLeft, Check, ExternalLink, History, Pause, Play, Search, ShieldCheck } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
-import { Loading, Notice } from '../components/Status'
+import { ChevronLeft, ChevronRight, LogOut, RefreshCw, Search, ShieldCheck, X } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { Brand } from '../components/Brand'
 import { PlatformGallery } from '../components/PlatformGallery'
-import { getPlatformAudit, listPlatformRestaurants, setSubscription } from '../lib/api'
+import { ShopBillingPanel } from '../components/ShopBillingPanel'
+import { Loading, Notice } from '../components/Status'
+import { getCashCollections, getPlatformAudit, getShopBilling, listSubscribers, setSubscription } from '../lib/api'
 import { useAuth } from '../lib/auth'
-import { subscriptionState } from '../lib/subscription'
-import type { PlatformAuditEntry, PlatformRestaurant, SubscriptionStatus } from '../lib/types'
-import { TEMPLATES } from '../templates/registry'
-import styles from './Platform.module.css'
+import { beirutInput, billingStatus, cashDate, cashMoney, parseBeirutInput } from '../lib/billing'
+import { billingError, billingText } from '../lib/billingI18n'
+import type { BillingCopyKey } from '../lib/billingI18n'
+import type { CashCollections, Language, PlatformAuditEntry, ShopBilling, SubscriberPage } from '../lib/types'
 
-type Bucket = 'expired' | 'expiring' | 'trial' | 'active' | 'suspended'
-type Filter = 'all' | 'attention' | 'live' | 'trial' | 'suspended'
-
-interface Lifecycle {
-  bucket: Bucket
-  tone: 'Live' | 'Trial' | 'Warn' | 'Danger' | 'Muted'
-  status: string
-  detail: string
-  /** Lower sorts first, so whatever needs action is at the top. */
-  rank: number
-  /** Whether the public menu is actually being served right now. */
-  serving: boolean
-}
-
-const formatDate = (iso?: string | null) => iso ? new Date(iso).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) : '—'
-
-function relative(days: number) {
-  const absolute = Math.abs(days)
-  if (absolute === 0) return 'today'
-  if (absolute === 1) return days > 0 ? 'tomorrow' : 'yesterday'
-  return days > 0 ? `in ${absolute} days` : `${absolute} days ago`
-}
-
-/** Presentation for the console, built on the shared liveness rule. */
-function lifecycleOf(restaurant: PlatformRestaurant): Lifecycle {
-  const state = subscriptionState(restaurant)
-  const days = state.daysLeft ?? 0
-
-  if (state.kind === 'suspended') {
-    // The date shown is what they are still owed, not when they were suspended
-    // — that is in the audit trail, and this is what matters when restoring.
-    return {
-      bucket: 'suspended', tone: 'Muted', status: 'Suspended',
-      detail: state.endsAt ? `Paid until ${formatDate(state.endsAt)}` : 'No end date set',
-      rank: 40, serving: false,
-    }
-  }
-
-  if (state.kind === 'trial') {
-    if (!state.serving) return { bucket: 'expired', tone: 'Danger', status: 'Trial ended', detail: relative(days), rank: 0, serving: false }
-    return { bucket: 'trial', tone: 'Trial', status: 'In trial', detail: `Ends ${relative(days)}`, rank: days <= 3 ? 5 : 20, serving: true }
-  }
-
-  if (state.daysLeft === null) {
-    return { bucket: 'active', tone: 'Live', status: 'Active', detail: 'No end date set', rank: 30, serving: true }
-  }
-
-  if (!state.serving) return { bucket: 'expired', tone: 'Danger', status: 'Expired', detail: `Lapsed ${relative(days)}`, rank: 1, serving: false }
-  if (days <= 30) return { bucket: 'expiring', tone: 'Warn', status: 'Renewal due', detail: `Renews ${relative(days)}`, rank: 10, serving: true }
-  return { bucket: 'active', tone: 'Live', status: 'Active', detail: `Renews ${formatDate(state.endsAt)}`, rank: 30, serving: true }
-}
-
-const FILTERS: { id: Filter; label: string; matches: (l: Lifecycle) => boolean }[] = [
-  { id: 'all', label: 'All', matches: () => true },
-  { id: 'attention', label: 'Needs attention', matches: (l) => l.bucket === 'expired' || l.bucket === 'expiring' },
-  { id: 'live', label: 'Live', matches: (l) => l.serving },
-  { id: 'trial', label: 'Trial', matches: (l) => l.bucket === 'trial' },
-  { id: 'suspended', label: 'Suspended', matches: (l) => l.bucket === 'suspended' },
-]
-
+type View = 'Subscribers' | 'Collections' | 'Activity' | 'Gallery'
 export function PlatformPage() {
-  const { adminRole, session, demoMode } = useAuth()
-  const [restaurants, setRestaurants] = useState<PlatformRestaurant[]>([])
-  const [audit, setAudit] = useState<PlatformAuditEntry[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
+  const { adminRole, session, demoMode, signOut } = useAuth()
+  const navigate = useNavigate()
+  const [language, setLanguage] = useState<Language>(() => {
+    try { return localStorage.getItem('fluxiva-landing-language') === 'ar' ? 'ar' : 'en' } catch { return 'en' }
+  })
+  const t = (key: BillingCopyKey) => billingText(language, key)
+  const [view, setView] = useState<View>('Subscribers')
+  const [directory, setDirectory] = useState<SubscriberPage | null>(null)
+  const [collections, setCollections] = useState<CashCollections | null>(null)
+  const [activity, setActivity] = useState<PlatformAuditEntry[]>([])
+  const [searchDraft, setSearchDraft] = useState('')
   const [search, setSearch] = useState('')
-  const [filter, setFilter] = useState<Filter>('all')
-  const [busyId, setBusyId] = useState('')
-  const [confirming, setConfirming] = useState<PlatformRestaurant | null>(null)
-
-  // Only a super admin may change billing; the database enforces this too.
+  const [page, setPage] = useState(0)
+  const [reload, setReload] = useState(0)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<unknown>(null)
+  const [selected, setSelected] = useState<ShopBilling | null>(null)
+  const selectedId = selected?.restaurant_id
+  const [billingRefresh, setBillingRefresh] = useState(0)
+  const [suspending, setSuspending] = useState(false)
+  const [busy, setBusy] = useState(false)
+  const today = beirutInput().slice(0, 10)
+  const [fromDraft, setFromDraft] = useState(today.slice(0, 8) + '01')
+  const [untilDraft, setUntilDraft] = useState(today)
+  const [dates, setDates] = useState({ from: fromDraft, until: untilDraft })
+  const dialog = useRef<HTMLDialogElement>(null)
   const canManage = adminRole === 'super_admin'
-
+  const money = (value: number | null) => cashMoney(value, language)
+  const date = (value: string | null, time = false) => cashDate(value, language, time)
+  const number = (value: number) => language === 'ar' ? '\u200e' + value.toLocaleString('ar-LB') + '\u200e' : value.toLocaleString('en-US')
   useEffect(() => {
-    Promise.all([listPlatformRestaurants(), getPlatformAudit(20)])
-      .then(([list, entries]) => { setRestaurants(list); setAudit(entries) })
-      .catch((caught) => setError(caught instanceof Error ? caught.message : 'Could not load the console'))
-      .finally(() => setLoading(false))
-  }, [])
-
-  /**
-   * `endsAt` is the renewal date to write, or null to let the database decide:
-   * extending a year when activating, and leaving the existing date untouched
-   * when suspending. Suspending must never overwrite it, or the restaurant
-   * loses the time it has already paid for.
-   */
-  async function changeStatus(restaurant: PlatformRestaurant, status: SubscriptionStatus, endsAt: string | null = null) {
-    setBusyId(restaurant.id); setError('')
-    try {
-      await setSubscription(restaurant.id, status, endsAt)
-      const [list, entries] = await Promise.all([listPlatformRestaurants(), getPlatformAudit(20)])
-      setRestaurants(list); setAudit(entries)
-    } catch (caught) {
-      setError(caught instanceof Error ? caught.message : 'Could not update the subscription')
-    } finally { setBusyId(''); setConfirming(null) }
+    const controller = new AbortController()
+    setLoading(true); setError(null)
+    const request = view === 'Subscribers'
+      ? listSubscribers(search, page, controller.signal).then(data => { if (!controller.signal.aborted) setDirectory(data) })
+      : view === 'Collections'
+        ? getCashCollections(dates.from, dates.until, page, controller.signal).then(data => { if (!controller.signal.aborted) setCollections(data) })
+        : view === 'Activity'
+          ? getPlatformAudit(50).then(data => { if (!controller.signal.aborted) setActivity(data) })
+          : Promise.resolve()
+    request.catch(caught => { if (!controller.signal.aborted) setError(caught) })
+      .finally(() => { if (!controller.signal.aborted) setLoading(false) })
+    return () => controller.abort()
+  }, [view, search, page, dates, reload])
+  useEffect(() => { if (suspending) dialog.current?.showModal() }, [suspending])
+  useEffect(() => { window.scrollTo(0, 0) }, [selectedId])
+  function changeLanguage() {
+    const next = language === 'en' ? 'ar' : 'en'
+    setLanguage(next)
+    try { localStorage.setItem('fluxiva-landing-language', next) } catch { /* blocked storage */ }
   }
-
-  const rows = useMemo(() => {
-    const term = search.trim().toLowerCase()
-    return restaurants
-      .map((restaurant) => ({ restaurant, lifecycle: lifecycleOf(restaurant) }))
-      .filter(({ restaurant, lifecycle }) => {
-        if (!FILTERS.find((entry) => entry.id === filter)?.matches(lifecycle)) return false
-        if (!term) return true
-        return `${restaurant.name_en} ${restaurant.name_ar} ${restaurant.slug} ${restaurant.owner_email ?? ''}`.toLowerCase().includes(term)
-      })
-      // Attention first, then soonest date within each group.
-      .sort((a, b) => a.lifecycle.rank - b.lifecycle.rank
-        || new Date(a.restaurant.subscription_ends_at ?? a.restaurant.trial_ends_at ?? 0).getTime()
-        - new Date(b.restaurant.subscription_ends_at ?? b.restaurant.trial_ends_at ?? 0).getTime())
-  }, [restaurants, search, filter])
-
-  const stats = useMemo(() => {
-    const all = restaurants.map(lifecycleOf)
-    return {
-      total: all.length,
-      serving: all.filter((l) => l.serving).length,
-      attention: all.filter((l) => l.bucket === 'expired' || l.bucket === 'expiring').length,
-      trial: all.filter((l) => l.bucket === 'trial').length,
-      suspended: all.filter((l) => l.bucket === 'suspended').length,
-    }
-  }, [restaurants])
-
-  const filterCounts = useMemo(() => {
-    const all = restaurants.map(lifecycleOf)
-    return Object.fromEntries(FILTERS.map((entry) => [entry.id, all.filter(entry.matches).length])) as Record<Filter, number>
-  }, [restaurants])
-
-  const templateName = (id?: string) => TEMPLATES.find((template) => template.id === id)?.name ?? 'Classic'
-
+  async function changeSuspension(suspend: boolean) {
+    if (!selected) return
+    setBusy(true); setError(null)
+    try {
+      await setSubscription(selected.restaurant_id, suspend ? 'suspended' : 'active', suspend ? null : selected.paid_until)
+      setSelected(await getShopBilling(selected.restaurant_id, true))
+      setBillingRefresh(n => n + 1); setReload(n => n + 1)
+      setSuspending(false); dialog.current?.close()
+    } catch (caught) { setError(caught) }
+    finally { setBusy(false) }
+  }
+  function shopRow(shop: ShopBilling) {
+    return <div className="cash-shop-row" key={shop.restaurant_id}>
+      <div><strong>{language === 'ar' ? shop.name_ar : shop.name_en}</strong><p><bdi>/m/{shop.slug}</bdi></p><div className="cash-tags"><span className="cash-tag">{t(billingStatus(shop))}</span><span>{t(shop.is_published ? 'Listed' : 'Hidden')}</span></div></div>
+      <div><span className="cash-label">{t('Annual price')}</span><bdi>{money(shop.annual_cents)}</bdi><span className="cash-label">{shop.agreement_id ? t('Remaining annual balance') : t('Cash received')}</span><bdi>{money(shop.agreement_id ? shop.remaining_cents : null)}</bdi></div>
+      <div><span className="cash-label">{t(shop.subscription_status === 'trial' ? 'Trial ends' : 'Paid through')}</span>{date(shop.paid_until)}{shop.whatsapp && <p><bdi>{shop.whatsapp}</bdi></p>}{(language === 'ar' ? shop.address_ar : shop.address_en) && <p>{language === 'ar' ? shop.address_ar : shop.address_en}</p>}</div>
+      <button className="button button-outline button-small" onClick={() => { setSelected(shop); setError(null) }}>{t('Open billing')}<ChevronRight size={16} /></button>
+    </div>
+  }
+  const totalPages = view === 'Subscribers' ? Math.ceil((directory?.total ?? 0) / 25) : Math.ceil(Math.max(collections?.due_total ?? 0, collections?.receipts_total ?? 0) / 25)
   return (
-    <main className={styles.console}>
-      <header className={styles.topbar}>
-        <Link className={styles.back} to="/dashboard"><ArrowLeft /> Dashboard</Link>
-        <span className={styles.topbarTitle}><ShieldCheck /> Fluxiva operator</span>
-        <span className={styles.identity}>
-          <span>{demoMode ? 'demo mode' : session?.user.email}</span>
-          <span className={styles.roleBadge}>{adminRole === 'super_admin' ? 'Super admin' : 'Support'}</span>
-        </span>
+    <main className="cash-console" dir={language === 'ar' ? 'rtl' : 'ltr'} lang={language}>
+      <header className="cash-topbar">
+        <Brand light homeLabel={t('Home')} />
+        <nav aria-label={t('Operator console')}>{(['Subscribers', 'Collections', 'Activity', 'Gallery'] as View[]).filter(v => v !== 'Gallery' || canManage).map(item => <button className={view === item && !selected ? 'selected' : ''} aria-current={view === item && !selected ? 'page' : undefined} key={item} onClick={() => { setView(item); setSelected(null); setPage(0) }}>{t(item)}</button>)}</nav>
+        <div className="cash-account"><span><bdi>{demoMode ? 'Fluxiva demo' : session?.user.email}</bdi><small><ShieldCheck size={12} /> {t(canManage ? 'Super admin' : 'Support')}</small></span><button onClick={changeLanguage} lang={language === 'en' ? 'ar' : 'en'}>{language === 'en' ? 'العربية' : 'English'}</button><button onClick={async () => { await signOut(); navigate('/login', { replace: true }) }}><LogOut size={16} />{t('Sign out')}</button></div>
       </header>
-
-      <div className={styles.shell}>
-        <div className={styles.heading}>
-          <h1>Operator console</h1>
-          <p>Subscriptions and menu access for every restaurant on Fluxiva.</p>
-        </div>
-
-        {error && <Notice tone="error">{error}</Notice>}
-        {demoMode && <Notice>Sample data. Connect Supabase to manage real restaurants.</Notice>}
-        {!canManage && <Notice>Your role has read-only access. Subscription changes are disabled.</Notice>}
-
-        {loading ? <Loading label="Loading restaurants…" /> : <>
-          <div className={styles.stats}>
-            <article className={styles.stat}><span>Restaurants</span><strong>{stats.total}</strong><small>on the platform</small></article>
-            <article className={`${styles.stat} ${styles.statLive}`}><span>Menus live</span><strong>{stats.serving}</strong><small>serving customers now</small></article>
-            <article className={`${styles.stat} ${stats.attention ? styles.statAttention : ''}`}><span>Needs attention</span><strong>{stats.attention}</strong><small>expired or due within 30 days</small></article>
-            <article className={styles.stat}><span>In trial</span><strong>{stats.trial}</strong><small>not yet paying</small></article>
-            <article className={styles.stat}><span>Suspended</span><strong>{stats.suspended}</strong><small>menus offline</small></article>
-          </div>
-
-          <div className={styles.toolbar}>
-            <div className={styles.search}>
-              <Search />
-              <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search by name, link or owner email…" />
-            </div>
-            <div className={styles.filters}>
-              {FILTERS.map((entry) => (
-                <button
-                  key={entry.id}
-                  className={`${styles.filter} ${filter === entry.id ? styles.filterActive : ''}`}
-                  onClick={() => setFilter(entry.id)}
-                >
-                  {entry.label}<span className={styles.filterCount}>{filterCounts[entry.id] ?? 0}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <section className={styles.table}>
-            <div className={styles.tableHead}>
-              <span>Restaurant</span><span>Owner</span><span>Menu</span><span>Subscription</span><span />
-            </div>
-
-            {rows.map(({ restaurant, lifecycle }) => (
-              <div key={restaurant.id} className={`${styles.row} ${busyId === restaurant.id ? styles.rowBusy : ''}`}>
-                <div className={styles.venue}>
-                  <span className={styles.swatch} style={{ backgroundColor: restaurant.primary_color }}>
-                    {restaurant.name_en.slice(0, 2).toUpperCase()}
-                  </span>
-                  <span className={styles.venueText}>
-                    <b>{restaurant.name_en}</b>
-                    <Link className={styles.slug} to={`/m/${restaurant.slug}`} target="_blank">/m/{restaurant.slug} <ExternalLink /></Link>
-                  </span>
-                </div>
-
-                <div>
-                  <span className={styles.cellLabel}>Owner</span>
-                  <span className={`${styles.owner} ${restaurant.owner_email ? '' : styles.ownerMissing}`}>
-                    {restaurant.owner_email ?? 'no account'}
-                  </span>
-                </div>
-
-                <div>
-                  <span className={styles.cellLabel}>Menu</span>
-                  <div className={styles.menuMeta}>
-                    <b>{restaurant.item_count}</b> items<br />
-                    <b>{(restaurant.views_30d ?? 0).toLocaleString()}</b> opens / 30d<br />
-                    {templateName(restaurant.template_id)}
-                    {restaurant.temporarily_closed && <span className={styles.closedTag}>Closed</span>}
-                  </div>
-                </div>
-
-                <div className={styles.sub}>
-                  <span className={styles.cellLabel}>Subscription</span>
-                  <span className={`${styles.pill} ${styles[`tone${lifecycle.tone}`]}`}>{lifecycle.status}</span>
-                  <span className={styles.subDetail}>{lifecycle.detail}</span>
-                  {!lifecycle.serving && <span className={styles.offline}>Menu offline</span>}
-                </div>
-
-                <div className={styles.actions}>
-                  {canManage ? <>
-                    <button
-                      className={`${styles.action} ${styles.actionPrimary}`}
-                      // Reactivating hands back the date it was suspended with,
-                      // so a restored account gets the time it was owed rather
-                      // than a fresh year on top of it.
-                      onClick={() => lifecycle.bucket === 'suspended'
-                        ? changeStatus(restaurant, 'active', restaurant.subscription_ends_at ?? null)
-                        : changeStatus(restaurant, 'active')}
-                    >
-                      {lifecycle.bucket === 'suspended' ? <><Play /> Reactivate</> : <><Check /> Extend 1 year</>}
-                    </button>
-                    {lifecycle.bucket !== 'suspended' && (
-                      <button className={`${styles.action} ${styles.actionDanger}`} onClick={() => setConfirming(restaurant)}>
-                        <Pause /> Suspend
-                      </button>
-                    )}
-                  </> : <span className={styles.readOnly}>Read-only</span>}
-                </div>
-              </div>
-            ))}
-
-            {!rows.length && <p className={styles.empty}>No restaurants match this view.</p>}
-          </section>
-
-          <section className={styles.audit}>
-            <div className={styles.auditHead}><History /><h2>Recent activity</h2></div>
-            <p className={styles.auditNote}>Every subscription change, and who made it.</p>
-            {audit.length ? (
-              <div className={styles.auditList}>
-                {audit.map((entry) => {
-                  const suspended = entry.action.endsWith('suspended')
-                  return (
-                    <div key={entry.id} className={styles.auditRow}>
-                      <span className={`${styles.auditAction} ${suspended ? styles.toneDanger : styles.toneLive}`}>
-                        {suspended ? 'Suspended' : 'Activated'}
-                      </span>
-                      <b>/m/{entry.restaurant_slug}</b>
-                      {entry.details?.ends_at && <span className={styles.auditActor}>until {formatDate(entry.details.ends_at)}</span>}
-                      <span className={styles.auditActor}>by {entry.actor_email ?? 'unknown'}</span>
-                      <span className={styles.auditTime}>{formatDate(entry.created_at)}</span>
-                    </div>
-                  )
-                })}
-              </div>
-            ) : <p className={styles.empty}>No changes recorded yet.</p>}
-          </section>
-          {canManage && <PlatformGallery />}
+      <div className="cash-console-shell">
+        <div className="cash-page-heading"><div><h1>{t(selected ? 'Subscription & payments' : view)}</h1><p>{t('Cash subscriptions, clearly recorded.')}</p></div><button className="button button-outline" disabled={loading || busy} onClick={() => { setReload(n => n + 1); if (selected) setBillingRefresh(n => n + 1) }}><RefreshCw size={16} /> {t('Refresh')}</button></div>
+        {demoMode && <Notice>{t('Sample data. Cash changes stay in this browser session.')}</Notice>}
+        {!canManage && <Notice>{t('Read-only access')}</Notice>}
+        {Boolean(error) && <Notice tone="error">{billingError(language, error)}<button className="cash-text-button" onClick={() => setReload(n => n + 1)}>{t('Try again')}</button></Notice>}
+        {selected ? <>
+          <div className="cash-detail-heading"><button className="cash-text-button" onClick={() => setSelected(null)}><ChevronLeft size={16} /> {t('Close billing')}</button><div className="cash-actions"><span className="cash-tag">{t(billingStatus(selected))}</span>{canManage && !selected.archived && <button className="button button-outline button-small" disabled={busy} onClick={() => selected.subscription_status === 'suspended' ? void changeSuspension(false) : setSuspending(true)}>{t(selected.subscription_status === 'suspended' ? 'Restore access' : 'Suspend menu')}</button>}</div></div>
+          <ShopBillingPanel key={selected.restaurant_id} shopId={selected.restaurant_id} language={language} admin refreshToken={billingRefresh} onChanged={data => { setSelected(data); setReload(n => n + 1) }} />
+        </> : view === 'Gallery' ? <PlatformGallery language={language} /> : <>
+          {view === 'Subscribers' && <form className="cash-search" onSubmit={event => { event.preventDefault(); setSearch(searchDraft.trim()); setPage(0); setReload(n => n + 1) }}><label><span className="sr-only">{t('Search owners, shops or contact numbers')}</span><Search size={18} /><input value={searchDraft} onChange={e => setSearchDraft(e.target.value)} placeholder={t('Search owners, shops or contact numbers')} /></label><button className="button button-outline">{t('Search')}</button></form>}
+          {view === 'Collections' && <form className="cash-date-filter" onSubmit={event => { event.preventDefault(); setDates({ from: fromDraft, until: untilDraft }); setPage(0) }}><label>{t('From')}<input type="date" value={fromDraft} onChange={e => setFromDraft(e.target.value)} required /></label><label>{t('Until')}<input type="date" value={untilDraft} min={fromDraft} onChange={e => setUntilDraft(e.target.value)} required /></label><button className="button button-outline">{t('Apply dates')}</button></form>}
+          {loading ? <Loading label={t(view === 'Subscribers' ? 'Loading subscribers…' : 'Loading collections…')} /> : <>
+            {view === 'Subscribers' && <section className="cash-directory" aria-label={t('Subscribers')}>
+              <p className="cash-result-count">{number(directory?.total ?? 0)} {t('subscribers')}</p>
+              {directory?.subscribers.length ? directory.subscribers.map(owner => <article className="cash-subscriber" key={owner.id}><header><h2><bdi>{owner.email}</bdi></h2><span>{t('Registered')} {date(owner.created_at)}</span>{owner.archived && <span className="cash-tag">{t('Archived')}</span>}</header>{owner.shops.length ? owner.shops.map(shopRow) : <p className="cash-empty">{t('No shop created yet')}</p>}</article>) : <p className="cash-empty">{t('No subscribers match this search.')}</p>}
+            </section>}
+            {view === 'Collections' && collections && <>
+              <div className="cash-total"><span>{t('Net cash recorded')}</span><strong><bdi>{money(collections.collected_cents)}</bdi></strong><p>{t('Voided receipts are excluded from the total.')}</p></div>
+              {collections.daily_totals.length > 0 && <section className="cash-collection-list"><h2>{t('Cash by collection date')}</h2><ol className="cash-daily-totals">{collections.daily_totals.map(day => <li key={day.date}><time>{date(parseBeirutInput(day.date + 'T12:00'))}</time><span>{t('Receipt count')}: {number(day.receipt_count)}</span><strong><bdi>{money(day.collected_cents)}</bdi></strong></li>)}</ol></section>}
+              <section className="cash-collection-list"><h2>{t('Upcoming and overdue collections')}</h2><p>{t('Paid periods ending within 30 days, earliest first.')}</p>{collections.due_shops.length ? collections.due_shops.map(shopRow) : <p className="cash-empty">{t('No collections due in this view.')}</p>}</section>
+              <section className="cash-collection-list"><h2>{t('Receipt history')}</h2>{collections.receipts.length ? <ol>{collections.receipts.map(receipt => <li className="cash-collection-receipt" key={receipt.id}><div><strong>{language === 'ar' ? receipt.name_ar : receipt.name_en}</strong><p><bdi>{receipt.owner_email}</bdi></p></div><div>{date(receipt.collected_at, true)}<p><bdi>{receipt.reference}</bdi></p></div><bdi>{money(receipt.amount_cents)}</bdi>{receipt.voided ? <span className="cash-tag">{t('Voided')}</span> : <button className="cash-text-button" onClick={async () => { try { setSelected(await getShopBilling(receipt.shop_id, true)) } catch (caught) { setError(caught) } }}>{t('Open billing')}</button>}</li>)}</ol> : <p className="cash-empty">{t('No receipts in this date range.')}</p>}</section>
+            </>}
+            {view === 'Activity' && <section className="cash-collection-list"><h2>{t('Recent activity')}</h2>{activity.length ? <ol>{activity.map(entry => <li className="cash-collection-receipt" key={entry.id}><strong>{t(entry.action === 'billing.cash_received' ? 'Cash recorded' : entry.action === 'billing.receipt_voided' ? 'Receipt corrected' : entry.action === 'billing.price' ? 'Price updated' : 'Access updated')}</strong><div><bdi>/m/{entry.restaurant_slug}</bdi><p><bdi>{entry.actor_email}</bdi></p></div><div>{entry.details.amount_cents != null && <bdi>{money(entry.details.amount_cents)}</bdi>}{entry.details.reference && <p><bdi>{entry.details.reference}</bdi></p>}<time>{date(entry.created_at, true)}</time></div></li>)}</ol> : <p className="cash-empty">{t('No activity recorded yet.')}</p>}</section>}
+            {(view === 'Subscribers' || view === 'Collections') && <div className="cash-pagination"><button className="button button-outline button-small" disabled={page === 0} onClick={() => setPage(p => p - 1)}><ChevronLeft size={16} />{t('Previous')}</button><span>{t('Page')} <bdi dir="ltr">{number(page + 1)} / {number(Math.max(1, totalPages))}</bdi></span><button className="button button-outline button-small" disabled={page + 1 >= totalPages} onClick={() => setPage(p => p + 1)}>{t('Next')}<ChevronRight size={16} /></button></div>}
+          </>}
         </>}
+        <p className="cash-time-note">{t('All dates are in Beirut time.')}</p>
       </div>
-
-      {confirming && (
-        <div className="modal-backdrop">
-          <div className={`modal-card ${styles.confirmCard}`}>
-            <h2>Suspend this restaurant?</h2>
-            <p>
-              <strong>{confirming.name_en}</strong> will stop serving its public menu immediately.
-              Anyone scanning the QR code at <strong>/m/{confirming.slug}</strong> will see an unavailable page until you reactivate it.
-            </p>
-            <div className={styles.confirmActions}>
-              <button className="button button-outline button-small" onClick={() => setConfirming(null)}>Cancel</button>
-              <button className="button button-primary button-small" onClick={() => changeStatus(confirming, 'suspended')}>
-                <Pause /> Suspend menu
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <dialog ref={dialog} className="cash-confirm-dialog" aria-labelledby="cash-suspend-title" onCancel={event => { if (busy) event.preventDefault(); else setSuspending(false) }} onClose={() => setSuspending(false)}>
+        <div className="cash-section-heading"><h2 id="cash-suspend-title">{t('Suspend this shop’s public menu?')}</h2><button className="cash-icon-button" aria-label={t('Cancel')} disabled={busy} onClick={() => dialog.current?.close()}><X /></button></div>
+        <p>{selected && (language === 'ar' ? selected.name_ar : selected.name_en)}</p><p>{t('Suspension preserves paid time and payment history.')}</p>{Boolean(error) && <Notice tone="error">{billingError(language, error)}</Notice>}
+        <div className="cash-actions"><button className="button button-primary" disabled={busy} onClick={() => void changeSuspension(true)}>{busy ? t('Saving…') : t('Suspend menu')}</button><button className="button button-outline" disabled={busy} onClick={() => dialog.current?.close()}>{t('Cancel')}</button></div>
+      </dialog>
     </main>
   )
 }

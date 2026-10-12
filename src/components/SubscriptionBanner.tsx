@@ -40,13 +40,13 @@ export function SubscriptionBanner({ restaurant, language = 'en' }: { restaurant
     text = t('Your menu is no longer showing to customers, and your QR code now leads to an unavailable page. Your items are all still saved — subscribing brings the menu straight back.')
   } else if (offline) {
     title = t('Your subscription has ended')
-    text = t('Your menu is no longer showing to customers, and your QR code now leads to an unavailable page. Your items are all still saved — renewing brings the menu straight back.')
+    text = t('Arrange a USD cash payment with Fluxiva to restore access. Your menu is still saved.')
   } else if (state.kind === 'trial') {
     title = `${plural(days, language)} ${t('left in your free trial')}`
     text = t('When the trial ends your menu stops showing to customers and your QR code will stop working. Subscribe before then to keep it live.')
   } else {
-    title = `${t('Your subscription renews in')} ${plural(days, language)}`
-    text = t('Renew before then to keep your menu and QR code working without interruption.')
+    title = `${t('Your paid access ends in')} ${plural(days, language)}`
+    text = t('Arrange a USD cash payment before then to keep your menu and QR code available.')
   }
 
   return (
@@ -63,7 +63,7 @@ export function SubscriptionBanner({ restaurant, language = 'en' }: { restaurant
               target="_blank"
               rel="noreferrer"
             >
-              <MessageCircle /> {offline ? t('Contact Fluxiva') : t('Renew now')}
+              <MessageCircle /> {t('Arrange cash collection')}
             </a>
           </div>
         )}

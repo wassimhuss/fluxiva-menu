@@ -16,6 +16,99 @@ export interface MenuContactCard {
 /** Operator console roles. Only `super_admin` may change subscriptions. */
 export type AdminRole = 'super_admin' | 'support'
 
+/** All subscription money is integer USD cents, independent of menu currency. */
+export interface CashReceipt {
+  id: string
+  amount_cents: number
+  collected_at: string
+  reference: string
+  coverage_from: string
+  coverage_until: string
+  voided: boolean
+  can_void: boolean
+  note?: string | null
+  actor_email?: string | null
+  void_reason?: string | null
+}
+export interface CashAgreement {
+  id: string
+  annual_cents: number
+  created_at: string
+  paid_cents: number
+  receipts: CashReceipt[]
+}
+export interface ShopBilling {
+  restaurant_id: string
+  owner_id: string
+  name_en: string
+  name_ar: string
+  slug: string
+  whatsapp?: string | null
+  address_en?: string | null
+  address_ar?: string | null
+  archived: boolean
+  subscription_status: SubscriptionStatus
+  is_published: boolean
+  trial_ends_at: string | null
+  paid_until: string | null
+  next_annual_cents: number | null
+  annual_cents: number | null
+  agreement_id: string | null
+  paid_cents: number
+  remaining_cents: number | null
+  payment_count: number
+  legacy_access: boolean
+  version: string
+  /** Directory rows omit history; shop detail loads it on demand. */
+  agreements?: CashAgreement[]
+}
+export interface PlatformSubscriber {
+  id: string
+  email: string
+  created_at: string
+  archived: boolean
+  shops: ShopBilling[]
+}
+export interface SubscriberPage {
+  subscribers: PlatformSubscriber[]
+  total: number
+  page: number
+  page_size: number
+}
+export interface CashPaymentPreview {
+  restaurant_id: string
+  annual_cents: number
+  amount_cents: number
+  collected_at: string
+  previous_paid_until: string | null
+  coverage_from: string
+  paid_until: string
+  remaining_cents: number
+  payment_count: number
+  version: string
+  suspended: boolean
+  is_published: boolean
+}
+export interface CashPaymentRequest {
+  shop_input: string
+  amount_input: number
+  collected_input: string
+  reference_input: string
+  note_input: string
+  request_input: string
+  version_input: string
+}
+export interface CashCollections {
+  collected_cents: number
+  daily_totals: Array<{ date: string; collected_cents: number; receipt_count: number }>
+  receipts_total: number
+  due_total: number
+  due_shops: ShopBilling[]
+  receipts: Array<Pick<CashReceipt, 'id' | 'amount_cents' | 'collected_at' | 'reference' | 'voided'> & {
+    name_en: string; name_ar: string; slug: string; owner_email: string; shop_id: string
+  }>
+}
+
 /** A restaurant as the operator console sees it, with owner and menu context. */
 export interface PlatformRestaurant {
   id: string
@@ -53,7 +146,7 @@ export interface PlatformAuditEntry {
   actor_email?: string
   action: string
   restaurant_slug?: string
-  details: { previous_ends_at?: string | null; ends_at?: string | null }
+  details: { previous_ends_at?: string | null; ends_at?: string | null; annual_cents?: number; amount_cents?: number; reference?: string; receipt_id?: string; reason?: string }
   created_at: string
 }
 

@@ -1,4 +1,4 @@
-import { ArrowDown, ArrowUp, CheckCircle2, ChevronLeft, ChevronRight, Copy, Download, ExternalLink, Eye, EyeOff, FileSpreadsheet, ImagePlus, Images, LayoutDashboard, LoaderCircle, LogOut, Maximize2, Menu, Palette, Pencil, Plus, QrCode, RotateCcw, Settings, Star, Store, Trash2, TriangleAlert, Upload, X } from 'lucide-react'
+import { ArrowDown, ArrowUp, CheckCircle2, Clock3, ChevronLeft, ChevronRight, Copy, Download, ExternalLink, Eye, EyeOff, FileSpreadsheet, ImagePlus, Images, LayoutDashboard, LoaderCircle, LogOut, Maximize2, Menu, Palette, Pencil, Plus, QrCode, RotateCcw, Settings, Star, Store, Trash2, TriangleAlert, Upload, X } from 'lucide-react'
 import QRCode from 'qrcode'
 import { isCancelledError } from '@tanstack/react-query'
 import { useCallback, useEffect, useMemo, useRef, useState, type SetStateAction } from 'react'
@@ -7,6 +7,7 @@ import { Brand } from '../components/Brand'
 import { Loading, Notice } from '../components/Status'
 import { MenuViews } from '../components/MenuViews'
 import { SubscriptionBanner } from '../components/SubscriptionBanner'
+import { ShopBillingPanel } from '../components/ShopBillingPanel'
 import { GalleryPicker } from '../components/GalleryPicker'
 import { ImageLightbox } from '../components/ImageLightbox'
 import { PortraitImageCropper } from '../components/PortraitImageCropper'
@@ -21,7 +22,7 @@ import { DEFAULT_TEMPLATE, TEMPLATES, resolveTemplateId } from '../templates/reg
 import type { BrandGroup, Category, GalleryCategory, GalleryImage, ItemExtra, Language, MenuItem, MenuViewStats, Restaurant, RestaurantMenu, Variant } from '../lib/types'
 import type { MenuWorkbookPreview } from '../lib/menuWorkbook'
 
-type Panel = 'overview' | 'analysis' | 'menu' | 'design' | 'settings'
+type Panel = 'overview' | 'analysis' | 'menu' | 'design' | 'settings' | 'billing'
 type ItemDraft = { category_id: string; name_en: string; name_ar: string; description_en: string; description_ar: string; price: string; variants: Variant[]; extras: ItemExtra[]; image_file: File | null; image_url?: string | null; gallery_image_id?: string | null }
 type ImagePreview = { url: string; name: string }
 type RestaurantSettings = Pick<Restaurant, 'name_en' | 'name_ar' | 'description_en' | 'description_ar' | 'whatsapp' | 'instagram' | 'address_en' | 'address_ar' | 'currency' | 'temporarily_closed' | 'takeaway_enabled' | 'default_language'>
@@ -763,7 +764,7 @@ export function DashboardPage() {
     ? t('Your menu is not being served')
     : subscription.daysLeft === null
       ? t('Restaurant access')
-      : subscription.kind === 'trial' ? t('remaining in your trial') : t('until renewal')
+      : subscription.kind === 'trial' ? t('remaining in your trial') : t('until paid access ends')
   // What customers see right now, versus what the owner is trying out.
   const liveTemplate = resolveTemplateId(menu.restaurant.template_id)
   /* Prices are typed and shown in whatever the restaurant charges in. Dollars
@@ -903,6 +904,7 @@ export function DashboardPage() {
           <button className={panel === 'menu' ? 'selected' : ''} onClick={() => setPanel('menu')}><Menu /> {t('Menu editor')}</button>
           <button className={panel === 'design' ? 'selected' : ''} onClick={() => { setPanel('design'); setDesignStep(1) }}><Palette /> {t('Menu design')}</button>
           <button className={panel === 'settings' ? 'selected' : ''} onClick={openSettings}><Settings /> {t('Restaurant settings')}</button>
+          <button className={panel === 'billing' ? 'selected' : ''} onClick={() => setPanel('billing')}><Clock3 /> {t('Subscription & payments')}</button>
         </nav>
         <div className="sidebar-bottom"><Link to={`/m/${menu.restaurant.slug}`} target="_blank"><ExternalLink /> {t('Open public menu')}</Link><button onClick={handleSignOut}><LogOut /> {t('Sign out')}</button></div>
       </aside>
@@ -932,16 +934,22 @@ export function DashboardPage() {
                 <button className="mobile-section-card" onClick={() => { setPanel('design'); setDesignStep(1) }}><span className="mobile-section-icon"><Palette /></span><span><b>{t('Menu design')}</b><small>{t('Layout, photos and brand')}</small></span><DirectionalChevron /></button>
                 <button className="mobile-section-card" onClick={openSettings}><span className="mobile-section-icon"><Settings /></span><span><b>{t('Restaurant settings')}</b><small>{t('Details, status and contact')}</small></span><DirectionalChevron /></button>
                 <button className="mobile-section-card mobile-section-card-analysis" onClick={() => setPanel('analysis')}><span className="mobile-section-icon"><Eye /></span><span><b>{t('Analysis')}</b><small>{t('Menu performance and opens')}</small></span><DirectionalChevron /></button>
+                <button className="mobile-section-card" onClick={() => setPanel('billing')}><span className="mobile-section-icon"><Clock3 /></span><span><b>{t('Subscription & payments')}</b><small>{t('Price, cash receipts and paid access')}</small></span><DirectionalChevron /></button>
                 <button className="mobile-section-card mobile-section-card-qr" onClick={openQr}><span className="mobile-section-icon"><QrCode /></span><span><b>{t('QR code')}</b><small>{t('Download or print your menu QR')}</small></span><DirectionalChevron /></button>
                 <Link className="mobile-section-card mobile-section-card-live" to={`/m/${menu.restaurant.slug}`} target="_blank" rel="noreferrer"><span className="mobile-section-icon"><ExternalLink /></span><span><b>{t('Live menu')}</b><small>{t('See what your customers see')}</small></span><ExternalLink /></Link>
               </div>
             </section>
             <div className="overview-columns">
-              <article className="dashboard-card"><div className="card-heading"><div><h2>{t('Quick actions')}</h2><p>{t('The most common menu tasks.')}</p></div></div><div className="quick-actions"><button onClick={() => { setPanel('menu'); openItem() }}><span><Plus /></span><div><b>{t('Add an item')}</b><small>{t('Name, price and size options')}</small></div><DirectionalChevron /></button><button onClick={() => { setPanel('menu'); openCategory() }}><span><Menu /></span><div><b>{t('Add a category')}</b><small>{t('Group your menu items')}</small></div><DirectionalChevron /></button><button onClick={openQr}><span><QrCode /></span><div><b>{t('Download QR code')}</b><small>{t('Ready to print and share')}</small></div><DirectionalChevron /></button></div></article>
+              <article className="dashboard-card"><div className="card-heading"><div><h2>{t('Quick actions')}</h2><p>{t('The most common menu tasks.')}</p></div></div><div className="quick-actions"><button onClick={() => { setPanel('menu'); openItem() }}><span><Plus /></span><div><b>{t('Add an item')}</b><small>{t('Name, price and size options')}</small></div><DirectionalChevron /></button><button onClick={() => { setPanel('menu'); openCategory() }}><span><Menu /></span><div><b>{t('Add a category')}</b><small>{t('Group your menu items')}</small></div><DirectionalChevron /></button><button onClick={() => setPanel('billing')}><span><Clock3 /></span><div><b>{t('Subscription & payments')}</b><small>{t('Price, cash receipts and paid access')}</small></div><DirectionalChevron /></button><button onClick={openQr}><span><QrCode /></span><div><b>{t('Download QR code')}</b><small>{t('Ready to print and share')}</small></div><DirectionalChevron /></button></div></article>
               <article className="dashboard-card qr-preview"><div className="card-heading"><div><h2>{t('Your menu link')}</h2><p>{t('Share this link anywhere.')}</p></div></div><div className="link-preview"><span>{menuUrl.replace(/^https?:\/\//, '')}</span><a href={menuUrl} target="_blank" rel="noreferrer" aria-label={t('Open brand menu link')}><ExternalLink /></a></div><div className="phone-mini"><div className="phone-mini-cover" style={{ backgroundColor: menu.restaurant.primary_color }}><span>{menu.restaurant.name_en.slice(0, 2).toUpperCase()}</span><b>{menu.restaurant.name_en}</b></div><div><i /><i /><i /></div></div></article>
             </div>
           </>}
 
+          {panel === 'billing' && <ShopBillingPanel key={accountKey + ':' + menu.restaurant.id} shopId={menu.restaurant.id} language={dashboardLanguage} onChanged={billing => {
+            setMenu(current => current?.restaurant.id === billing.restaurant_id ? {
+              ...current, restaurant: { ...current.restaurant, subscription_status: billing.subscription_status, subscription_ends_at: billing.paid_until ?? undefined },
+            } : current)
+          }} />}
           {panel === 'analysis' && <>
             <div className="page-heading analysis-page-heading"><div><span className="eyebrow"><span /> {t('Analysis')}</span><h1>{t('Customer activity.')}</h1><p>{t('See how often customers open your menu and what they can see.')}</p></div></div>
             <section className="analysis-card dashboard-card" aria-labelledby="analysis-title">

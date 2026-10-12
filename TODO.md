@@ -9,6 +9,16 @@ This file is the working product backlog for developers and AI agents. Keep it u
 - `[x]` Complete
 - `[!]` Blocked or waiting for a prerequisite
 
+## Cash subscriptions and subscriber management
+
+**Status:** `[x]` Implemented and verified; migration `026` applied to production on 2026-10-12. Frontend release is being coordinated on the configured GitHub/Render branch.
+
+- [x] Private shop pricing, locked annual agreements, immutable USD receipts and reasoned voids; three valid receipts maximum, final receipt settles the balance.
+- [x] Protected previews/atomic writes, proportional Beirut calendar-month coverage, idempotency, stale-state checks, preserved legacy access and deleted-shop history.
+- [x] Bilingual subscriber directory, daily collection totals/queue, admin receipt workflow, and read-only owner billing; functional offline demo.
+- [x] 26 financial/security/API tests, clean installation, lint/build, desktop/390 px English/Arabic browser flows, isolated migration validation and production migration with unchanged existing access.
+- [ ] Verify the hosted frontend release after pushing the validated source.
+
 ## API experience — first phase
 
 **Status:** `[x]` Implemented and verified locally and with read-only production queries. Frontend deployment remains pending; no migration is needed.

@@ -5,6 +5,7 @@ import { getCachedOwnerQueryClient, getOwnerQueryClient, ownerCacheGeneration } 
 import { patchMenuItem } from './menuState'
 import { subscriptionState } from './subscription'
 import type { AdminRole, BrandGroup, BrandPlaces, Category, GalleryCategory, GalleryImage, ItemExtra, MenuContactCard, MenuItem, MenuViewDay, MenuViewStats, PlatformAuditEntry, PlatformRestaurant, Restaurant, RestaurantMenu, Variant } from './types'
+import type { CashCollections, CashPaymentPreview, CashPaymentRequest, ShopBilling, SubscriberPage } from './types'
 
 type RestaurantInput = Pick<Restaurant, 'name_en' | 'name_ar' | 'slug' | 'primary_color' | 'phone' | 'whatsapp' | 'instagram' | 'maps_url' | 'address_en' | 'address_ar' | 'currency' | 'temporarily_closed' | 'default_language'>
 type CategoryInput = Pick<Category, 'restaurant_id' | 'name_en' | 'name_ar' | 'sort_order'>
@@ -724,6 +725,55 @@ export async function listPlatformRestaurants(): Promise<PlatformRestaurant[]> {
   return (data ?? []) as PlatformRestaurant[]
 }
 
+export async function listSubscribers(search = '', page = 0, signal?: AbortSignal): Promise<SubscriberPage> {
+  if (!supabase) return (await import('./billingDemo')).demoSubscribers(search, page)
+  const { data, error } = await supabase.rpc('platform_subscribers', { search_input: search, page_input: page }).abortSignal(readSignal(signal))
+  if (error) throw error
+  return data as SubscriberPage
+}
+export async function getShopBilling(shopId: string, admin = false, signal?: AbortSignal): Promise<ShopBilling> {
+  if (!supabase) return (await import('./billingDemo')).demoShopBilling(shopId, admin)
+  const { data, error } = await supabase.rpc(admin ? 'platform_get_shop_billing' : 'owner_get_shop_billing', { shop_input: shopId }).abortSignal(readSignal(signal))
+  if (error) throw error
+  return data as ShopBilling
+}
+export async function setShopPrice(shopId: string, annualCents: number): Promise<ShopBilling> {
+  if (!supabase) return (await import('./billingDemo')).demoSetPrice(shopId, annualCents)
+  const { data, error } = await supabase.rpc('platform_set_shop_price', { shop_input: shopId, annual_input: annualCents })
+  if (error) throw error
+  return data as ShopBilling
+}
+export async function previewCashPayment(shopId: string, amount: number, collectedAt: string): Promise<CashPaymentPreview> {
+  if (!supabase) return (await import('./billingDemo')).demoPreview(shopId, amount, collectedAt)
+  const { data, error } = await supabase.rpc('platform_preview_cash_payment', { shop_input: shopId, amount_input: amount, collected_input: collectedAt }).abortSignal(readSignal())
+  if (error) throw error
+  return data as CashPaymentPreview
+}
+export async function reviewLegacyAccess(shopId: string, endsAt: string, version: string): Promise<ShopBilling> {
+  if (!supabase) return (await import('./billingDemo')).demoReviewLegacy(shopId, endsAt, version)
+  const { data, error } = await supabase.rpc('platform_review_legacy_access', { shop_input: shopId, ends_input: endsAt, version_input: version })
+  if (error) throw error
+  return data as ShopBilling
+}
+export async function recordCashPayment(request: CashPaymentRequest): Promise<ShopBilling> {
+  if (!supabase) return (await import('./billingDemo')).demoRecord(request)
+  const { data, error } = await supabase.rpc('platform_record_cash_payment', request)
+  if (error) throw error
+  return data as ShopBilling
+}
+export async function voidCashReceipt(receiptId: string, reason: string, requestId: string, version: string): Promise<ShopBilling> {
+  if (!supabase) return (await import('./billingDemo')).demoVoid(receiptId, reason, requestId, version)
+  const { data, error } = await supabase.rpc('platform_void_cash_receipt', { receipt_input: receiptId, reason_input: reason, request_input: requestId, version_input: version })
+  if (error) throw error
+  return data as ShopBilling
+}
+export async function getCashCollections(from: string, until: string, page = 0, signal?: AbortSignal): Promise<CashCollections> {
+  if (!supabase) return (await import('./billingDemo')).demoCollections(from, until, page)
+  const { data, error } = await supabase.rpc('platform_cash_collections', { from_input: from, until_input: until, page_input: page }).abortSignal(readSignal(signal))
+  if (error) throw error
+  return data as CashCollections
+}
+
 export async function getPlatformAudit(limit = 50): Promise<PlatformAuditEntry[]> {
   if (!supabase) return demoPlatformAudit
   const { data, error } = await supabase.rpc('platform_audit', { limit_input: limit })
@@ -731,12 +781,9 @@ export async function getPlatformAudit(limit = 50): Promise<PlatformAuditEntry[]
   return (data ?? []) as PlatformAuditEntry[]
 }
 
-/**
- * Passing a null `endsAt` for an activation lets the database extend from the
- * existing renewal date, so renewing early does not discard remaining time.
- */
+/** Suspend/restore only. Restoration preserves the server's existing expiry. */
 export async function setSubscription(restaurantId: string, status: Restaurant['subscription_status'], endsAt: string | null) {
-  if (!supabase) return
+  if (!supabase) { (await import('./billingDemo')).demoSuspension(restaurantId, status, endsAt); return }
   const { error } = await supabase.rpc('platform_set_subscription', {
     restaurant_id_input: restaurantId,
     status_input: status,

@@ -129,6 +129,18 @@ The existing npm lockfile contains some resolved tarball URLs on `nexus.eulerts.
 
 For changes to copying, verify **Add place → Copy menu from… → create → edit copied prices → switch back → unchanged original → Show branch** in English/Arabic at 390 px and desktop. Also test the empty-menu alternative, duplicate-slug errors, sizes/extras, currency, sold-out/order preservation, shared-gallery and personal-photo lifetimes, copy failure cleanup, and owner/anonymous/cross-owner RPC access. Demo mutations now retain category/item edits during branch switches within the same runtime, but still reset on full reload.
 
+### Cash billing rollout (026)
+
+Apply `026_cash_subscriptions.sql` after 025 and before deploying the cash console. It adds private pricing/agreements/immutable receipts/voids, guarded RPCs, and protects restaurant subscription columns against direct owner writes. Do not replay 001–025 against the configured production project: those migrations were previously applied through the SQL editor. For another environment, apply all numbered migrations in order.
+
+Before rollout, save restaurant status, trial/paid expiry and publication snapshots plus menu counts. After migration, confirm those values are unchanged and the new price/receipt tables are empty. No historical cash import or automatic price assignment is performed. The admin must enter each shop's actual annual price before taking its first cash receipt; published $60 marketing pricing is unchanged. Check protected reads as an owner/admin and anonymous denial. Review Supabase security/performance advisors; private tables deliberately have RLS and no direct policies, and authenticated definer RPCs deliberately enforce authorization inside each function.
+
+`npm run test` now includes real isolated PostgreSQL through the exact PGlite development dependency, in addition to API/cache tests. Financial tests never write production receipts. Exercise full/split/unequal payments, expiry gaps, fractional and month-end coverage, stale previews, duplicate retries, corrections, rollback, archived places and role boundaries. Keep cash collection dates in Beirut time. Verify `/platform` Subscribers, Collections and Activity plus `/dashboard` Subscription & payments in English/Arabic and demo mode. Billing refresh must not reset menu drafts. Do not submit fabricated receipts to production for QA.
+
+Migration 026 was applied with the Supabase migration tool on 2026-10-12 after all 001–026 migrations and repeated 026 application passed in isolated PostgreSQL. Production retained 2 places, 6 categories, 23 items and identical trial/paid dates, publication flags and admin roles. Protected admin directory/collections and owner billing reads succeeded; the regular owner still has no operator role. All new billing RPCs deny anonymous execution and use an empty search path. New cash and price tables contain no assumed historical records. Advisors reported no new billing foreign-key/index issues; the private-table no-policy and authenticated-definer notices are intentional guarded access, while existing gallery/RLS/index and leaked-password-protection notices remain separate follow-ups.
+
+Deployment is a normal fast-forward release on the configured GitHub/Render branch. Verify the new console on the hosted site; a successful push alone does not confirm Render deployed it. If Render sign-in is unavailable or auto-deployment does not occur, report the concrete deployment blocker and keep the tested source/migration ready.
+
 ## 4. Verification by risk
 
 ### Documentation-only

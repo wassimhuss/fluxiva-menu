@@ -5,6 +5,13 @@ import type { Language } from './types'
  * possible to add Arabic without mixing translation logic into data handling.
  */
 const arabic: Record<string, string> = {
+  'Subscription & payments': 'الاشتراك والدفعات',
+  'Price, cash receipts and paid access': 'السعر والإيصالات النقدية ومدة الوصول',
+  'until paid access ends': 'حتى نهاية مدة الوصول المدفوعة',
+  'Your paid access ends in': 'تنتهي مدة الوصول المدفوعة خلال',
+  'Arrange cash collection': 'تنسيق التحصيل النقدي',
+  'Arrange a USD cash payment before then to keep your menu and QR code available.': 'نسّق دفعة نقدية بالدولار قبل هذا الموعد لتبقى قائمتك ورمز QR متاحين.',
+  'Arrange a USD cash payment with Fluxiva to restore access. Your menu is still saved.': 'نسّق دفعة نقدية بالدولار مع فلوكسيفا لاستعادة الوصول. ما زالت قائمتك محفوظة.',
   'Highlight item': 'ميّز الصنف',
   'Remove highlight': 'إزالة التمييز',
   'Tap the star beside an item to mark it as recommended.': 'اضغط النجمة بجانب الصنف لتظهر عليه علامة مننصحك فيه.',
