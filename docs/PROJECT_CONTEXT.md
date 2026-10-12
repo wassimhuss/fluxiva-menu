@@ -178,7 +178,7 @@ Returning to a cached branch displays it immediately and refreshes stale data in
 
 Public menu/branch requests are aborted on route changes or retry, with a 15-second deadline. Workspace metadata, owner menu, analytics and role reads also have deadlines. Network failures show bilingual retry controls separately from genuinely unavailable menus. Availability changes disable repeated taps and merge/restore only the affected item's availability; they cannot restore an obsolete whole-menu snapshot. Query-level retries are disabled because the installed Supabase SDK already retries eligible reads; writes are not automatically retried.
 
-`npm run test` uses Node's test runner and the real transpiled API with a controlled client. It covers request counts, public eligibility, ordering, cache deduplication/account isolation, confirmed and failed saves, cancellation and availability rollback. The new nested queries were also verified read-only against production on 2026-10-12: each used one request and returned the existing 2 eligible branches, 6 categories and 23 items. Production data was not modified. Frontend deployment remains pending.
+`npm run test` uses Node's test runner and the real transpiled API with a controlled client. It covers request counts, public eligibility, ordering, cache deduplication/account isolation, confirmed and failed saves, cancellation and availability rollback. The new nested queries were also verified read-only against production on 2026-10-12: each used one request and returned the existing 2 eligible branches, 6 categories and 23 items. Production data was not modified. Frontend deployed with release `79fa2d6` on 2026-10-12.
 
 ## Main workflows
 

@@ -11,17 +11,17 @@ This file is the working product backlog for developers and AI agents. Keep it u
 
 ## Cash subscriptions and subscriber management
 
-**Status:** `[x]` Implemented and verified; migration `026` applied to production on 2026-10-12. Frontend release is being coordinated on the configured GitHub/Render branch.
+**Status:** `[x]` Implemented and verified; migration `026` applied to production on 2026-10-12. Frontend release `79fa2d6` is deployed and verified on Render.
 
 - [x] Private shop pricing, locked annual agreements, immutable USD receipts and reasoned voids; three valid receipts maximum, final receipt settles the balance.
 - [x] Protected previews/atomic writes, proportional Beirut calendar-month coverage, idempotency, stale-state checks, preserved legacy access and deleted-shop history.
 - [x] Bilingual subscriber directory, daily collection totals/queue, admin receipt workflow, and read-only owner billing; functional offline demo.
 - [x] 26 financial/security/API tests, clean installation, lint/build, desktop/390 px English/Arabic browser flows, isolated migration validation and production migration with unchanged existing access.
-- [ ] Verify the hosted frontend release after pushing the validated source.
+- [x] Verify the hosted frontend release after pushing the validated source: live admin login, directory, legacy billing and Arabic layout confirmed on Render (2026-10-12).
 
 ## API experience — first phase
 
-**Status:** `[x]` Implemented and verified locally and with read-only production queries. Frontend deployment remains pending; no migration is needed.
+**Status:** `[x]` Implemented and verified locally and with read-only production queries. Frontend deployed with release `79fa2d6` on 2026-10-12; no migration is needed.
 
 - [x] Load public menus, owner menus and public branch lists in one data request each, retaining RLS, eligibility checks and deterministic ordering.
 - [x] Add a lazy-loaded owner cache with account/branch isolation, in-flight deduplication, 30-second freshness, five-minute retention, confirmed-save reconciliation and clearing/cancellation on sign-out.
@@ -33,7 +33,7 @@ This file is the working product backlog for developers and AI agents. Keep it u
 
 ## Move whole categories one position up or down
 
-**Status:** `[x]` Implemented and verified locally. Frontend deployment remains pending; no database migration is needed.
+**Status:** `[x]` Implemented and verified locally. Frontend deployed with release `79fa2d6` on 2026-10-12; no database migration is needed.
 
 - [x] Use bilingual Move category up / Move category down controls that swap with the neighboring category, one position per tap.
 - [x] Keep arrows visible on mobile, with consistent 36 px desktop / 44 px mobile icon controls.
@@ -42,7 +42,7 @@ This file is the working product backlog for developers and AI agents. Keep it u
 
 ## Move items one position up or down
 
-**Status:** `[x]` Implemented and verified; migration `025` applied to production on 2026-10-12. Frontend deployment remains pending.
+**Status:** `[x]` Implemented and verified; migration `025` applied to production on 2026-10-12. Frontend deployed with release `79fa2d6` on 2026-10-12.
 
 - [x] Use Move item up / Move item down with plain arrows, moving one position per tap within the category in English and Arabic.
 - [x] Keep both controls visible on desktop and mobile, with the existing equal-width touch controls on phones.
@@ -51,7 +51,7 @@ This file is the working product backlog for developers and AI agents. Keep it u
 
 ## One-tap item highlights
 
-**Status:** `[x]` Implemented and verified; migration `024` applied to the configured production Supabase project on 2026-10-12. Frontend deployment remains pending.
+**Status:** `[x]` Implemented and verified; migration `024` applied to the configured production Supabase project on 2026-10-12. Frontend deployed with release `79fa2d6` on 2026-10-12.
 
 - [x] Add a star toggle beside each owner menu item with bilingual labels and saving/error feedback.
 - [x] Show only a Recommended / مننصحك فيه badge across all eight public-menu designs. Star toggles preserve category tabs, initial category selection, category membership and item order, along with sold-out and takeaway behavior.
@@ -59,7 +59,7 @@ This file is the working product backlog for developers and AI agents. Keep it u
 - [x] Add migration `024_item_highlights.sql` with owner RLS unchanged and preserve highlights when copying branches.
 - [x] Verify owner workflows at 320/390/1280 px, all eight public designs in English/Arabic at 390/1280 px, saving/failure/retry states, sold-out display, sizes/extras ordering, badge removal, photos-off behavior, lint/build, and all migrations with owner/anonymous/cross-owner access checks in isolated PostgreSQL.
 - [x] Apply migration `024` to production, preserving 2 branches, 6 categories and 23 items; verify the boolean/default, branch-copy definition, RLS and function privileges (2026-10-12).
-- [ ] Deploy the updated frontend.
+- [x] Deploy the updated frontend (release `79fa2d6`, 2026-10-12).
 
 ## Shared image gallery
 
@@ -149,7 +149,7 @@ Build a curated **Fluxiva Gallery** that lets every restaurant owner either sele
 
 ## Copy a menu into a new branch
 
-**Status:** `[x]` Implementation verified; migration `023_copy_place_menu.sql` applied to the configured production project on 2026-10-11. Frontend deployment remains pending.
+**Status:** `[x]` Implementation verified; migration `023_copy_place_menu.sql` applied to the configured production project on 2026-10-11. Frontend deployed with release `79fa2d6` on 2026-10-12.
 
 - [x] Add bilingual **Copy menu from…** / **Start with an empty menu** choices when adding a branch.
 - [x] Copy categories, items, bilingual copy, prices, sizes, extras, availability, ordering and menu design into independently editable records.
@@ -161,7 +161,7 @@ Build a curated **Fluxiva Gallery** that lets every restaurant owner either sele
 
 ## Branch visibility and deletion
 
-**Status:** `[x]` Core workflow verified; migration `022_branch_visibility_and_deletion.sql` applied to the configured production project on 2026-10-11. Frontend deployment and asset garbage collection remain follow-ups.
+**Status:** `[x]` Core workflow verified; migration `022_branch_visibility_and_deletion.sql` applied to the configured production project on 2026-10-11. Frontend deployed with release `79fa2d6` on 2026-10-12; asset garbage collection remains a follow-up.
 
 - [x] Add bilingual Hide / Show and confirmed Delete controls to the owner place switcher.
 - [x] Keep hidden branch menus editable while excluding them from shared QR selection and direct public links.
