@@ -131,6 +131,7 @@ Build a curated **Fluxiva Gallery** that lets every restaurant owner either sele
 
 ## Completed product improvements
 
+- [x] Align Reel footer labels independently of their icon widths, keep every icon in one RTL-aware column, and isolate Instagram handles so `@` stays at the start in Arabic; verify narrow/mobile/desktop layouts and wrapped addresses (2026-10-12).
 - [x] Connect the Reel closing/footer card to the dashboard palette in saved menus and live previews, including contrast-aware text/icons and contact surfaces; verify English/Arabic at 390/1280 px with all presets and light/dark custom colors (2026-10-11).
 - [x] Replace the generic footer chat icon with the WhatsApp brand icon across all eight menu templates, preserving theme colors, contact links, and bilingual responsive layouts (2026-10-11).
 - [x] Confirm before hiding a visible menu item while keeping restoration a one-tap action (2026-10-09).

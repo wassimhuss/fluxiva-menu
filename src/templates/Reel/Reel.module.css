@@ -366,7 +366,7 @@
   color: var(--reel-ink);
 }
 
-.endInner { max-width: 420px; }
+.endInner { inline-size: min(100%, 420px); min-inline-size: 0; }
 
 .endLogo {
   inline-size: 74px;
@@ -398,9 +398,11 @@
 }
 
 .endContact {
-  display: flex;
+  display: grid;
+  /* Equal edge columns keep labels centred on the card, independently of
+     their length. The icon column mirrors automatically in Arabic. */
+  grid-template-columns: 20px minmax(0, 1fr) 20px;
   align-items: center;
-  justify-content: center;
   gap: 10px;
   background: var(--reel-footer-surface);
   border: 1px solid var(--reel-footer-line);
@@ -412,7 +414,21 @@
   transition: border-color .22s ease, transform .22s ease;
 }
 
-.endContact svg { width: 17px; color: currentColor; }
+.endContact svg {
+  grid-column: 1;
+  grid-row: 1;
+  width: 20px;
+  height: 20px;
+  color: currentColor;
+}
+
+.endContactLabel {
+  grid-column: 2;
+  grid-row: 1;
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
+  text-align: center;
+}
 
 .endContact:focus-visible {
   outline: 2px solid var(--reel-ink);

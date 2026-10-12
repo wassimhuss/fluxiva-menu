@@ -162,17 +162,19 @@ export default function ReelTemplate(props: MenuTemplateProps) {
             <div className={styles.endContacts}>
               {restaurant.whatsapp && (
                 <a className={styles.endContact} href={`https://wa.me/${restaurant.whatsapp.replace(/\D/g, '')}`} target="_blank" rel="noreferrer">
-                  <WhatsAppIcon /> {t('Message us', 'راسلنا')}
+                  <WhatsAppIcon />
+                  <span className={styles.endContactLabel}>{t('Message us', 'راسلنا')}</span>
                 </a>
               )}
               {address && (
                 restaurant.maps_url
-                  ? <a className={styles.endContact} href={restaurant.maps_url} target="_blank" rel="noreferrer"><MapPin /> {address}</a>
-                  : <span className={styles.endContact}><MapPin /> {address}</span>
+                  ? <a className={styles.endContact} href={restaurant.maps_url} target="_blank" rel="noreferrer"><MapPin /><bdi className={styles.endContactLabel}>{address}</bdi></a>
+                  : <span className={styles.endContact}><MapPin /><bdi className={styles.endContactLabel}>{address}</bdi></span>
               )}
               {restaurant.instagram && (
                 <a className={styles.endContact} href={`https://instagram.com/${instagramHandle}`} target="_blank" rel="noreferrer">
-                  <Instagram /> {restaurant.instagram}
+                  <Instagram />
+                  <bdi className={styles.endContactLabel} dir="ltr">{restaurant.instagram}</bdi>
                 </a>
               )}
             </div>
