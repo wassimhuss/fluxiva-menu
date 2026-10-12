@@ -1,4 +1,4 @@
-import { ArrowDown, ArrowUp, CheckCircle2, ChevronLeft, ChevronRight, Copy, Download, ExternalLink, Eye, EyeOff, FileSpreadsheet, ImagePlus, Images, LayoutDashboard, LoaderCircle, LogOut, Maximize2, Menu, Palette, Pencil, Plus, QrCode, RotateCcw, Settings, ShieldCheck, Star, Store, Trash2, TriangleAlert, Upload, X } from 'lucide-react'
+import { ArrowDown, ArrowUp, CheckCircle2, ChevronLeft, ChevronRight, Copy, Download, ExternalLink, Eye, EyeOff, FileSpreadsheet, ImagePlus, Images, LayoutDashboard, LoaderCircle, LogOut, Maximize2, Menu, Palette, Pencil, Plus, QrCode, RotateCcw, Settings, Star, Store, Trash2, TriangleAlert, Upload, X } from 'lucide-react'
 import QRCode from 'qrcode'
 import { isCancelledError } from '@tanstack/react-query'
 import { useCallback, useEffect, useMemo, useRef, useState, type SetStateAction } from 'react'
@@ -42,7 +42,7 @@ async function discardAsset(restaurantId: string, url?: string | null) {
 }
 
 export function DashboardPage() {
-  const { session, demoMode, adminRole, signOut } = useAuth()
+  const { session, demoMode, signOut } = useAuth()
   const navigate = useNavigate()
   const [menu, setMenuState] = useState<RestaurantMenu | null>(null)
   const menuRevision = useRef(0)
@@ -904,7 +904,7 @@ export function DashboardPage() {
           <button className={panel === 'design' ? 'selected' : ''} onClick={() => { setPanel('design'); setDesignStep(1) }}><Palette /> {t('Menu design')}</button>
           <button className={panel === 'settings' ? 'selected' : ''} onClick={openSettings}><Settings /> {t('Restaurant settings')}</button>
         </nav>
-        <div className="sidebar-bottom"><Link to={`/m/${menu.restaurant.slug}`} target="_blank"><ExternalLink /> {t('Open public menu')}</Link><button onClick={handleSignOut}><LogOut /> {t('Sign out')}</button>{adminRole && <Link className="platform-link" to="/platform"><ShieldCheck /> {t('Operator console')}</Link>}</div>
+        <div className="sidebar-bottom"><Link to={`/m/${menu.restaurant.slug}`} target="_blank"><ExternalLink /> {t('Open public menu')}</Link><button onClick={handleSignOut}><LogOut /> {t('Sign out')}</button></div>
       </aside>
       <section className="dashboard-main">
         <header className="dashboard-header">{panel !== 'overview' && <button className="mobile-menu" aria-label={t('Back to overview')} onClick={requestBackToOverview}><BackChevron /></button>}<button type="button" className="dashboard-current-place" onClick={() => setPlaceSwitcherOpen(true)}><span>{t('Restaurant dashboard')}</span><b>{menu.restaurant.name_en}</b></button><div className="header-actions"><button type="button" className="language-switch" onClick={() => changeDashboardLanguage(dashboardLanguage === 'ar' ? 'en' : 'ar')} aria-label={dashboardLanguage === 'ar' ? 'Switch to English' : 'التبديل إلى العربية'}>{dashboardLanguage === 'ar' ? 'EN' : 'عربي'}</button>{panel === 'overview' && <button type="button" className="dashboard-header-signout" onClick={handleSignOut}><LogOut /> <span>{t('Sign out')}</span></button>}<Link className="button button-small button-outline" to={`/m/${menu.restaurant.slug}`} target="_blank">{t('View menu')} <ExternalLink /></Link></div></header>

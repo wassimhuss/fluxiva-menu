@@ -86,7 +86,6 @@ const arabic: Record<string, string> = {
   'Save': 'حفظ',
   'Open public menu': 'فتح القائمة العامة',
   'Sign out': 'تسجيل الخروج',
-  'Operator console': 'لوحة المشغّل',
   'View menu': 'عرض القائمة',
   'QR code': 'رمز QR',
   'Open navigation': 'فتح التنقّل',

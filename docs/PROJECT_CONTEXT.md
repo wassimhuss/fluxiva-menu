@@ -57,6 +57,7 @@ Demo mode is a deliberate development and sales-preview feature. Do not remove i
 
 - `src/lib/supabase.ts` creates the client from the two public Vite environment variables.
 - `src/lib/auth.tsx` owns the session lifecycle and exposes `session`, `loading`, `demoMode`, and `signOut`.
+- Signed-in operators go directly from authentication to `/platform` after their role resolves. Normal owners go to `/dashboard` (new signups to `/onboarding`); the owner dashboard contains no operator-console link. Demo login continues to open the owner dashboard.
 - Login, signup, forgot-password, and reset-password screens inherit the landing-page language preference (`fluxiva-landing-language`) and apply a complete English/Arabic RTL layout through `src/lib/authI18n.ts`.
 - `src/lib/api.ts` is the client-side data boundary for restaurant, category, item, asset, and platform operations.
 - Public menus query by slug and allow only `trial` or `active` restaurants.

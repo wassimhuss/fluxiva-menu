@@ -2,7 +2,7 @@ import { ArrowLeft, Eye, EyeOff } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link, Navigate, useNavigate } from 'react-router-dom'
 import { Brand } from '../components/Brand'
-import { Notice } from '../components/Status'
+import { Loading, Notice } from '../components/Status'
 import { useAuth } from '../lib/auth'
 import { AUTH_LANGUAGE_KEY, authErrorText, authText } from '../lib/authI18n'
 import { isSupabaseConfigured, supabase } from '../lib/supabase'
@@ -36,7 +36,7 @@ export function AuthPage({ mode }: { mode: Mode }) {
   const isSignup = mode === 'signup'
   const isForgot = mode === 'forgot'
   const navigate = useNavigate()
-  const { session, demoMode } = useAuth()
+  const { session, demoMode, adminRole, adminLoading } = useAuth()
   const [language] = useState<Language>(() => localStorage.getItem(AUTH_LANGUAGE_KEY) === 'ar' ? 'ar' : 'en')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -63,7 +63,10 @@ export function AuthPage({ mode }: { mode: Mode }) {
     } catch { /* storage may be blocked */ }
   }, [])
 
-  if (session) return <Navigate to="/dashboard" replace />
+  if (session) {
+    if (adminLoading) return <main className="dashboard-loading"><Loading /></main>
+    return <Navigate to={adminRole ? '/platform' : isSignup ? '/onboarding' : '/dashboard'} replace />
+  }
 
   async function submit(event: React.FormEvent) {
     event.preventDefault()
@@ -91,7 +94,7 @@ export function AuthPage({ mode }: { mode: Mode }) {
     setBusy(false)
     if (result.error) { setError(result.error.message); return }
     if (isSignup && !result.data.session) setMessage('Check your email to confirm your account, then sign in.')
-    else navigate(isSignup ? '/onboarding' : '/dashboard')
+    // AuthProvider resolves the signed-in role before the redirect above.
   }
 
   const copy = COPY[mode]
