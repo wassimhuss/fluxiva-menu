@@ -1,6 +1,7 @@
 import { Suspense, lazy, useCallback, useEffect } from 'react'
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { Loading } from './components/Status'
+import { routeAccess } from './lib/routeAccess'
 import { AuthProvider, useAuth } from './lib/auth'
 import { IDLE_SIGNOUT_KEY, useIdleLogout } from './lib/useIdleLogout'
 import { PublicMenuPage } from './pages/PublicMenuPage'
@@ -17,6 +18,7 @@ const ResetPasswordPage = lazy(() => import('./pages/ResetPasswordPage').then((m
 const OnboardingPage = lazy(() => import('./pages/OnboardingPage').then((m) => ({ default: m.OnboardingPage })))
 const DashboardPage = lazy(() => import('./pages/DashboardPage').then((m) => ({ default: m.DashboardPage })))
 const PlatformPage = lazy(() => import('./pages/PlatformPage').then((m) => ({ default: m.PlatformPage })))
+const AccountAccessError = lazy(() => import('./components/AccountAccessError').then((m) => ({ default: m.AccountAccessError })))
 
 /**
  * Ends an idle session on the signed-in pages. Not applied to the public menu:
@@ -34,10 +36,12 @@ function useIdleSignOut() {
 }
 
 function OwnerRoute({ children }: { children: React.ReactNode }) {
-  const { session, loading, demoMode } = useAuth()
+  const auth = useAuth()
   useIdleSignOut()
-  if (loading) return null
-  if (!session && !demoMode) return <Navigate to="/login" replace />
+  const access = routeAccess(auth, 'owner')
+  if (access === 'loading') return <RouteFallback />
+  if (access === 'error') return <AccountAccessError />
+  if (access !== 'allow') return <Navigate to={access} replace />
   return children
 }
 
@@ -50,11 +54,12 @@ function OwnerRoute({ children }: { children: React.ReactNode }) {
  * refusal, so the console's existence is not advertised.
  */
 function AdminRoute({ children }: { children: React.ReactNode }) {
-  const { session, loading, demoMode, adminRole, adminLoading } = useAuth()
+  const auth = useAuth()
   useIdleSignOut()
-  if (loading || adminLoading) return null
-  if (!session && !demoMode) return <Navigate to="/login" replace />
-  if (!adminRole) return <Navigate to="/dashboard" replace />
+  const access = routeAccess(auth, 'operator')
+  if (access === 'loading') return <RouteFallback />
+  if (access === 'error') return <AccountAccessError />
+  if (access !== 'allow') return <Navigate to={access} replace />
   return children
 }
 

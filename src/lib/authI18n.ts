@@ -3,6 +3,9 @@ import type { Language } from './types'
 export const AUTH_LANGUAGE_KEY = 'fluxiva-landing-language'
 
 const arabic: Record<string, string> = {
+  'Could not confirm account access. Please try again.': 'تعذّر التحقق من صلاحيات الحساب. حاول مجدداً.',
+  'Try again': 'حاول مجدداً',
+  'Sign out': 'تسجيل الخروج',
   'Welcome back': 'أهلاً بعودتك',
   'Sign in to your menu': 'سجّل الدخول إلى قائمتك',
   'Manage your restaurant details and menu.': 'أدِر تفاصيل مطعمك وقائمتك بسهولة.',

@@ -55,6 +55,8 @@ Do not silently depend on a field that is absent from the demo data or existing 
 
 ### Add an owner-dashboard workflow
 
+For account routing, verify an operator's direct `/dashboard` and `/onboarding` visits return to `/platform`, and an owner's `/platform` visit returns to `/dashboard`. Landing navigation, sign-in and password-recovery completion must use the account's workspace. Role loading must not flash an owner page; a failed lookup must offer Retry/Sign out. Offline demo still supports both route previews. `tests/routes.test.mjs` covers these access decisions.
+
 1. Keep persistence logic in `src/lib/api.ts`.
 2. Reuse the domain types from `src/lib/types.ts`.
 3. Give asynchronous actions visible loading/error/success feedback.
