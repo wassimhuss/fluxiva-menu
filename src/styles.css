@@ -1010,7 +1010,9 @@ html.menu-preview-document::-webkit-scrollbar,body.menu-preview-document::-webki
 .category-card .category-move:focus-visible{outline:2px solid var(--green);outline-offset:3px}
 @media(max-width:600px){
   .category-card{--category-control-size:44px}
-  .category-card .category-heading>.category-actions{grid-template-columns:repeat(4,minmax(44px,1fr));gap:8px}
-  .category-card .category-actions .icon-button{justify-self:center}
-  .category-card .category-actions>.button{grid-column:1 / -1;min-height:44px}
+  .category-card .category-heading{gap:8px}
+  .category-card .category-heading>div:first-child{flex:0 0 100%}
+  .category-card .category-heading>.category-actions{grid-template-columns:repeat(4,44px) minmax(0,1fr);gap:4px;width:max-content;max-width:100%}
+  .category-card .category-actions>.button{grid-column:auto;width:auto;min-height:44px;padding:0 6px;gap:4px;line-height:1.2}
+  .category-card .category-actions>.button svg{width:15px;height:15px;flex:none}
 }
