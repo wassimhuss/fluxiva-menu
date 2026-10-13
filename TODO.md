@@ -131,14 +131,14 @@ Build a curated **Fluxiva Gallery** that lets every restaurant owner either sele
 
 ## Platform storage usage
 
-**Status:** `[~]` Implemented and verified; migration `029` applied to production on 2026-10-13. Frontend release pending.
+**Status:** `[x]` Implemented and verified; migration `029` applied to production on 2026-10-13. Frontend release `e17cb20` is live on Render.
 
 - [x] Add a protected admin storage inventory with total usage, remaining configured quota, bucket totals and per-owner/per-restaurant menu usage.
 - [x] Keep shared gallery files separate and surface unattributed menu files left by deleted places.
 - [x] Add bilingual responsive UI, demo preview data and a public quota setting without exposing a service-role or Management API token.
 - [x] Apply migration `029_platform_storage_usage.sql` to production and verify super-admin reads, regular-owner rejection and anonymous denial. Support access is verified in isolated PostgreSQL. The organization is Free and the configured/default quota is 1 GB.
 - [x] Verify the full test suite, lint/build and 1280/390 px English/Arabic Storage views on Node 22.22.0, with no console errors or mobile overflow.
-- [ ] Push and confirm the Render deployment of the Storage view.
+- [x] Push and confirm Render deployment of the Storage view (`e17cb20`); hosted assets contain the Storage UI and protected RPC. All 37 tests passed after integrating the concurrent manual billing release. Hosted admin UI requires sign-in; the local English/Arabic UI and production RPC were verified separately.
 
 ## Engineering backlog
 
