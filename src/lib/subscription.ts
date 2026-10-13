@@ -19,8 +19,8 @@ export interface SubscriptionState {
 }
 
 /** Whole days from now, rounded up. Negative once the date has passed. */
-function daysUntil(iso?: string) {
-  return iso ? Math.ceil((new Date(iso).getTime() - Date.now()) / DAY) : null
+function daysUntil(iso: string | undefined, now: number) {
+  return iso ? Math.ceil((new Date(iso).getTime() - now) / DAY) : null
 }
 
 /**
@@ -28,8 +28,8 @@ function daysUntil(iso?: string) {
  * subscription that lapsed an hour ago rounds to zero days, which would
  * otherwise read as still live.
  */
-function isFuture(iso?: string) {
-  return Boolean(iso && new Date(iso).getTime() > Date.now())
+function isFuture(iso: string | undefined, now: number) {
+  return Boolean(iso && new Date(iso).getTime() > now)
 }
 
 /**
@@ -37,7 +37,7 @@ function isFuture(iso?: string) {
  * a UI that disagrees with the database about whether a menu is live is worse
  * than no indicator at all.
  */
-export function subscriptionState(input: SubscriptionInput): SubscriptionState {
+export function subscriptionState(input: SubscriptionInput, now = Date.now()): SubscriptionState {
   if (input.subscription_status === 'suspended') {
     return { kind: 'suspended', serving: false, daysLeft: null, endsAt: input.subscription_ends_at }
   }
@@ -45,8 +45,8 @@ export function subscriptionState(input: SubscriptionInput): SubscriptionState {
   if (input.subscription_status === 'trial') {
     return {
       kind: 'trial',
-      serving: isFuture(input.trial_ends_at),
-      daysLeft: daysUntil(input.trial_ends_at),
+      serving: isFuture(input.trial_ends_at, now),
+      daysLeft: daysUntil(input.trial_ends_at, now),
       endsAt: input.trial_ends_at,
     }
   }
@@ -58,15 +58,24 @@ export function subscriptionState(input: SubscriptionInput): SubscriptionState {
 
   return {
     kind: 'active',
-    serving: isFuture(input.subscription_ends_at),
-    daysLeft: daysUntil(input.subscription_ends_at),
+    serving: isFuture(input.subscription_ends_at, now),
+    daysLeft: daysUntil(input.subscription_ends_at, now),
     endsAt: input.subscription_ends_at,
   }
 }
 
 /** Days before expiry at which the owner starts being warned. */
 export const TRIAL_WARNING_DAYS = 7
-export const RENEWAL_WARNING_DAYS = 14
+export const RENEWAL_WARNING_DAYS = 7
+
+export const OWNER_EDIT_WARNING_MS = 7 * DAY
+export function ownerAccessState(input: SubscriptionInput, now = Date.now()): 'open' | 'warning' | 'blocked' {
+  const state = subscriptionState(input, now)
+  if (state.kind === 'suspended') return 'blocked'
+  if (state.serving) return 'open'
+  const end = state.endsAt ? Date.parse(state.endsAt) : NaN
+  return Number.isFinite(end) && now < end + OWNER_EDIT_WARNING_MS ? 'warning' : 'blocked'
+}
 
 /** True when the owner should be told their menu is about to stop being served. */
 export function needsWarning(state: SubscriptionState) {

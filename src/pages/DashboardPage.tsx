@@ -12,15 +12,17 @@ import { BillingIconButton } from '../components/BillingIconButton'
 import { GalleryPicker } from '../components/GalleryPicker'
 import { ImageLightbox } from '../components/ImageLightbox'
 import { PortraitImageCropper } from '../components/PortraitImageCropper'
-import { cleanExtras, cleanVariants, createCategories, createCategory, createItem, createItems, createPlaceFromMenu, createRestaurant, deleteCategory, deleteItem, deleteRestaurant, deleteRestaurantAsset, getMenuViewStats, getOwnerBrand, getCachedOwnerMenu, getOwnerMenu, getOwnerRestaurants, listGalleryCategories, listGalleryImages, moveCategoryByOne, moveItemByOne, setItemHighlighted, setPlacePublished, updateCategory, updateItem, updateRestaurant, uploadRestaurantAsset, validateGallerySource } from '../lib/api'
+import { cleanExtras, cleanVariants, createCategories, createCategory, createItem, createItems, createPlaceFromMenu, createRestaurant, deleteCategory, deleteItem, deleteRestaurant, deleteRestaurantAsset, getMenuViewStats, getShopBilling, getOwnerBrand, getCachedOwnerMenu, getOwnerMenu, getOwnerRestaurants, listGalleryCategories, listGalleryImages, moveCategoryByOne, moveItemByOne, setItemHighlighted, setPlacePublished, updateCategory, updateItem, updateRestaurant, uploadRestaurantAsset, validateGallerySource } from '../lib/api'
 import { useAuth } from '../lib/auth'
 import { formatMoney, localText, slugify } from '../lib/format'
 import { patchMenuItem } from '../lib/menuState'
 import { dashboardText } from '../lib/dashboardI18n'
 import { downloadMenuTemplate, exportMenuWorkbook, readMenuWorkbook } from '../lib/menuWorkbook'
-import { subscriptionState } from '../lib/subscription'
+import { ownerAccessState, subscriptionState } from '../lib/subscription'
+import { useSubscriptionClock } from '../lib/useSubscriptionClock'
+import { OwnerSubscriptionGate } from '../components/OwnerSubscriptionGate'
 import { DEFAULT_TEMPLATE, TEMPLATES, resolveTemplateId } from '../templates/registry'
-import type { BrandGroup, Category, GalleryCategory, GalleryImage, ItemExtra, Language, MenuItem, MenuViewStats, Restaurant, RestaurantMenu, Variant } from '../lib/types'
+import type { BrandGroup, Category, GalleryCategory, GalleryImage, ItemExtra, Language, MenuItem, MenuViewStats, Restaurant, RestaurantMenu, ShopBilling, Variant } from '../lib/types'
 import type { MenuWorkbookPreview } from '../lib/menuWorkbook'
 
 type Panel = 'overview' | 'analysis' | 'menu' | 'design' | 'settings' | 'billing'
@@ -68,6 +70,35 @@ export function DashboardPage() {
   const [highlightBusy, setHighlightBusy] = useState<string[]>([])
   const [itemMoveBusy, setItemMoveBusy] = useState<{ id: string; direction: 'up' | 'down' } | null>(null)
   const [panel, setPanel] = useState<Panel>('overview')
+  const subscriptionNow = useSubscriptionClock(menu?.restaurant)
+  const editingLocked = Boolean(menu && ownerAccessState(menu.restaurant,subscriptionNow)==='blocked')
+  const currentShopId=menu?.restaurant.id
+  const currentShop=useRef(currentShopId); currentShop.current=currentShopId
+  const accessAccount=useRef(accountKey); accessAccount.current=accountKey
+  const accessRequest=useRef(0)
+  function applyAccess(billing:ShopBilling) {
+    const fields={subscription_status:billing.subscription_status,trial_ends_at:billing.trial_ends_at??undefined,
+      subscription_ends_at:billing.subscription_status==='trial'?undefined:billing.paid_until??undefined}
+    setMenu(current=>current?.restaurant.id===billing.restaurant_id ? {...current,restaurant:{...current.restaurant,...fields}} : current)
+    setRestaurants(current=>current.map(place=>place.id===billing.restaurant_id?{...place,...fields}:place))
+  }
+  async function refreshAccess() {
+    if(!currentShopId) return
+    const actor=accountKey
+    const request=++accessRequest.current
+    const billing=await getShopBilling(currentShopId,false)
+    if(request!==accessRequest.current || currentShop.current!==currentShopId || accessAccount.current!==actor) return
+    applyAccess(billing)
+  }
+  const refreshAccessRef=useRef(refreshAccess); refreshAccessRef.current=refreshAccess
+  useEffect(()=>{
+    if(!currentShopId || panel==='billing') return
+    const requests=accessRequest
+    const check=()=>{void refreshAccessRef.current().catch(()=>undefined)}
+    const timer=window.setInterval(check,60000)
+    window.addEventListener('focus',check)
+    return()=>{requests.current++;window.clearInterval(timer);window.removeEventListener('focus',check)}
+  },[currentShopId,accountKey,panel])
   const [designStep, setDesignStep] = useState(1)
   const [settingsStep, setSettingsStep] = useState(1)
   const [error, setError] = useState('')
@@ -754,7 +785,7 @@ export function DashboardPage() {
   if (!menu) return <main className="dashboard-loading" dir={dashboardLanguage === 'ar' ? 'rtl' : 'ltr'}><div className="dashboard-load-error"><Store /><h1>{t('We couldn’t open your restaurant.')}</h1><p>{error || t('Please check your connection and try again.')}</p><button className="button button-primary" onClick={() => setLoadAttempt((attempt) => attempt + 1)}>{t('Try again')}</button></div></main>
   // Built from the same rule the database uses, so this card can never claim
   // "active" while the menu is actually offline.
-  const subscription = subscriptionState(menu.restaurant)
+  const subscription = subscriptionState(menu.restaurant,subscriptionNow)
   const subscriptionLabel = subscription.kind === 'trial' ? t('Free trial') : t('Subscription')
   const subscriptionValue = !subscription.serving
     ? t('Offline')
@@ -895,7 +926,7 @@ export function DashboardPage() {
   }
 
   return (
-    <main className="dashboard-layout" dir={dashboardLanguage === 'ar' ? 'rtl' : 'ltr'}>
+    <main className="dashboard-layout" data-owner-locked={editingLocked} dir={dashboardLanguage === 'ar' ? 'rtl' : 'ltr'}>
       <aside className="dashboard-sidebar">
         <div className="sidebar-top"><Brand light /></div>
         <button type="button" className="restaurant-switcher" onClick={() => setPlaceSwitcherOpen(true)}><span className="mini-monogram" style={{ backgroundColor: menu.restaurant.primary_color }}>{menu.restaurant.name_en.slice(0, 2).toUpperCase()}</span><span><b>{menu.restaurant.name_en}</b><small>{restaurants.length} {t(restaurants.length === 1 ? 'place' : 'places')}</small></span><DirectionalChevron /></button>
@@ -915,6 +946,7 @@ export function DashboardPage() {
           {error && <Notice tone="error">{error}</Notice>}
           {success && <div className="dashboard-toast" role="status"><Notice tone="success">{success}</Notice></div>}
           {demoMode && <Notice>{t('This preview uses sample data. Connect Supabase to save changes and create owner accounts.')}</Notice>}
+          <OwnerSubscriptionGate shop={menu.restaurant} places={restaurants} language={dashboardLanguage} open={editingLocked && panel!=='billing'} onBilling={()=>setPanel('billing')} onSwitch={switchPlace} onRefresh={refreshAccess} onSignOut={handleSignOut} onLanguage={()=>changeDashboardLanguage(dashboardLanguage==='ar'?'en':'ar')} />
           <SubscriptionBanner restaurant={menu.restaurant} language={dashboardLanguage} />
           {menu.restaurant.is_published === false && <Notice>{t('This branch is hidden from customers. Its menu is still saved.')} <BillingIconButton icon={Store} label={t('Manage branches')} onClick={() => setPlaceSwitcherOpen(true)} /></Notice>}
 
@@ -946,10 +978,10 @@ export function DashboardPage() {
             </div>
           </>}
 
+          {panel === 'billing' && editingLocked && <p className="notice">{dashboardLanguage==='ar'?'التعديل موقوف لهذا المطعم. يمكنك مراجعة دفعاتك أو الانتقال إلى مطعم آخر من أعلى الصفحة.':'Editing is paused for this shop. You can review payments or switch shops using the header.'}</p>}
           {panel === 'billing' && <ShopBillingPanel key={accountKey + ':' + menu.restaurant.id} shopId={menu.restaurant.id} language={dashboardLanguage} onChanged={billing => {
-            setMenu(current => current?.restaurant.id === billing.restaurant_id ? {
-              ...current, restaurant: { ...current.restaurant, subscription_status: billing.subscription_status, subscription_ends_at: billing.paid_until ?? undefined },
-            } : current)
+            accessRequest.current++
+            applyAccess(billing)
           }} />}
           {panel === 'analysis' && <>
             <div className="page-heading analysis-page-heading"><div><span className="eyebrow"><span /> {t('Analysis')}</span><h1>{t('Customer activity.')}</h1><p>{t('See how often customers open your menu and what they can see.')}</p></div></div>
@@ -1202,13 +1234,13 @@ export function DashboardPage() {
           </button>
           <div className="owner-place-controls">
             <span className={`owner-place-status${restaurant.is_published === false ? ' hidden' : ''}`}>{t(restaurant.menu_copy_pending ? 'Copy incomplete' : restaurant.is_published === false ? 'Hidden' : 'Listed')}</span>
-            <button type="button" disabled={placeActionBusy || restaurant.menu_copy_pending} aria-label={`${t(restaurant.is_published === false ? 'Show branch' : 'Hide branch')}: ${localText(dashboardLanguage, restaurant.name_en, restaurant.name_ar)}`} onClick={() => restaurant.is_published === false ? void changePlaceVisibility(restaurant, true) : requestPlaceAction('hide', restaurant)}>{restaurant.is_published === false ? <Eye /> : <EyeOff />}{t(restaurant.is_published === false ? 'Show branch' : 'Hide branch')}</button>
-            <button type="button" className="danger" disabled={placeActionBusy || restaurants.length <= 1} aria-label={`${t('Delete branch')}: ${localText(dashboardLanguage, restaurant.name_en, restaurant.name_ar)}`} onClick={() => requestPlaceAction('delete', restaurant)}><Trash2 />{t('Delete branch')}</button>
+            <button type="button" disabled={editingLocked || ownerAccessState(restaurant,subscriptionNow)==='blocked' || placeActionBusy || restaurant.menu_copy_pending} aria-label={`${t(restaurant.is_published === false ? 'Show branch' : 'Hide branch')}: ${localText(dashboardLanguage, restaurant.name_en, restaurant.name_ar)}`} onClick={() => restaurant.is_published === false ? void changePlaceVisibility(restaurant, true) : requestPlaceAction('hide', restaurant)}>{restaurant.is_published === false ? <Eye /> : <EyeOff />}{t(restaurant.is_published === false ? 'Show branch' : 'Hide branch')}</button>
+            <button type="button" className="danger" disabled={editingLocked || !subscriptionState(restaurant,subscriptionNow).serving || placeActionBusy || restaurants.length <= 1} aria-label={`${t('Delete branch')}: ${localText(dashboardLanguage, restaurant.name_en, restaurant.name_ar)}`} onClick={() => requestPlaceAction('delete', restaurant)}><Trash2 />{t('Delete branch')}</button>
           </div>
         </article>)}</div>
         <p className="place-management-hint">{t('Hidden branches keep their menu but disappear from the QR branch list and public menu links. Showing a branch still requires a valid trial or subscription.')}</p>
         {restaurants.length <= 1 && <p className="place-management-hint">{t('Keep at least one place. You can hide your last branch instead of deleting it.')}</p>}
-        <button type="button" className="button button-primary full" disabled={placeActionBusy} onClick={openPlaceCreator}><Plus /> {t('Add another place')}</button>
+        <button type="button" className="button button-primary full" disabled={editingLocked || restaurants.some(place=>!subscriptionState(place,subscriptionNow).serving) || placeActionBusy} onClick={openPlaceCreator}><Plus /> {t('Add another place')}</button>
       </div></div>}
 
       {placeAction && <div className="modal-backdrop"><form className="modal-card place-action-modal" role="dialog" aria-modal="true" aria-labelledby="place-action-title" onSubmit={confirmPlaceAction}>

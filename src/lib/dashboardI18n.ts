@@ -5,6 +5,9 @@ import type { Language } from './types'
  * possible to add Arabic without mixing translation logic into data handling.
  */
 const arabic: Record<string, string> = {
+  'Shop editing is locked; arrange cash collection with Fluxiva': 'التعديل موقوف لهذا المطعم. نسّق تحصيل دفعة نقدية مع فلوكسيفا.',
+  'Resolve expired or suspended shops before adding another place': 'راجع اشتراكات المطاعم المنتهية أو الموقوفة قبل إضافة فرع آخر.',
+  'Resolve expired or suspended shops before deleting this place': 'راجع اشتراك هذا المطعم المنتهي أو الموقوف قبل حذفه.',
   'Subscription & payments': 'الاشتراك والدفعات',
   'Price, cash receipts and paid access': 'السعر والإيصالات النقدية ومدة الوصول',
   'until paid access ends': 'حتى نهاية مدة الوصول المدفوعة',

@@ -11,6 +11,13 @@ This file is the working product backlog for developers and AI agents. Keep it u
 
 ## Cash subscriptions and subscriber management
 
+### Expired-shop owner and guest dialogs (2026-10-13)
+
+- [x] Seven elapsed days of owner editing warnings after paid/trial expiry, then a bilingual blocking dialog with billing, branch switching, access refresh and sign-out.
+- [x] Keep public menus unavailable immediately at expiry; show a generic guest dialog on direct-menu and empty brand links, with no billing information.
+- [x] Enforce owner write/asset restrictions and replacement-trial prevention in migration `030`; preserve reads and super-admin billing/restoration.
+- [x] Verify boundaries, security, English/Arabic desktop/mobile, demo and all 40 tests/lint/build; apply production migration with unchanged existing data.
+
 ### Manual access dates and dashboard actions (2026-10-13)
 
 - [x] Replace amount-based access calculations with required admin-entered start and expiry dates in migration `028`, preserving current access and immutable receipt dates when correcting the ledger.

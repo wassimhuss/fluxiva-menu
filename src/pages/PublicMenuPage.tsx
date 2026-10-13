@@ -6,6 +6,8 @@ import { OrderBar } from '../components/OrderBar'
 import { ServiceChoice } from '../components/ServiceChoice'
 import { TemplateSwitcher } from '../components/TemplateSwitcher'
 import { getMenuContactCard, getPublicMenu, recordMenuView } from '../lib/api'
+import { subscriptionState } from '../lib/subscription'
+import { useSubscriptionClock } from '../lib/useSubscriptionClock'
 import { useAuth } from '../lib/auth'
 import { formatMoney, localText } from '../lib/format'
 import { deriveTheme } from '../lib/theme'
@@ -71,6 +73,8 @@ export function PublicMenuPage() {
   const { session, loading: authLoading } = useAuth()
   const [searchParams, setSearchParams] = useSearchParams()
   const [menu, setMenu] = useState<RestaurantMenu | null>(null)
+  const subscriptionNow=useSubscriptionClock(menu?.restaurant)
+  const publicServing=Boolean(menu && menu.restaurant.is_published!==false && subscriptionState(menu.restaurant,subscriptionNow).serving)
   const [contact, setContact] = useState<MenuContactCard | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -96,6 +100,28 @@ export function PublicMenuPage() {
       .finally(() => { if (!cancelled) { setSettledSlug(slug); setLoading(false) } })
     return () => { cancelled = true; controller.abort() }
   }, [slug, loadAttempt])
+
+  // Recheck suspension, publication and admin changes without clearing the
+  // guest's language/category state or flashing a loading screen.
+  useEffect(()=>{
+    if(loading || settledSlug!==slug) return
+    const controller=new AbortController()
+    let busy=false
+    const check=async()=>{
+      if(busy) return
+      busy=true
+      try {
+        const data=await getPublicMenu(slug,controller.signal)
+        if(controller.signal.aborted) return
+        setMenu(data)
+        if(data) setActiveCategory(current=>data.categories.some(category=>category.id===current)?current:data.categories[0]?.id??'')
+      } catch { /* Known expiry still blocks even while the connection is down. */ }
+      finally {busy=false}
+    }
+    const timer=window.setInterval(()=>void check(),60000)
+    window.addEventListener('focus',check)
+    return()=>{controller.abort();window.clearInterval(timer);window.removeEventListener('focus',check)}
+  },[slug,loading,settledSlug])
 
   /* The design panel previews an unsaved brand colour the same way it already
      previews an unsaved template. Validated as a hex literal first: this value
@@ -240,7 +266,7 @@ export function PublicMenuPage() {
      of those missing and the diner never sees the button — an order button
      that leads nowhere is worse than none. */
   const canOrder = Boolean(
-    menu?.restaurant.takeaway_enabled
+    publicServing && menu?.restaurant.takeaway_enabled
     && menu.restaurant.whatsapp
     && !menu.restaurant.temporarily_closed
     // A design with no way to add a dish would hand the diner an empty basket
@@ -302,7 +328,7 @@ export function PublicMenuPage() {
     <h1>Connection interrupted</h1><p dir="rtl" lang="ar">تعذّر الاتصال. حاول مجددًا.</p>
     <button className="button button-primary" onClick={() => setLoadAttempt((attempt) => attempt + 1)}>Try again / حاول مجددًا</button>
   </div></main>
-  if (!menu) return <MenuUnavailable contact={contact} />
+  if (!menu || !publicServing) return <MenuUnavailable contact={contact} onRetry={()=>setLoadAttempt(value=>value+1)} />
   // Hold the branded loader until the first screen can render complete.
   if (!imagesReady) return <MenuLoadingState language={language} />
 

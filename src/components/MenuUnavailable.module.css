@@ -13,13 +13,20 @@
 }
 
 .card {
-  inline-size: min(100%, 420px);
+  inline-size: min(calc(100vw - 32px), 440px);
+  max-block-size: calc(100dvh - 32px);
+  overflow: auto;
+  border: 0;
   background: #fff;
-  border-radius: 24px;
+  border-radius: 16px;
   padding: 34px 28px 30px;
   text-align: center;
   box-shadow: 0 20px 54px rgba(27, 36, 34, .1);
 }
+.card::backdrop { background: rgba(23,63,53,.58); }
+.card :is(button,a):focus-visible {outline:3px solid var(--orange);outline-offset:3px}
+.language {display:flex;align-items:center;gap:7px;margin:0 0 16px auto;min-height:44px;background:#fff;border:1px solid #d5ddd7;border-radius:8px;padding:8px 12px;color:var(--green)}
+.language svg {width:18px}
 
 .logo {
   inline-size: 78px;
@@ -50,16 +57,17 @@
 }
 
 .primary {
-  font-size: 15.5px;
+  font-size: 23px;
+  font-weight: 700;
   line-height: 1.6;
-  color: rgba(27, 36, 34, .74);
+  color: #18332d;
   margin: 0 0 6px;
 }
 
 .secondary {
   font-size: 14px;
   line-height: 1.6;
-  color: rgba(27, 36, 34, .45);
+  color: #52675d;
   margin: 0;
 }
 
@@ -71,6 +79,9 @@
 }
 
 .action {
+  border:0;
+  cursor:pointer;
+  min-height:44px;
   display: flex;
   align-items: center;
   justify-content: center;

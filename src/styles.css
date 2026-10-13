@@ -429,6 +429,14 @@
 .cash-actions{display:flex;align-items:center;gap:12px;flex-wrap:wrap}.cash-pagination{display:flex;justify-content:center;align-items:center;gap:18px;margin:28px 0;font-size:14px}.cash-time-note{margin-top:30px;text-align:center}
 .cash-empty{padding:24px;color:#52675d;font-size:14px}
 .cash-detail-heading{margin:24px 0}
+.subscription-gate{width:min(480px,calc(100vw - 32px));max-height:calc(100dvh - 32px);overflow:auto;border:0;border-radius:16px;padding:28px;background:white;color:var(--ink);box-shadow:0 18px 60px #173f3533}
+.subscription-gate::backdrop{background:#173f359e}.subscription-gate-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px}
+.subscription-gate-symbol{display:grid;place-items:center;width:52px;height:52px;border-radius:12px;background:#edf2ed;color:var(--green)}
+.subscription-gate h2{font-size:26px;line-height:1.25;margin:0 0 12px}.subscription-gate p{font-size:15px;line-height:1.7;color:#496256;margin-bottom:20px}.subscription-gate .subscription-gate-shop{font-weight:700;color:var(--ink);margin-bottom:12px}.subscription-gate .subscription-gate-date{font-size:13px}
+.subscription-gate>.button{margin-bottom:12px}.subscription-gate-switch{display:grid;gap:10px;font-size:14px;font-weight:600;margin:12px 0 22px}.subscription-gate-switch select{width:100%;min-height:46px;border:1px solid #c3cfc6;border-radius:8px;padding:10px;background:white;color:var(--ink);font:inherit}
+.subscription-gate-actions{display:flex;flex-wrap:wrap;gap:12px}.subscription-gate :is(button,a,select):focus-visible{outline:3px solid var(--orange);outline-offset:3px}
+[data-owner-locked="true"]>.modal-backdrop:not(:has(.place-switcher-modal)){display:none}
+@media(max-width:480px){.subscription-gate{padding:24px 20px}.subscription-gate h2{font-size:24px}.subscription-gate-actions>.button{flex:1;padding-inline:12px;font-size:14px}}
 .cash-billing{min-width:0;background:white;border:1px solid #d5ddd7;border-radius:12px;padding:28px;color:var(--ink)}
 .cash-billing :is(h1,h2){font-size:22px;margin:0}.cash-billing h3{font-size:18px;margin:0 0 18px}.cash-billing h4{font-size:15px;margin:0 0 14px}
 .cash-section-heading p{margin:8px 0 0;color:#52675d}.cash-explanation{font-size:14px;line-height:1.75;color:#496256;margin:20px 0}

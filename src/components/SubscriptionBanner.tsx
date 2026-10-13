@@ -1,5 +1,5 @@
 import { AlertTriangle, Clock, MessageCircle } from 'lucide-react'
-import { needsWarning, subscriptionState } from '../lib/subscription'
+import { needsWarning, ownerAccessState, OWNER_EDIT_WARNING_MS, subscriptionState } from '../lib/subscription'
 import { dashboardText } from '../lib/dashboardI18n'
 import type { Language, Restaurant } from '../lib/types'
 import styles from './SubscriptionBanner.module.css'
@@ -24,7 +24,7 @@ function plural(days: number, language: Language) {
 export function SubscriptionBanner({ restaurant, language = 'en' }: { restaurant: Restaurant; language?: Language }) {
   const t = (english: string) => dashboardText(language, english)
   const state = subscriptionState(restaurant)
-  if (!needsWarning(state)) return null
+  if (!needsWarning(state) || ownerAccessState(restaurant)==='blocked') return null
 
   const offline = !state.serving
   const days = state.daysLeft ?? 0
@@ -55,6 +55,7 @@ export function SubscriptionBanner({ restaurant, language = 'en' }: { restaurant
       <div className={styles.body}>
         <p className={styles.title}>{title}</p>
         <p className={styles.text}>{text}</p>
+        {offline && state.endsAt && <p className={styles.text}>{language==='ar'?'سيتوقف التعديل في:':'Editing pauses on:'} {new Intl.DateTimeFormat(language==='ar'?'ar-LB':'en-GB',{timeZone:'Asia/Beirut',dateStyle:'medium',timeStyle:'short'}).format(new Date(Date.parse(state.endsAt)+OWNER_EDIT_WARNING_MS))}</p>}
         {SUPPORT_WHATSAPP && (
           <div className={styles.actions}>
             <a

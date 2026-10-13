@@ -45,6 +45,7 @@ export function ShopBillingPanel({ shopId, language, admin = false, onChanged, r
   const [voidRequest, setVoidRequest] = useState('')
   const dialog = useRef<HTMLDialogElement>(null)
   const alive = useRef(true)
+  const readRequest = useRef(0)
   const changed = useRef(onChanged)
   changed.current = onChanged
   const pendingRef = useRef(pending)
@@ -75,23 +76,28 @@ export function ShopBillingPanel({ shopId, language, admin = false, onChanged, r
   const acceptRef = useRef(accept)
   acceptRef.current = accept
   const refresh = async () => {
+    const request = ++readRequest.current
     setLoading(true); setError(null)
-    try { acceptRef.current(await getShopBilling(shopId, admin)) }
-    catch (caught) { if (alive.current) setError(caught) }
-    finally { if (alive.current) setLoading(false) }
+    try { const data = await getShopBilling(shopId, admin); if (request === readRequest.current) acceptRef.current(data) }
+    catch (caught) { if (alive.current && request === readRequest.current) setError(caught) }
+    finally { if (alive.current && request === readRequest.current) setLoading(false) }
   }
   useEffect(() => {
     alive.current = true
+    const requests = readRequest
+    const request = ++readRequest.current
     const controller = new AbortController()
     getShopBilling(shopId, admin, controller.signal)
-      .then(data => { if (!controller.signal.aborted) acceptRef.current(data) })
-      .catch(caught => { if (!controller.signal.aborted) setError(caught) })
-      .finally(() => { if (!controller.signal.aborted) setLoading(false) })
-    return () => { alive.current = false; controller.abort() }
+      .then(data => { if (!controller.signal.aborted && request === readRequest.current) acceptRef.current(data) })
+      .catch(caught => { if (!controller.signal.aborted && request === readRequest.current) setError(caught) })
+      .finally(() => { if (!controller.signal.aborted && request === readRequest.current) setLoading(false) })
+    return () => { alive.current = false; requests.current++; controller.abort() }
     // Language changes translate existing values rather than refetching private data.
   }, [shopId, admin, refreshToken])
   useEffect(() => { if (voidTarget) dialog.current?.showModal() }, [voidTarget])
   async function act(operation: () => Promise<ShopBilling>, message: BillingCopyKey) {
+    readRequest.current++
+    setLoading(false)
     setBusy(true); setError(null); setSuccess(null)
     try {
       accept(await operation())
@@ -111,6 +117,8 @@ export function ShopBillingPanel({ shopId, language, admin = false, onChanged, r
   }
   async function confirmPayment() {
     if (!preview) return
+    readRequest.current++
+    setLoading(false)
     const prepared = pending ?? { preview, request: {
       shop_input: shopId, amount_input: preview.amount_cents, collected_input: preview.collected_at,
       starts_input: preview.coverage_from, ends_input: preview.paid_until,
@@ -130,6 +138,8 @@ export function ShopBillingPanel({ shopId, language, admin = false, onChanged, r
   }
   async function correctReceipt() {
     if (!voidTarget || !billing) return
+    readRequest.current++
+    setLoading(false)
     setBusy(true); setError(null)
     try {
       const next = await voidCashReceipt(voidTarget.id, reason, voidRequest, billing.version)

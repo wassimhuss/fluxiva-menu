@@ -3,7 +3,7 @@ import { demoBrand, demoContactCard, demoGalleryCategories, demoGalleryImages, d
 import { supabase } from './supabase'
 import { getCachedOwnerQueryClient, getOwnerQueryClient, ownerCacheGeneration } from './queryClient'
 import { patchMenuItem } from './menuState'
-import { subscriptionState } from './subscription'
+import { ownerAccessState, subscriptionState } from './subscription'
 import type { AdminRole, BrandGroup, BrandPlaces, Category, GalleryCategory, GalleryImage, ItemExtra, MenuContactCard, MenuItem, MenuViewDay, MenuViewStats, PlatformAuditEntry, PlatformRestaurant, PlatformStorageUsage, Restaurant, RestaurantMenu, Variant } from './types'
 import type { CashCollections, CashPaymentPreview, CashPaymentRequest, ShopBilling, SubscriberPage } from './types'
 
@@ -294,7 +294,17 @@ async function ensureOwnerBrand(session: Session, input: RestaurantInput) {
   return data as BrandGroup
 }
 
+function checkDemoEdit(id: string) {
+  if (supabase) return
+  const shop=demoMenus.find(menu=>menu.restaurant.id===id)?.restaurant
+  if(shop && ownerAccessState(shop)==='blocked') throw new Error('Shop editing is locked; arrange cash collection with Fluxiva')
+}
+function checkDemoNewPlace() {
+  if(!supabase && demoMenus.some(menu=>!subscriptionState(menu.restaurant).serving)) throw new Error('Resolve expired or suspended shops before adding another place')
+}
+
 export async function createRestaurant(session: Session | null, input: RestaurantInput, brandId?: string) {
+  checkDemoNewPlace()
   if (!supabase) {
     if (demoRestaurants.some((place) => place.slug === input.slug)) throw new Error('This menu link is already taken. Choose a different one.')
     const restaurant: Restaurant = {
@@ -327,6 +337,7 @@ export async function createRestaurant(session: Session | null, input: Restauran
  * ready to edit. Shared active gallery files stay shared; source files are never
  * deleted or modified. All writes use the signed-in owner's normal permissions. */
 export async function createPlaceFromMenu(session: Session | null, input: RestaurantInput, sourceId: string): Promise<RestaurantMenu> {
+  checkDemoNewPlace()
   if (!supabase) {
     const source = demoMenus.find((entry) => entry.restaurant.id === sourceId)
     if (!source || source.restaurant.menu_copy_pending) throw new Error('Could not copy this menu. Please try again.')
@@ -415,6 +426,7 @@ function restaurantCopyAsset(publicUrl: string): { bucket: 'menu-assets' | 'gall
 }
 
 export async function updateRestaurant(id: string, values: Partial<Restaurant>) {
+  checkDemoEdit(id)
   if (!supabase) {
     const restaurant = demoRestaurants.find((place) => place.id === id)
     if (!restaurant) throw new Error('Restaurant not found.')
@@ -430,6 +442,7 @@ export async function updateRestaurant(id: string, values: Partial<Restaurant>) 
 
 /** Persist before changing dashboard state; owners retain access to hidden places. */
 export async function setPlacePublished(id: string, published: boolean): Promise<Restaurant> {
+  checkDemoEdit(id)
   if (!supabase) {
     const restaurant = demoRestaurants.find((place) => place.id === id)
     if (!restaurant) throw new Error('Could not update branch visibility.')
@@ -446,6 +459,11 @@ export async function setPlacePublished(id: string, published: boolean): Promise
 
 /** The RPC checks ownership, the typed slug, and the last-place guard atomically. */
 export async function deleteRestaurant(id: string, slugConfirmation: string) {
+  if (!supabase) {
+    const place=demoMenus.find(entry=>entry.restaurant.id===id)?.restaurant
+    if(place && !subscriptionState(place).serving) throw new Error('Resolve expired or suspended shops before deleting this place')
+  }
+  checkDemoEdit(id)
   if (!supabase) {
     const index = demoRestaurants.findIndex((place) => place.id === id && place.slug === slugConfirmation)
     if (index < 0) throw new Error('The menu link does not match.')
@@ -477,6 +495,7 @@ export async function setRestaurantTemplate(id: string, templateId: string) {
 }
 
 export async function createCategory(input: CategoryInput) {
+  checkDemoEdit(input.restaurant_id)
   if (!supabase) {
     const category = { ...input, id: crypto.randomUUID() } as Category
     demoMenus.find((entry) => entry.restaurant.id === input.restaurant_id)?.categories.push(structuredClone(category))
@@ -500,6 +519,7 @@ export async function createCategories(inputs: CategoryInput[]) {
 }
 
 export async function updateCategory(id: string, values: Partial<Category>) {
+  if(!supabase) checkDemoEdit(demoMenus.find(menu=>menu.categories.some(row=>row.id===id))?.restaurant.id??'')
   if (!supabase) {
     const category = demoMenus.flatMap((entry) => entry.categories).find((entry) => entry.id === id)
     if (!category) throw new Error('Category not found.')
@@ -515,6 +535,7 @@ export async function updateCategory(id: string, values: Partial<Category>) {
 
 /** Persists a one-position move in one batch, including any tied-rank normalization. */
 export async function moveCategoryByOne(restaurantId: string, categoryId: string, direction: 'up' | 'down'): Promise<Category[]> {
+  checkDemoEdit(restaurantId)
   const demo = !supabase ? demoMenus.find((menu) => menu.restaurant.id === restaurantId) : undefined
   let categories: Category[]
   if (!supabase) {
@@ -551,6 +572,7 @@ export async function moveCategoryByOne(restaurantId: string, categoryId: string
 }
 
 export async function deleteCategory(id: string) {
+  if(!supabase) checkDemoEdit(demoMenus.find(menu=>menu.categories.some(row=>row.id===id))?.restaurant.id??'')
   if (!supabase) {
     for (const entry of demoMenus) {
       entry.categories = entry.categories.filter((category) => category.id !== id)
@@ -565,6 +587,7 @@ export async function deleteCategory(id: string) {
 }
 
 export async function createItem(input: ItemInput) {
+  checkDemoEdit(input.restaurant_id)
   if (!supabase) {
     const item = { ...structuredClone(input), id: crypto.randomUUID(), highlighted: input.highlighted ?? false } as MenuItem
     demoMenus.find((entry) => entry.restaurant.id === input.restaurant_id)?.items.push(structuredClone(item))
@@ -588,6 +611,7 @@ export async function createItems(inputs: ItemInput[]) {
 }
 
 export async function updateItem(id: string, values: Partial<MenuItem>) {
+  if(!supabase) checkDemoEdit(demoMenus.find(menu=>menu.items.some(row=>row.id===id))?.restaurant.id??'')
   if (!supabase) {
     const item = demoMenus.flatMap((entry) => entry.items).find((entry) => entry.id === id)
     if (!item) throw new Error('MenuItem not found.')
@@ -603,6 +627,7 @@ export async function updateItem(id: string, values: Partial<MenuItem>) {
 
 /** Moves one position within this category and saves sibling ranks atomically. */
 export async function moveItemByOne(restaurantId: string, categoryId: string, itemId: string, direction: 'up' | 'down'): Promise<MenuItem[]> {
+  checkDemoEdit(restaurantId)
   if (supabase) {
     const { data, error } = await supabase.rpc('owner_move_menu_item', {
       restaurant_id_input: restaurantId,
@@ -636,6 +661,7 @@ export async function moveItemByOne(restaurantId: string, categoryId: string, it
 
 /** Uses existing owner RLS and confirms that a matching item was updated. */
 export async function setItemHighlighted(restaurantId: string, id: string, highlighted: boolean): Promise<boolean> {
+  checkDemoEdit(restaurantId)
   if (!supabase) {
     const item = demoMenus.find((entry) => entry.restaurant.id === restaurantId)?.items.find((entry) => entry.id === id)
     if (!item) throw new Error('Item not found.')
@@ -651,6 +677,7 @@ export async function setItemHighlighted(restaurantId: string, id: string, highl
 }
 
 export async function deleteItem(id: string) {
+  if(!supabase) checkDemoEdit(demoMenus.find(menu=>menu.items.some(row=>row.id===id))?.restaurant.id??'')
   if (!supabase) {
     for (const entry of demoMenus) entry.items = entry.items.filter((item) => item.id !== id)
     patchOwnerMenus((menu) => menu.items.some((item) => item.id === id), (menu) => ({ ...menu, items: menu.items.filter((item) => item.id !== id) }))
@@ -662,6 +689,7 @@ export async function deleteItem(id: string) {
 }
 
 export async function uploadRestaurantAsset(restaurantId: string, file: File, purpose: AssetPurpose = 'item') {
+  checkDemoEdit(restaurantId)
   const optimizedFile = await optimizeImage(file, purpose)
   if (!supabase) return URL.createObjectURL(optimizedFile)
   const extension = optimizedFile.name.split('.').pop() || 'webp'
@@ -676,6 +704,7 @@ export async function uploadRestaurantAsset(restaurantId: string, file: File, pu
  * External URLs and bundled demo images are deliberately ignored.
  */
 export async function deleteRestaurantAsset(restaurantId: string, publicUrl?: string | null) {
+  checkDemoEdit(restaurantId)
   if (!publicUrl) return
   if (publicUrl.startsWith('blob:')) {
     const referenced = demoMenus.some((entry) => entry.restaurant.logo_url === publicUrl || entry.restaurant.cover_image_url === publicUrl || entry.items.some((item) => item.image_url === publicUrl))
