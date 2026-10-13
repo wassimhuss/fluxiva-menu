@@ -11,6 +11,12 @@ This file is the working product backlog for developers and AI agents. Keep it u
 
 ## Cash subscriptions and subscriber management
 
+### Subscriber search filters (2026-10-13)
+
+- [x] Add bilingual subscription, visibility, payment-record, account/archive, shop-presence and Beirut registration-date filters with sort controls, removable applied chips and clear-all.
+- [x] Filter before owner pagination through protected migration `032`, intersect branch criteria on the same shop and retain all owner branches; normalize contact numbers across English/Arabic/Persian numerals and preserve literal search characters.
+- [x] Verify demo, English/Arabic desktop/mobile, all 46 tests/lint/build and unchanged production records; apply migration `032` with operator-only reads and preserved legacy callers.
+
 ### Full subscriber profiles (2026-10-13)
 
 - [x] Open a bilingual account/shop/activity profile from each subscriber email and eye icon, including exact account/shop dates, contact/brand details, menu settings/statistics, billing navigation and archived records.

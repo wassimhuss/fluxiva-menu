@@ -1,5 +1,6 @@
 import { demoBrand, demoMenus, demoPlatformAudit, demoPlatformRestaurants, demoStorageUsage } from './demo'
-import type { CashAgreement, CashCollections, CashPaymentPreview, CashPaymentRequest, ShopBilling, SubscriberDetails, SubscriberPage, SubscriptionStatus } from './types'
+import type { CashAgreement, CashCollections, CashPaymentPreview, CashPaymentRequest, ShopBilling, SubscriberDetails, SubscriberFilters, SubscriberPage, SubscriptionStatus } from './types'
+import {DEFAULT_SUBSCRIBER_FILTERS,hasShopFilters,subscriberPhoneDigits,subscriberRegistrationDay,subscriberShopMatches} from './subscriberFilters'
 
 type DemoAgreement = CashAgreement & { baseline_until: string | null; baseline_status: SubscriptionStatus }
 type DemoShop = ShopBilling & { agreements: DemoAgreement[]; revision: number; email: string; restore_status: SubscriptionStatus }
@@ -47,11 +48,13 @@ function ensureShops() {
     ...m.restaurant, created_at: now(), owner_email: 'owner@hilaloven.com', item_count: m.items.length, views_30d: 0,
   }))]
   for (const source of sources) {
-    if (shops.has(source.id)) continue
+    const published=demoMenus.find(menu=>menu.restaurant.id===source.id)?.restaurant.is_published??true
+    const existing=shops.get(source.id)
+    if (existing) {existing.is_published=published;continue}
     const shop: DemoShop = {
       restaurant_id: source.id, owner_id: 'demo-' + source.owner_email, email: source.owner_email ?? 'owner@hilaloven.com',
       name_en: source.name_en, name_ar: source.name_ar, slug: source.slug,
-      archived: false, subscription_status: source.subscription_status, is_published: true,
+      archived: false, subscription_status: source.subscription_status, is_published: published,
       trial_ends_at: source.trial_ends_at ?? null,
       paid_until: source.subscription_status === 'trial' ? source.trial_ends_at ?? null : source.subscription_ends_at ?? null,
       next_annual_cents: 12000, annual_cents: 12000, agreement_id: null, paid_cents: 0,
@@ -85,19 +88,46 @@ export function demoShopBilling(id: string, admin = false): ShopBilling {
   }
   return shop
 }
-export function demoSubscribers(search = '', page = 0): SubscriberPage {
+export function demoSubscribers(search = '', page = 0,filters:SubscriberFilters=DEFAULT_SUBSCRIBER_FILTERS): SubscriberPage {
+  if(filters.registered_from&&filters.registered_to&&filters.registered_from>filters.registered_to) fail('Enter a valid registration date range')
   ensureShops()
   const grouped = new Map<string, SubscriberPage['subscribers'][number]>()
   for (const shop of shops.values()) {
     const created=demoPlatformRestaurants.find(source=>source.id===shop.restaurant_id)?.created_at??now()
     const owner = grouped.get(shop.owner_id) ?? { id: shop.owner_id, email: shop.email, created_at: created, archived: false, shops: [] }
-    if(created<owner.created_at) owner.created_at=created
+    if(!owner.created_at||created<owner.created_at) owner.created_at=created
     const summary = structuredClone(shop); delete (summary as Partial<DemoShop>).agreements
     owner.shops.push(summary); grouped.set(shop.owner_id, owner)
   }
   grouped.set('demo-empty', { id: 'demo-empty', email: 'new.owner@example.com', created_at: demoSessionStarted, archived: false, shops: [] })
-  const term = search.toLocaleLowerCase()
-  const all = [...grouped.values()].filter(o => (o.email + ' ' + o.shops.map(s => s.name_en + ' ' + s.name_ar + ' ' + s.slug).join(' ')).toLocaleLowerCase().includes(term))
+  const term=search.trim().toLocaleLowerCase(),digits=subscriberPhoneDigits(term)
+  const phoneTerm=/^[+()٠-٩۰-۹0-9 .-]+$/.test(term)&&digits.length>=3
+  const shopText=(shop:ShopBilling)=>{
+    const restaurant=demoMenus.find(menu=>menu.restaurant.id===shop.restaurant_id)?.restaurant
+    const phones=[shop.whatsapp,restaurant?.phone,restaurant?.whatsapp].filter(Boolean).join(' ')
+    return (shop.name_en+' '+shop.name_ar+' '+shop.slug+' '+phones).toLocaleLowerCase().includes(term)||(phoneTerm&&subscriberPhoneDigits(phones).includes(digits))
+  }
+  const all=[...grouped.values()].filter(owner=>{
+    if(filters.account==='current'&&owner.archived||filters.account==='archived'&&!owner.archived) return false
+    const current=owner.shops.filter(shop=>!shop.archived)
+    if(filters.shops==='with'&&!current.length||filters.shops==='none'&&current.length) return false
+    if(filters.registered_from||filters.registered_to) {
+      if(!owner.created_at||owner.archived) return false
+      const day=subscriberRegistrationDay(owner.created_at)
+      if(filters.registered_from&&day<filters.registered_from||filters.registered_to&&day>filters.registered_to) return false
+    }
+    const ownerMatch=owner.email.toLocaleLowerCase().includes(term)||(owner.shops.some(shop=>shop.restaurant_id==='demo-restaurant')&&(demoBrand.name_en+' '+demoBrand.name_ar+' '+demoBrand.slug).toLocaleLowerCase().includes(term))
+    const eligible=owner.shops.filter(shop=>subscriberShopMatches(shop,filters)&&(!term||ownerMatch||shopText(shop)))
+    owner.matching_shop_ids=eligible.map(shop=>shop.restaurant_id)
+    return hasShopFilters(filters)?eligible.length>0:!term||ownerMatch||eligible.length>0
+  })
+  const expiry=(owner:SubscriberPage['subscribers'][number])=>Math.min(...owner.shops.filter(shop=>!shop.archived&&shop.subscription_status!=='suspended'&&owner.matching_shop_ids?.includes(shop.restaurant_id)).map(shop=>shop.paid_until?Date.parse(shop.paid_until):Infinity))
+  all.sort((a,b)=>{
+    const email=a.email.toLocaleLowerCase().localeCompare(b.email.toLocaleLowerCase())
+    const dates=a.created_at&&b.created_at?a.created_at.localeCompare(b.created_at):a.created_at?-1:b.created_at?1:0
+    const result=filters.sort==='email_asc'?email:filters.sort==='email_desc'?-email:filters.sort==='expiry'?(expiry(a)<expiry(b)?-1:expiry(a)>expiry(b)?1:0):filters.sort==='oldest'?dates:a.created_at&&b.created_at?-dates:dates
+    return result||a.id.localeCompare(b.id)
+  })
   return { subscribers: all.slice(page * 25, page * 25 + 25), total: all.length, page, page_size: 25 }
 }
 export function demoSubscriberDetails(ownerId:string,activityPage=0):SubscriberDetails {

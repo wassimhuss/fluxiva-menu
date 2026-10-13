@@ -5,7 +5,8 @@ import { getCachedOwnerQueryClient, getOwnerQueryClient, ownerCacheGeneration } 
 import { patchMenuItem } from './menuState'
 import { ownerAccessState, subscriptionState } from './subscription'
 import type { AdminRole, BrandGroup, BrandPlaces, Category, GalleryCategory, GalleryImage, ItemExtra, MenuContactCard, MenuItem, MenuViewDay, MenuViewStats, PlatformAuditEntry, PlatformRestaurant, PlatformStorageUsage, Restaurant, RestaurantMenu, Variant } from './types'
-import type { CashCollections, CashPaymentPreview, CashPaymentRequest, ShopBilling, SubscriberDetails, SubscriberPage } from './types'
+import type { CashCollections, CashPaymentPreview, CashPaymentRequest, ShopBilling, SubscriberDetails, SubscriberFilters, SubscriberPage } from './types'
+import {DEFAULT_SUBSCRIBER_FILTERS} from './subscriberFilters'
 
 type RestaurantInput = Pick<Restaurant, 'name_en' | 'name_ar' | 'slug' | 'primary_color' | 'phone' | 'whatsapp' | 'instagram' | 'maps_url' | 'address_en' | 'address_ar' | 'currency' | 'temporarily_closed' | 'default_language'>
 type CategoryInput = Pick<Category, 'restaurant_id' | 'name_en' | 'name_ar' | 'sort_order'>
@@ -763,9 +764,9 @@ export async function listPlatformRestaurants(): Promise<PlatformRestaurant[]> {
   return (data ?? []) as PlatformRestaurant[]
 }
 
-export async function listSubscribers(search = '', page = 0, signal?: AbortSignal): Promise<SubscriberPage> {
-  if (!supabase) return (await import('./billingDemo')).demoSubscribers(search, page)
-  const { data, error } = await supabase.rpc('platform_subscribers', { search_input: search, page_input: page }).abortSignal(readSignal(signal))
+export async function listSubscribers(search = '', page = 0, signal?: AbortSignal, filters:SubscriberFilters=DEFAULT_SUBSCRIBER_FILTERS): Promise<SubscriberPage> {
+  if (!supabase) return (await import('./billingDemo')).demoSubscribers(search, page,filters)
+  const { data, error } = await supabase.rpc('platform_search_subscribers', { search_input: search, filters_input:filters, page_input: page }).abortSignal(readSignal(signal))
   if (error) throw error
   return data as SubscriberPage
 }

@@ -22,9 +22,11 @@ async function loadApi(t) {
   const clientUri = uri(nonce + 'export let supabase=null;export function setClient(client){supabase=client}')
   const cacheUri = uri(nonce + compile('queryClient').replace("'@tanstack/react-query'", JSON.stringify(import.meta.resolve('@tanstack/react-query'))))
   const stateUri = uri(compile('menuState'))
+  const filtersUri=uri(compile('subscriberFilters').replace("'./subscription'",JSON.stringify(uri(compile('subscription')))))
   const code = compile('api').replace("'./demo'", JSON.stringify(uri(nonce + compile('demo'))))
     .replace("'./supabase'", JSON.stringify(clientUri)).replace("'./subscription'", JSON.stringify(uri(compile('subscription'))))
     .replace("'./queryClient'", JSON.stringify(cacheUri)).replace("'./menuState'", JSON.stringify(stateUri))
+    .replace("'./subscriberFilters'",JSON.stringify(filtersUri))
   const api = await import(uri(code))
   const client = await import(clientUri)
   const cache = await import(cacheUri)
@@ -33,6 +35,15 @@ async function loadApi(t) {
   return { api, ...client, ...cache, queryClient }
 }
 const session = (id = 'owner') => ({ user: { id } })
+test('subscriber search forwards combined filters and sort with cancellation through the operator RPC',async(t)=>{
+  const {api,setClient}=await loadApi(t),controller=new AbortController(),calls=[]
+  setClient({rpc:(name,params)=>({abortSignal:signal=>{calls.push({name,params,signal});return Promise.resolve({data:{total:0,subscribers:[]},error:null})}})})
+  const filters={status:'expired',visibility:'hidden',payments:'balance',account:'current',shops:'with',registered_from:'2024-01-01',registered_to:'2024-02-01',sort:'email_asc'}
+  await api.listSubscribers('Literal %_',2,controller.signal,filters)
+  assert.equal(calls[0].name,'platform_search_subscribers')
+  assert.deepEqual(calls[0].params,{search_input:'Literal %_',filters_input:filters,page_input:2})
+  controller.abort();assert.equal(calls[0].signal.aborted,true)
+})
 test('subscriber detail requests use only the protected RPC with cancellation and propagate failures',async(t)=>{
   const {api,setClient}=await loadApi(t),calls=[],controller=new AbortController()
   let error=null

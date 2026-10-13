@@ -231,6 +231,14 @@ These are opportunities, not committed roadmap items:
 6. Make Excel category/item import fully transactional so a failed item batch cannot leave empty categories.
 7. Add a documented Supabase migration/deployment pipeline.
 
+### Subscriber filters (032)
+
+Apply `032_subscriber_filters.sql` after 031 and before releasing its frontend. It adds a read-only protected directory RPC; existing directory callers remain compatible. Verify filter intersections on one current branch, owner search versus branch search, literal wildcard handling, stored/search Arabic/Persian phone numerals, inclusive Beirut date bounds, unknown archived dates, stable sorting and filtering before pagination. Repeat application must leave shops and receipts unchanged. Support may read; owners and anonymous callers must be denied.
+
+Check `/platform` in English/Arabic at desktop and 390 px: Apply filters, removable chips, clear-all, valid/reversed registration ranges, mobile overflow, sort order, current/archived and no-shop states, and profile/back retention. Demo must reflect changes to menu publication. Do not create production cash or change access dates to test filters.
+
+Migration 032 was applied on 2026-10-13 as `20261013134008` after isolated and repeat-application tests and read-only review. The complete production restaurant snapshot, two Auth accounts, 6 categories, 23 items, 331 stored files, 5 audit records and empty agreement/receipt tables matched before/after. Protected active/listed/no-recorded-payment and Beirut registration filters returned the existing owner; Arabic-digit phone search matched, and owner/anonymous access was denied. Advisors retain their existing categories; the additional authenticated security-definer RPC has the internal operator guard, empty search path and no anonymous grant. All 46 tests, lint, build and diff checks passed. English/Arabic desktop and 390 px controls, results, date validation, chips/reset, sorting and profile/back were verified in demo, with no console errors in the desktop route. Main/Excel chunk-size warnings remain. Source deployment follows the validated push; check the hosted directory and combined filters afterward. Temporary QA pages/images are excluded from Git.
+
 ### Subscriber profiles (031)
 
 Apply `031_subscriber_details.sql` after 030. It is a read-only operator RPC, not a grant of direct Auth-table access. Test both operator roles, owner/anonymous denial, omitted credential/raw metadata fields, empty accounts, archived owners/shops, stable 25-entry activity pagination and repeat application in isolated PostgreSQL. Archive registration/sign-in dates are unknown; never substitute receipt dates. Trial expiry is not paid time, and zero recorded receipts are not proof of zero historical cash.

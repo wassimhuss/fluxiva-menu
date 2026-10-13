@@ -65,9 +65,20 @@ export interface ShopBilling {
 export interface PlatformSubscriber {
   id: string
   email: string
-  created_at: string
+  created_at: string | null
   archived: boolean
   shops: ShopBilling[]
+  matching_shop_ids?: string[]
+}
+export interface SubscriberFilters {
+  status: 'any' | 'trial' | 'active' | 'expired' | 'suspended' | 'expiring'
+  visibility: 'any' | 'listed' | 'hidden'
+  payments: 'any' | 'balance' | 'settled' | 'none'
+  account: 'any' | 'current' | 'archived'
+  shops: 'any' | 'with' | 'none'
+  registered_from: string
+  registered_to: string
+  sort: 'newest' | 'oldest' | 'email_asc' | 'email_desc' | 'expiry'
 }
 export interface SubscriberPage {
   subscribers: PlatformSubscriber[]

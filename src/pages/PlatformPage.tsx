@@ -1,4 +1,4 @@
-import { ArrowLeft, ArrowRight, CalendarCheck, ChevronLeft, ChevronRight, Eye, LogOut, ReceiptText, RefreshCw, Search, ShieldCheck, ShieldOff, ShieldPlus, Trash2, X } from 'lucide-react'
+import { ArrowLeft, ArrowRight, CalendarCheck, ChevronLeft, ChevronRight, Eye, LogOut, ReceiptText, RefreshCw, ShieldCheck, ShieldOff, ShieldPlus, Trash2, X } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { Brand } from '../components/Brand'
@@ -7,13 +7,15 @@ import { PlatformGallery } from '../components/PlatformGallery'
 import { ShopBillingPanel } from '../components/ShopBillingPanel'
 import { StorageUsagePanel } from '../components/StorageUsagePanel'
 import { SubscriberDetails } from '../components/SubscriberDetails'
+import { SubscriberSearch } from '../components/SubscriberSearch'
+import {DEFAULT_SUBSCRIBER_FILTERS,hasShopFilters} from '../lib/subscriberFilters'
 import { Loading, Notice } from '../components/Status'
 import { deleteSubscriber, getCashCollections, getPlatformAudit, getPlatformStorageUsage, getShopBilling, listSubscribers, setSubscriberStatus, setSubscription } from '../lib/api'
 import { useAuth } from '../lib/auth'
 import { beirutInput, billingStatus, cashDate, cashMoney, parseBeirutInput } from '../lib/billing'
 import { billingError, billingText } from '../lib/billingI18n'
 import type { BillingCopyKey } from '../lib/billingI18n'
-import type { CashCollections, Language, PlatformAuditEntry, PlatformStorageUsage, ShopBilling, SubscriberPage } from '../lib/types'
+import type { CashCollections, Language, PlatformAuditEntry, PlatformStorageUsage, ShopBilling, SubscriberFilters, SubscriberPage } from '../lib/types'
 
 type View = 'Subscribers' | 'Collections' | 'Activity' | 'Gallery' | 'Storage'
 export function PlatformPage() {
@@ -31,8 +33,8 @@ export function PlatformPage() {
   const [collections, setCollections] = useState<CashCollections | null>(null)
   const [activity, setActivity] = useState<PlatformAuditEntry[]>([])
   const [storage, setStorage] = useState<PlatformStorageUsage | null>(null)
-  const [searchDraft, setSearchDraft] = useState('')
   const [search, setSearch] = useState('')
+  const [filters,setFilters]=useState<SubscriberFilters>({...DEFAULT_SUBSCRIBER_FILTERS})
   const [page, setPage] = useState(0)
   const [reload, setReload] = useState(0)
   const [loading, setLoading] = useState(true)
@@ -59,7 +61,7 @@ export function PlatformPage() {
     const controller = new AbortController()
     setLoading(true); setError(null)
     const request = view === 'Subscribers'
-      ? listSubscribers(search, page, controller.signal).then(data => { if (!controller.signal.aborted) setDirectory(data) })
+      ? listSubscribers(search, page, controller.signal,filters).then(data => { if (!controller.signal.aborted) setDirectory(data) })
       : view === 'Collections'
         ? getCashCollections(dates.from, dates.until, page, controller.signal).then(data => { if (!controller.signal.aborted) setCollections(data) })
           : view === 'Activity'
@@ -70,7 +72,7 @@ export function PlatformPage() {
     request.catch(caught => { if (!controller.signal.aborted) setError(caught) })
       .finally(() => { if (!controller.signal.aborted) setLoading(false) })
     return () => controller.abort()
-  }, [view, search, page, dates, reload])
+  }, [view, search, filters,page, dates, reload])
   useEffect(() => { if (suspending) dialog.current?.showModal() }, [suspending])
   useEffect(() => {
     if (accountAction) accountDialog.current?.showModal()
@@ -107,9 +109,9 @@ export function PlatformPage() {
   function requestAccountAction(owner: SubscriberPage['subscribers'][number], kind: 'suspend' | 'restore' | 'delete') {
     setAccountConfirmation(''); setError(null); setAccountAction({ owner, kind })
   }
-  function shopRow(shop: ShopBilling) {
+  function shopRow(shop: ShopBilling,matchingIds?:string[]) {
     return <div className="cash-shop-row" key={shop.restaurant_id}>
-      <div><strong>{language === 'ar' ? shop.name_ar : shop.name_en}</strong><p><bdi>/m/{shop.slug}</bdi></p><div className="cash-tags"><span className="cash-tag">{t(billingStatus(shop))}</span><span>{t(shop.is_published ? 'Listed' : 'Hidden')}</span></div></div>
+      <div><strong>{language === 'ar' ? shop.name_ar : shop.name_en}</strong><p><bdi>/m/{shop.slug}</bdi></p><div className="cash-tags"><span className="cash-tag">{t(billingStatus(shop))}</span><span>{t(shop.is_published ? 'Listed' : 'Hidden')}</span>{matchingIds?.includes(shop.restaurant_id)&&<span className="cash-tag cash-filter-match">{t('Matches search & filters')}</span>}</div></div>
       <div><span className="cash-label">{t('Annual price')}</span><bdi>{money(shop.annual_cents)}</bdi><span className="cash-label">{shop.agreement_id ? t('Remaining annual balance') : t('Cash received')}</span><bdi>{money(shop.agreement_id ? shop.remaining_cents : null)}</bdi></div>
       <div><span className="cash-label">{t(shop.subscription_status === 'trial' ? 'Trial ends' : 'Paid through')}</span>{date(shop.paid_until)}{shop.whatsapp && <p><bdi>{shop.whatsapp}</bdi></p>}{(language === 'ar' ? shop.address_ar : shop.address_en) && <p>{language === 'ar' ? shop.address_ar : shop.address_en}</p>}</div>
       <BillingIconButton icon={ReceiptText} label={t('Open billing') + ' · ' + (language === 'ar' ? shop.name_ar : shop.name_en)} onClick={() => { setSelected(shop); setError(null) }} />
@@ -133,22 +135,22 @@ export function PlatformPage() {
           <div className="cash-detail-heading"><BillingIconButton icon={language === 'ar' ? ArrowRight : ArrowLeft} label={t(subscriberId?'Back to subscriber':'Close billing')} onClick={() => setSelected(null)} /><div className="cash-actions"><span className="cash-tag">{t(billingStatus(selected))}</span>{canManage && !selected.archived && <BillingIconButton icon={selected.subscription_status === 'suspended' ? ShieldPlus : ShieldOff} danger={selected.subscription_status !== 'suspended'} label={t(selected.subscription_status === 'suspended' ? 'Restore access' : 'Suspend menu')} disabled={busy} onClick={() => selected.subscription_status === 'suspended' ? void changeSuspension(false) : setSuspending(true)} />}</div></div>
           <ShopBillingPanel key={selected.restaurant_id} shopId={selected.restaurant_id} language={language} admin refreshToken={billingRefresh} onChanged={data => { setSelected(data); setReload(n => n + 1) }} />
         </> : subscriberId ? null : view === 'Gallery' ? <PlatformGallery language={language} /> : <>
-          {view === 'Subscribers' && <form className="cash-search" onSubmit={event => { event.preventDefault(); setSearch(searchDraft.trim()); setPage(0); setReload(n => n + 1) }}><label><span className="sr-only">{t('Search owners, shops or contact numbers')}</span><Search size={18} /><input value={searchDraft} onChange={e => setSearchDraft(e.target.value)} placeholder={t('Search owners, shops or contact numbers')} /></label><BillingIconButton icon={Search} type="submit" label={t('Search')} /></form>}
+          {view === 'Subscribers' && <SubscriberSearch search={search} filters={filters} language={language} loading={loading} onApply={(term,next)=>{setLoading(true);setError(null);setSearch(term);setFilters(next);setPage(0);setReload(n=>n+1)}}/>}
           {view === 'Collections' && <form className="cash-date-filter" onSubmit={event => { event.preventDefault(); setDates({ from: fromDraft, until: untilDraft }); setPage(0) }}><label>{t('From')}<input type="date" value={fromDraft} onChange={e => setFromDraft(e.target.value)} required /></label><label>{t('Until')}<input type="date" value={untilDraft} min={fromDraft} onChange={e => setUntilDraft(e.target.value)} required /></label><BillingIconButton icon={CalendarCheck} type="submit" label={t('Apply dates')} /></form>}
           {loading ? <Loading label={t(view === 'Subscribers' ? 'Loading subscribers…' : view === 'Collections' ? 'Loading collections…' : view === 'Storage' ? 'Loading storage…' : 'Loading activity…')} /> : <>
-            {view === 'Subscribers' && <section className="cash-directory" aria-label={t('Subscribers')}>
-              <p className="cash-result-count">{number(directory?.total ?? 0)} {t('subscribers')}</p>
-              {directory?.subscribers.length ? directory.subscribers.map(owner => <article className="cash-subscriber" key={owner.id}><header><h2><Link className="subscriber-link" to={{search:'?subscriber='+encodeURIComponent(owner.id)}} aria-label={t('Open subscriber')+' · '+owner.email}><bdi>{owner.email}</bdi></Link></h2><BillingIconButton icon={Eye} label={t('Open subscriber')+' · '+owner.email} onClick={()=>setSearchParams({subscriber:owner.id})}/><span>{t('Registered')} {date(owner.created_at)}</span>{owner.archived && <span className="cash-tag">{t('Archived')}</span>}{canManage && !owner.archived && <div className="cash-account-actions">{owner.shops.length > 0 && <BillingIconButton icon={owner.shops.every(shop => shop.subscription_status === 'suspended') ? ShieldPlus : ShieldOff} danger={!owner.shops.every(shop => shop.subscription_status === 'suspended')} label={t(owner.shops.every(shop => shop.subscription_status === 'suspended') ? 'Restore account access' : 'Suspend account') + ' · ' + owner.email} onClick={() => requestAccountAction(owner, owner.shops.every(shop => shop.subscription_status === 'suspended') ? 'restore' : 'suspend')} />}<BillingIconButton icon={Trash2} danger label={t('Delete account') + ' · ' + owner.email} onClick={() => requestAccountAction(owner, 'delete')} /></div>}</header>{owner.shops.length ? owner.shops.map(shopRow) : <p className="cash-empty">{t('No shop created yet')}</p>}</article>) : <p className="cash-empty">{t('No subscribers match this search.')}</p>}
+            {view === 'Subscribers' && !error && <section className="cash-directory" aria-label={t('Subscribers')}>
+              <p className="cash-result-count">{number(directory?.total ?? 0)} {t(directory?.total===1?'subscriber':'subscribers')}</p>
+              {directory?.subscribers.length ? directory.subscribers.map(owner => <article className="cash-subscriber" key={owner.id}><header><h2><Link className="subscriber-link" to={{search:'?subscriber='+encodeURIComponent(owner.id)}} aria-label={t('Open subscriber')+' · '+owner.email}><bdi>{owner.email}</bdi></Link></h2><BillingIconButton icon={Eye} label={t('Open subscriber')+' · '+owner.email} onClick={()=>setSearchParams({subscriber:owner.id})}/>{!owner.archived&&<span>{t('Registered')} {date(owner.created_at)}</span>}{owner.archived && <span className="cash-tag">{t('Archived')}</span>}{canManage && !owner.archived && <div className="cash-account-actions">{owner.shops.length > 0 && <BillingIconButton icon={owner.shops.every(shop => shop.subscription_status === 'suspended') ? ShieldPlus : ShieldOff} danger={!owner.shops.every(shop => shop.subscription_status === 'suspended')} label={t(owner.shops.every(shop => shop.subscription_status === 'suspended') ? 'Restore account access' : 'Suspend account') + ' · ' + owner.email} onClick={() => requestAccountAction(owner, owner.shops.every(shop => shop.subscription_status === 'suspended') ? 'restore' : 'suspend')} />}<BillingIconButton icon={Trash2} danger label={t('Delete account') + ' · ' + owner.email} onClick={() => requestAccountAction(owner, 'delete')} /></div>}</header>{owner.shops.length ? owner.shops.map(shop=>shopRow(shop,(search||hasShopFilters(filters))?owner.matching_shop_ids:undefined)) : <p className="cash-empty">{t('No shop created yet')}</p>}</article>) : <p className="cash-empty">{t('No subscribers match this search.')}</p>}
             </section>}
             {view === 'Collections' && collections && <>
               <div className="cash-total"><span>{t('Net cash recorded')}</span><strong><bdi>{money(collections.collected_cents)}</bdi></strong><p>{t('Voided receipts are excluded from the total.')}</p></div>
               {collections.daily_totals.length > 0 && <section className="cash-collection-list"><h2>{t('Cash by collection date')}</h2><ol className="cash-daily-totals">{collections.daily_totals.map(day => <li key={day.date}><time>{date(parseBeirutInput(day.date + 'T12:00'))}</time><span>{t('Receipt count')}: {number(day.receipt_count)}</span><strong><bdi>{money(day.collected_cents)}</bdi></strong></li>)}</ol></section>}
-              <section className="cash-collection-list"><h2>{t('Upcoming and overdue collections')}</h2><p>{t('Paid periods ending within 30 days, earliest first.')}</p>{collections.due_shops.length ? collections.due_shops.map(shopRow) : <p className="cash-empty">{t('No collections due in this view.')}</p>}</section>
+              <section className="cash-collection-list"><h2>{t('Upcoming and overdue collections')}</h2><p>{t('Paid periods ending within 30 days, earliest first.')}</p>{collections.due_shops.length ? collections.due_shops.map(shop=>shopRow(shop)) : <p className="cash-empty">{t('No collections due in this view.')}</p>}</section>
               <section className="cash-collection-list"><h2>{t('Receipt history')}</h2>{collections.receipts.length ? <ol>{collections.receipts.map(receipt => <li className="cash-collection-receipt" key={receipt.id}><div><strong>{language === 'ar' ? receipt.name_ar : receipt.name_en}</strong><p><bdi>{receipt.owner_email}</bdi></p></div><div>{date(receipt.collected_at, true)}<p><bdi>{receipt.reference}</bdi></p></div><bdi>{money(receipt.amount_cents)}</bdi>{receipt.voided ? <span className="cash-tag">{t('Voided')}</span> : <BillingIconButton icon={ReceiptText} label={t('Open billing') + ' · ' + (language === 'ar' ? receipt.name_ar : receipt.name_en)} onClick={async () => { try { setSelected(await getShopBilling(receipt.shop_id, true)) } catch (caught) { setError(caught) } }} />}</li>)}</ol> : <p className="cash-empty">{t('No receipts in this date range.')}</p>}</section>
             </>}
             {view === 'Activity' && <section className="cash-collection-list"><h2>{t('Recent activity')}</h2>{activity.length ? <ol>{activity.map(entry => <li className="cash-collection-receipt" key={entry.id}><strong>{t(entry.action === 'billing.cash_received' ? 'Cash recorded' : entry.action === 'billing.receipt_voided' ? 'Receipt corrected' : entry.action === 'billing.price' ? 'Price updated' : 'Access updated')}</strong><div><bdi>/m/{entry.restaurant_slug}</bdi><p><bdi>{entry.actor_email}</bdi></p></div><div>{entry.details.amount_cents != null && <bdi>{money(entry.details.amount_cents)}</bdi>}{entry.details.reference && <p><bdi>{entry.details.reference}</bdi></p>}<time>{date(entry.created_at, true)}</time></div></li>)}</ol> : <p className="cash-empty">{t('No activity recorded yet.')}</p>}</section>}
             {view === 'Storage' && storage && <StorageUsagePanel usage={storage} language={language} />}
-            {(view === 'Subscribers' || view === 'Collections') && <div className="cash-pagination"><BillingIconButton icon={language === 'ar' ? ChevronRight : ChevronLeft} label={t('Previous')} disabled={page === 0} onClick={() => setPage(p => p - 1)} /><span>{t('Page')} <bdi dir="ltr">{number(page + 1)} / {number(Math.max(1, totalPages))}</bdi></span><BillingIconButton icon={language === 'ar' ? ChevronLeft : ChevronRight} label={t('Next')} disabled={page + 1 >= totalPages} onClick={() => setPage(p => p + 1)} /></div>}
+            {(view === 'Subscribers' && !error || view === 'Collections') && <div className="cash-pagination"><BillingIconButton icon={language === 'ar' ? ChevronRight : ChevronLeft} label={t('Previous')} disabled={page === 0} onClick={() => setPage(p => p - 1)} /><span>{t('Page')} <bdi dir="ltr">{number(page + 1)} / {number(Math.max(1, totalPages))}</bdi></span><BillingIconButton icon={language === 'ar' ? ChevronLeft : ChevronRight} label={t('Next')} disabled={page + 1 >= totalPages} onClick={() => setPage(p => p + 1)} /></div>}
           </>}
         </>}
         <p className="cash-time-note">{t('All dates are in Beirut time.')}</p>

@@ -17,10 +17,30 @@ test('an interrupted receipt from the previous release retains its ID and previe
   try { assert.deepEqual(restoredReceipt('pending'),old) }
   finally { if(original) Object.defineProperty(globalThis,'sessionStorage',original); else delete globalThis.sessionStorage }
 })
-async function demo() {
+async function demo(withSource=false) {
   const nonce='// '+crypto.randomUUID()+'\n'
-  return import(uri(nonce+compile('billingDemo').replace("'./billing'",JSON.stringify(uri(compile('billing')))).replace("'./demo'",JSON.stringify(uri(nonce+compile('demo'))))))
+  const filtersUri=uri(compile('subscriberFilters').replace("'./subscription'",JSON.stringify(uri(compile('subscription')))))
+  const sourceUri=uri(nonce+compile('demo'))
+  const api=await import(uri(nonce+compile('billingDemo').replace("'./billing'",JSON.stringify(uri(compile('billing')))).replace("'./demo'",JSON.stringify(sourceUri)).replace("'./subscriberFilters'",JSON.stringify(filtersUri))))
+  return withSource?{api,source:await import(sourceUri)}:api
 }
+test('demo filtering searches contact numbers, matches shop state/ledger, and sorts before pagination',async()=>{
+  const {api,source}=await demo(true),base={status:'any',visibility:'any',payments:'any',account:'any',shops:'any',registered_from:'',registered_to:'',sort:'newest'}
+  const empty=api.demoSubscribers('',0,{...base,shops:'none'})
+  assert.equal(empty.total,1);assert.equal(empty.subscribers[0].id,'demo-empty')
+  assert.equal(api.demoSubscribers('',0,{...base,status:'trial'}).total,1)
+  assert.equal(api.demoSubscribers('',0,{...base,payments:'balance'}).subscribers[0].email,'owner@hilaloven.com')
+  assert.equal(api.demoSubscribers('+٩٦١٧١٦٣٦١٨٩').subscribers[0].email,'owner@hilaloven.com')
+  assert.equal(api.demoSubscribers('%_').total,0)
+  const emails=api.demoSubscribers('',0,{...base,sort:'email_asc'}).subscribers.map(o=>o.email)
+  assert.deepEqual(emails,[...emails].sort((a,b)=>a.localeCompare(b)))
+  source.demoMenus.find(menu=>menu.restaurant.id==='demo-restaurant').restaurant.is_published=false
+  assert.equal(api.demoSubscribers('',0,{...base,visibility:'hidden'}).subscribers[0].email,'owner@hilaloven.com')
+  assert.equal(api.demoShopBilling('demo-restaurant').is_published,false)
+  source.demoMenus.find(menu=>menu.restaurant.id==='demo-restaurant').restaurant.is_published=true
+  assert.equal(api.demoSubscribers('',0,{...base,visibility:'hidden'}).total,0)
+  assert.throws(()=>api.demoSubscribers('',0,{...base,registered_from:'2024-02-02',registered_to:'2024-02-01'}),/registration date range/)
+})
 test('demo subscriber profiles cover full accounts, empty accounts and scoped live billing/activity refresh',async()=>{
   const api=await demo(),owner=api.demoSubscribers().subscribers.find(row=>row.shops.some(shop=>shop.restaurant_id==='demo-restaurant'))
   const first=api.demoSubscriberDetails(owner.id)
