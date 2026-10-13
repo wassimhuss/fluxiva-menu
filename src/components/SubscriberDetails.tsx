@@ -53,7 +53,7 @@ export function SubscriberDetails({ownerId,language,refreshToken,onBack,onBillin
   const actionName=(action:string):BillingCopyKey=>({
     'account.suspended':'Account suspended','account.active':'Account restored','account.deleted':'Account deleted',
     'billing.cash_received':'Cash recorded','billing.receipt_voided':'Receipt corrected','billing.price':'Price updated',
-    'subscription.suspended':'Menu suspended','subscription.active':'Menu access restored','subscription.trial':'Trial access restored',
+    'subscription.suspended':'Menu suspended','subscription.active':'Menu activated','subscription.trial':'Trial activated',
     'billing.legacy_review':'Existing access reviewed',
   } as Record<string,BillingCopyKey>)[action]??'Access updated'
   return <div className="subscriber-profile" aria-busy={loading}>
