@@ -8,6 +8,7 @@ import { Loading, Notice } from '../components/Status'
 import { MenuViews } from '../components/MenuViews'
 import { SubscriptionBanner } from '../components/SubscriptionBanner'
 import { ShopBillingPanel } from '../components/ShopBillingPanel'
+import { BillingIconButton } from '../components/BillingIconButton'
 import { GalleryPicker } from '../components/GalleryPicker'
 import { ImageLightbox } from '../components/ImageLightbox'
 import { PortraitImageCropper } from '../components/PortraitImageCropper'
@@ -915,7 +916,7 @@ export function DashboardPage() {
           {success && <div className="dashboard-toast" role="status"><Notice tone="success">{success}</Notice></div>}
           {demoMode && <Notice>{t('This preview uses sample data. Connect Supabase to save changes and create owner accounts.')}</Notice>}
           <SubscriptionBanner restaurant={menu.restaurant} language={dashboardLanguage} />
-          {menu.restaurant.is_published === false && <Notice>{t('This branch is hidden from customers. Its menu is still saved.')} <button type="button" className="hidden-branch-manage" onClick={() => setPlaceSwitcherOpen(true)}>{t('Manage branches')}</button></Notice>}
+          {menu.restaurant.is_published === false && <Notice>{t('This branch is hidden from customers. Its menu is still saved.')} <BillingIconButton icon={Store} label={t('Manage branches')} onClick={() => setPlaceSwitcherOpen(true)} /></Notice>}
 
           {panel === 'overview' && <>
             <div className="page-heading overview-page-heading"><div><span className="eyebrow"><span /> {t('Good to see you')}</span><h1>{t('Your menu at a glance.')}</h1></div><button className="button button-primary overview-add-item" onClick={() => { setPanel('menu'); openItem() }}><Plus /> {t('Add menu item')}</button></div>

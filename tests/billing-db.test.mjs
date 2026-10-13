@@ -7,6 +7,8 @@ import { PGlite } from '@electric-sql/pglite'
 // are stubbed; no request or mutation touches production.
 const db = new PGlite()
 const ids = Object.fromEntries(['admin','support','owner','other','empty'].map(k=>[k,crypto.randomUUID()]))
+const legacy={owner:crypto.randomUUID(),brand:crypto.randomUUID(),shop:crypto.randomUUID(),agreement:crypto.randomUUID(),receipt:crypto.randomUUID()}
+let legacySnapshot
 const scalar = async (sql, params=[]) => (await db.query(sql,params)).rows[0]?.value
 async function asUser(id,role='authenticated') {
   await db.exec('reset role')
@@ -22,12 +24,17 @@ async function shop({end='2024-01-31T10:00:00+02:00',status='active',published=t
   await scalar('select public.platform_set_shop_price($1,12000) as value',[id])
   return id
 }
-async function preview(id,amount,collected='2024-01-31T10:00:00+02:00') {
-  return scalar('select public.platform_preview_cash_payment($1,$2,$3) as value',[id,amount,collected])
+async function preview(id,amount,collected='2024-01-31T10:00:00+02:00',dates) {
+  if (!dates) {
+    const bill=await scalar('select public.platform_get_shop_billing($1) as value',[id])
+    const start=new Date(Math.max(Date.parse(collected),Date.parse(bill.paid_until??bill.trial_ends_at??collected))).toISOString()
+    dates={start,end:new Date(Date.parse(start)+90*86400000).toISOString()}
+  }
+  return scalar('select public.platform_preview_manual_cash_payment($1,$2,$3,$4,$5) as value',[id,amount,collected,dates.start,dates.end])
 }
 async function receipt(id,amount,collected='2024-01-31T10:00:00+02:00',request=crypto.randomUUID(),quote) {
   quote??=await preview(id,amount,collected)
-  return scalar("select public.platform_record_cash_payment($1,$2,$3,'CASH-TEST','Private collection note',$4,$5) as value",[id,amount,collected,request,quote.version])
+  return scalar("select public.platform_record_manual_cash_payment($1,$2,$3,$4,$5,'CASH-TEST','Private collection note',$6,$7) as value",[id,amount,collected,quote.coverage_from,quote.paid_until,request,quote.version])
 }
 before(async()=>{
   await db.exec([
@@ -43,6 +50,14 @@ before(async()=>{
     'grant execute on function auth.uid() to anon,authenticated,service_role;',
   ].join('\n'))
   for(const name of readdirSync(new URL('../supabase/migrations/',import.meta.url)).filter(n=>n.endsWith('.sql')).sort()) {
+    if(name==='028_manual_cash_access_dates.sql') {
+      await db.query("insert into auth.users(id,email) values($1,'legacy@example.com')",[legacy.owner])
+      await db.query("insert into public.brands(id,owner_id,slug,name_en,name_ar) values($1,$2,'legacy-brand','Legacy','قديم')",[legacy.brand,legacy.owner])
+      await db.query("insert into public.restaurants(id,owner_id,brand_id,slug,name_en,name_ar,subscription_status,subscription_ends_at) values($1,$2,$3,'legacy-shop','Legacy','قديم','active','2024-07-31T07:00:00Z')",[legacy.shop,legacy.owner,legacy.brand])
+      await db.query("insert into private.cash_agreements(id,restaurant_id,shop_id,owner_id,owner_email,name_en,name_ar,slug,annual_cents,baseline_until,baseline_status) values($1,$2,$2,$3,'legacy@example.com','Legacy','قديم','legacy-shop',12000,'2024-01-31T08:00:00Z','active')",[legacy.agreement,legacy.shop,legacy.owner])
+      await db.query("insert into private.cash_receipts(id,agreement_id,amount_cents,collected_at,reference,note,actor_id,actor_email,coverage_from,coverage_until) values($1,$2,6000,'2024-01-31T08:00:00Z','OLD-RECEIPT','Original cash',$3,'old-admin@example.com','2024-01-31T08:00:00Z','2024-07-31T07:00:00Z')",[legacy.receipt,legacy.agreement,legacy.owner])
+      legacySnapshot=await scalar('select jsonb_build_object(\'shop\',to_jsonb(s),\'receipt\',to_jsonb(r)) as value from public.restaurants s cross join private.cash_receipts r where s.id=$1 and r.id=$2',[legacy.shop,legacy.receipt])
+    }
     // UUID generation is native PostgreSQL; no other pgcrypto function is used.
     await db.exec(readFileSync(new URL('../supabase/migrations/'+name,import.meta.url),'utf8').replace(/create extension if not exists pgcrypto;/gi,''))
   }
@@ -51,18 +66,35 @@ before(async()=>{
 })
 after(async()=>{await db.close()})
 
-test('calendar coverage handles halves, thirds, fractions, leap years and anchored month ends',async()=>{
-  const half=await shop()
-  let bill=await receipt(half,6000)
-  assert.equal(bill.paid_until,'2024-07-31T07:00:00+00:00')
-  bill=await receipt(half,6000,'2024-02-01T10:00:00+02:00')
-  assert.equal(bill.paid_until,'2025-01-31T08:00:00+00:00')
-  const thirds=await shop()
-  await receipt(thirds,2000); await receipt(thirds,4000)
-  assert.equal((await receipt(thirds,6000)).paid_until,'2025-01-31T08:00:00+00:00')
-  const fractional=await shop()
-  assert.equal((await receipt(fractional,500)).paid_until,'2024-02-14T20:00:00+00:00')
-  assert.equal((await receipt(fractional,11500)).paid_until,'2025-01-31T08:00:00+00:00')
+test('admin chooses exact coverage dates independently of the amount, including settlement without extension',async()=>{
+  const id=await shop(), dates={start:'2024-01-31T10:00:00+02:00',end:'2024-02-29T20:15:00+02:00'}
+  const quote=await preview(id,8000,undefined,dates)
+  assert.equal(quote.paid_until,'2024-02-29T18:15:00+00:00')
+  assert.equal((await preview(id,12000,undefined,dates)).paid_until,quote.paid_until)
+  let bill=await receipt(id,8000,quote.collected_at,crypto.randomUUID(),quote)
+  assert.equal(bill.paid_until,quote.paid_until); assert.equal(bill.remaining_cents,4000)
+  const settlement=await preview(id,4000,undefined,dates)
+  bill=await receipt(id,4000,settlement.collected_at,crypto.randomUUID(),settlement)
+  assert.equal(bill.paid_until,quote.paid_until); assert.equal(bill.remaining_cents,0)
+  const small=await shop()
+  assert.equal((await receipt(small,1,quote.collected_at,crypto.randomUUID(),await preview(small,1,undefined,dates))).paid_until,quote.paid_until)
+})
+test('manual dates are required, finite, ordered, preserve existing time and cannot leave a future gap',async()=>{
+  const id=await shop(), start='2024-01-31T10:00:00+02:00'
+  for(const dates of [{start:null,end:null},{start,end:null},{start,end:start},{start:'2024-02-01T10:00:00+02:00',end:'2024-03-01T10:00:00+02:00'},{start,end:'infinity'}]) {
+    await assert.rejects(preview(id,8000,undefined,dates),/access|expiry|gap/i)
+  }
+  const quoted=await preview(id,8000)
+  await receipt(id,8000,quoted.collected_at,crypto.randomUUID(),quoted)
+  await assert.rejects(preview(id,4000,undefined,{start,end:'2024-02-29T10:00:00+02:00'}),/shorten/)
+  await assert.rejects(scalar('select public.platform_preview_cash_payment($1,8000,$2) as value',[id,start]),/manually/)
+  await assert.rejects(scalar("select public.platform_record_cash_payment($1,8000,$2,'old','',$3,'old') as value",[id,start,crypto.randomUUID()]),/manually/)
+})
+test('choosing the displayed current expiry retains its exact legacy seconds without extending access',async()=>{
+  const id=await shop({end:'2024-05-01T10:00:45.123+03:00'})
+  const quote=await preview(id,8000,undefined,{start:'2024-01-31T10:00:00+02:00',end:'2024-05-01T10:00:00+03:00'})
+  assert.equal(quote.paid_until,'2024-05-01T07:00:45.123+00:00')
+  assert.equal((await receipt(id,8000,quote.collected_at,crypto.randomUUID(),quote)).paid_until,quote.paid_until)
 })
 test('cash preserves future trial, hidden/suspended flags and starts a new segment after a lapse',async()=>{
   const future=new Date(Date.now()+10*86400000).toISOString()
@@ -74,7 +106,8 @@ test('cash preserves future trial, hidden/suspended flags and starts a new segme
   assert.equal((await receipt(suspended,4000)).subscription_status,'suspended')
   const late=await shop()
   await receipt(late,2000)
-  assert.equal((await receipt(late,4000,'2024-06-01T10:00:00+03:00')).paid_until,'2024-10-01T07:00:00+00:00')
+  const lateQuote=await preview(late,4000,'2024-06-01T10:00:00+03:00')
+  assert.equal((await receipt(late,4000,lateQuote.collected_at,crypto.randomUUID(),lateQuote)).paid_until,lateQuote.paid_until)
 })
 test('limits, cash validation, locked pricing and monotonic dates are enforced',async()=>{
   const id=await shop()
@@ -98,6 +131,20 @@ test('duplicate retries create one receipt and stale concurrent previews cannot 
   assert.equal((await receipt(id,4000,quote.collected_at,request,quote)).payment_count,1)
   await assert.rejects(receipt(id,4000,quote.collected_at,crypto.randomUUID(),quote),/Billing changed/)
   await assert.rejects(receipt(id,2000,quote.collected_at,request,quote),/different information/)
+  await assert.rejects(receipt(id,4000,quote.collected_at,request,{...quote,paid_until:'2025-01-01T00:00:00Z'}),/different information/)
+  const legacyRetry=await scalar("select public.platform_record_cash_payment($1,$2,$3,'CASH-TEST','Private collection note',$4,$5) as value",[id,4000,quote.collected_at,request,quote.version])
+  assert.equal(legacyRetry.payment_count,1)
+  await assert.rejects(scalar("select public.platform_record_cash_payment($1,$2,$3,'CASH-TEST','Private collection note',$4,$5) as value",[id,2000,quote.collected_at,request,quote.version]),/different information/)
+})
+test('voiding earlier cash preserves the remaining receipts explicitly entered dates',async()=>{
+  const id=await shop(), first=crypto.randomUUID()
+  await receipt(id,4000,undefined,first)
+  const secondQuote=await preview(id,4000)
+  let bill=await receipt(id,4000,secondQuote.collected_at,crypto.randomUUID(),secondQuote)
+  bill=await scalar('select public.platform_void_cash_receipt($1,$2,$3,$4) as value',[first,'Incorrect receipt',crypto.randomUUID(),bill.version])
+  assert.equal(bill.paid_cents,4000); assert.equal(bill.payment_count,1)
+  assert.equal(bill.paid_until,secondQuote.paid_until)
+  assert.equal(bill.agreements[0].receipts.find(r=>!r.voided).coverage_until,secondQuote.paid_until)
 })
 test('voids retain receipts, recalculate access, preserve suspension and refuse older agreements',async()=>{
   const id=await shop(), request=crypto.randomUUID()
@@ -224,12 +271,22 @@ test('suspended trials preserve their underlying trial when the only receipt is 
   assert.equal(new Date(bill.trial_ends_at).getTime(),new Date(trialEnd).getTime())
 })
 
-test('reapplying migration 026 preserves receipts, locked prices and access dates',async()=>{
+test('reapplying migration 028 preserves receipts, locked prices and access dates',async()=>{
   const id=await shop(), request=crypto.randomUUID()
   const before=await receipt(id,6000,undefined,request)
   await db.exec('reset role')
-  await db.exec(readFileSync(new URL('../supabase/migrations/026_cash_subscriptions.sql',import.meta.url),'utf8'))
+  await db.exec(readFileSync(new URL('../supabase/migrations/028_manual_cash_access_dates.sql',import.meta.url),'utf8'))
   await asUser(ids.admin)
   const after=await scalar('select public.platform_get_shop_billing($1) as value',[id])
   assert.deepEqual(after,before)
+})
+test('028 leaves pre-existing automatic receipts and shop access unchanged, then accepts manual dates',async()=>{
+  await db.exec('reset role')
+  const after=await scalar('select jsonb_build_object(\'shop\',to_jsonb(s),\'receipt\',to_jsonb(r)) as value from public.restaurants s cross join private.cash_receipts r where s.id=$1 and r.id=$2',[legacy.shop,legacy.receipt])
+  assert.deepEqual(after,legacySnapshot)
+  await asUser(ids.admin)
+  const quote=await preview(legacy.shop,6000,undefined,{start:'2024-07-31T07:00:00Z',end:'2024-08-02T15:45:00Z'})
+  const bill=await receipt(legacy.shop,6000,quote.collected_at,crypto.randomUUID(),quote)
+  assert.equal(bill.paid_until,'2024-08-02T15:45:00+00:00')
+  assert.equal(bill.agreements[0].receipts.find(r=>r.id===legacy.receipt).coverage_until,'2024-07-31T07:00:00+00:00')
 })

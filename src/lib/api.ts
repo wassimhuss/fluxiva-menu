@@ -752,9 +752,9 @@ export async function setShopPrice(shopId: string, annualCents: number): Promise
   if (error) throw error
   return data as ShopBilling
 }
-export async function previewCashPayment(shopId: string, amount: number, collectedAt: string): Promise<CashPaymentPreview> {
-  if (!supabase) return (await import('./billingDemo')).demoPreview(shopId, amount, collectedAt)
-  const { data, error } = await supabase.rpc('platform_preview_cash_payment', { shop_input: shopId, amount_input: amount, collected_input: collectedAt }).abortSignal(readSignal())
+export async function previewCashPayment(shopId: string, amount: number, collectedAt: string, startsAt: string, endsAt: string): Promise<CashPaymentPreview> {
+  if (!supabase) return (await import('./billingDemo')).demoPreview(shopId, amount, collectedAt, startsAt, endsAt)
+  const { data, error } = await supabase.rpc('platform_preview_manual_cash_payment', { shop_input: shopId, amount_input: amount, collected_input: collectedAt, starts_input: startsAt, ends_input: endsAt }).abortSignal(readSignal())
   if (error) throw error
   return data as CashPaymentPreview
 }
@@ -766,7 +766,10 @@ export async function reviewLegacyAccess(shopId: string, endsAt: string, version
 }
 export async function recordCashPayment(request: CashPaymentRequest): Promise<ShopBilling> {
   if (!supabase) return (await import('./billingDemo')).demoRecord(request)
-  const { data, error } = await supabase.rpc('platform_record_cash_payment', request)
+  // Older uncertain requests can only reconcile a receipt; that RPC cannot
+  // create new automatic coverage after migration 028.
+  const rpc = request.starts_input && request.ends_input ? 'platform_record_manual_cash_payment' : 'platform_record_cash_payment'
+  const { data, error } = await supabase.rpc(rpc, request)
   if (error) throw error
   return data as ShopBilling
 }

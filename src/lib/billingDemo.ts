@@ -1,4 +1,3 @@
-import { calendarCoverage } from './billing'
 import { demoMenus, demoPlatformAudit, demoPlatformRestaurants } from './demo'
 import type { CashAgreement, CashCollections, CashPaymentPreview, CashPaymentRequest, ShopBilling, SubscriberPage, SubscriptionStatus } from './types'
 
@@ -20,17 +19,14 @@ function syncMenu(shop: DemoShop) {
     restaurant.subscription_ends_at = shop.paid_until ?? undefined
   }
 }
-function replay(agreement: DemoAgreement, extra?: { amount: number; collected: string }) {
-  let total = 0, count = 0, segment = 0, anchor = '', until = agreement.baseline_until, from = until ?? ''
-  const payments = [...agreement.receipts].reverse().filter(r => !r.voided).map(r => ({ amount: r.amount_cents, collected: r.collected_at }))
-  if (extra) payments.push(extra)
+function replay(agreement: DemoAgreement) {
+  let total = 0, count = 0, until = agreement.baseline_until
+  const payments = [...agreement.receipts].reverse().filter(r => !r.voided)
   for (const payment of payments) {
-    from = until && new Date(until) > new Date(payment.collected) ? until : payment.collected
-    if (!anchor || (until && new Date(until) < new Date(payment.collected))) { anchor = from; segment = 0 }
-    total += payment.amount; segment += payment.amount; count++
-    until = calendarCoverage(anchor, segment, agreement.annual_cents)
+    total += payment.amount_cents; count++
+    if (!until || new Date(payment.coverage_until) > new Date(until)) until = payment.coverage_until
   }
-  return { total, count, until, from }
+  return { total, count, until }
 }
 function refresh(shop: DemoShop) {
   const a = shop.agreements[0]
@@ -64,7 +60,7 @@ function ensureShops() {
     // A labelled demo receipt demonstrates the operator/owner workflow.
     if (source.id === 'demo-restaurant') {
       const collected = new Date(Date.now() - 30 * 86400000).toISOString()
-      const until = calendarCoverage(collected, 4000, 12000)
+      const until = new Date(Date.now() + 45 * 86400000).toISOString()
       shop.agreements = [{
         id: 'demo-agreement', annual_cents: 12000, paid_cents: 4000, created_at: collected,
         baseline_until: null, baseline_status: 'active',
@@ -121,7 +117,7 @@ export function demoSetPrice(id: string, price: number) {
   audit(shop, 'billing.price', { annual_cents: price })
   return demoShopBilling(id, true)
 }
-export function demoPreview(id: string, amount: number, collected: string): CashPaymentPreview {
+export function demoPreview(id: string, amount: number, collected: string, starts: string, ends: string): CashPaymentPreview {
   const shop = get(id), a = shop.agreements[0]
   if (!Number.isInteger(amount) || amount < 1 || amount > 100000000) fail('Enter a positive cash amount')
   if (!Number.isFinite(new Date(collected).getTime()) || new Date(collected).getTime() > Date.now()) fail('Collection date cannot be in the future')
@@ -134,11 +130,15 @@ export function demoPreview(id: string, amount: number, collected: string): Cash
   if (amount > price - paid) fail('Cash amount exceeds the remaining annual balance')
   if (count >= 3) fail('Maximum three payments per agreement')
   if (count === 2 && amount !== price - paid) fail('The third payment must settle the remaining balance')
-  const base = shop.paid_until && new Date(shop.paid_until) > new Date(collected) ? shop.paid_until : collected
-  const result = newAgreement ? { from: base, until: calendarCoverage(base, amount, price) } : replay(a, { amount, collected })
-  if (new Date(result.until!).getTime() <= new Date(result.from).getTime()) fail('Cash amount is too small to grant access')
+  const baseline = shop.paid_until ?? (shop.subscription_status === 'suspended' ? shop.trial_ends_at : null)
+  if (!Number.isFinite(Date.parse(starts)) || !Number.isFinite(Date.parse(ends))) fail('Enter access start and expiry dates manually')
+  // Selecting the displayed current minute preserves its original precision.
+  if (baseline && Date.parse(ends) < Date.parse(baseline) && Date.parse(ends) >= Math.floor(Date.parse(baseline) / 60000) * 60000) ends = baseline
+  if (Date.parse(ends) <= Date.parse(starts) || Date.parse(ends) <= Date.parse(collected)) fail('Expiry must be after the access start and collection date')
+  if (baseline && Date.parse(ends) < Date.parse(baseline)) fail('Expiry cannot shorten existing trial or paid access')
+  if (Date.parse(starts) > Math.max(Date.parse(collected), Date.parse(baseline ?? collected))) fail('Access start cannot leave a future gap after current access')
   return { restaurant_id: id, annual_cents: price, amount_cents: amount, collected_at: collected,
-    previous_paid_until: shop.paid_until, coverage_from: result.from, paid_until: result.until!,
+    previous_paid_until: shop.paid_until, coverage_from: starts, paid_until: ends,
     remaining_cents: price - paid - amount, payment_count: count + 1, version: shop.version,
     suspended: shop.subscription_status === 'suspended', is_published: shop.is_published }
 }
@@ -151,7 +151,7 @@ export function demoRecord(request: CashPaymentRequest) {
   }
   if (shop.version !== request.version_input) fail('Billing changed; refresh the payment preview')
   if (!request.reference_input.trim() || request.reference_input.trim().length > 120 || request.note_input.length > 2000) fail('Enter a receipt reference and a note under 2000 characters')
-  const quote = demoPreview(shop.restaurant_id, request.amount_input, request.collected_input)
+  const quote = demoPreview(shop.restaurant_id, request.amount_input, request.collected_input, request.starts_input, request.ends_input)
   if (!shop.agreements.length || shop.remaining_cents === 0) shop.agreements.unshift({
     id: crypto.randomUUID(), annual_cents: quote.annual_cents, paid_cents: 0, created_at: now(),
     baseline_until: shop.paid_until ?? (shop.subscription_status === 'suspended' ? shop.trial_ends_at : null),

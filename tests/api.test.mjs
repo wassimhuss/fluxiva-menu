@@ -33,6 +33,25 @@ async function loadApi(t) {
   return { api, ...client, ...cache, queryClient }
 }
 const session = (id = 'owner') => ({ user: { id } })
+test('cash API forwards exact admin-entered dates to protected manual RPCs', async (t) => {
+  const {api,setClient}=await loadApi(t), calls=[]
+  setClient({rpc:(name,params)=>{
+    calls.push({name,params})
+    const result=Promise.resolve({data:{version:'reviewed'},error:null})
+    result.abortSignal=()=>result
+    return result
+  }})
+  const request={shop_input:'shop',amount_input:8000,collected_input:'2026-10-12T09:00:00Z',starts_input:'2026-10-12T09:00:00Z',ends_input:'2026-11-20T14:30:00Z',reference_input:'CASH-80',note_input:'Agreed dates',request_input:crypto.randomUUID(),version_input:'reviewed'}
+  await api.previewCashPayment(request.shop_input,request.amount_input,request.collected_input,request.starts_input,request.ends_input)
+  await api.recordCashPayment(request)
+  assert.equal(calls[0].name,'platform_preview_manual_cash_payment')
+  assert.deepEqual(calls[0].params,{shop_input:request.shop_input,amount_input:8000,collected_input:request.collected_input,starts_input:request.starts_input,ends_input:request.ends_input})
+  assert.deepEqual(calls[1],{name:'platform_record_manual_cash_payment',params:request})
+  const {starts_input,ends_input,...oldRequest}=request
+  assert.ok(starts_input && ends_input)
+  await api.recordCashPayment(oldRequest)
+  assert.deepEqual(calls[2],{name:'platform_record_cash_payment',params:oldRequest})
+})
 test('role lookup distinguishes owners from failed requests and can recover on retry', async (t) => {
   const { api, setClient } = await loadApi(t)
   let result = { data: null, error: null }

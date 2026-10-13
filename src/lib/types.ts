@@ -93,6 +93,8 @@ export interface CashPaymentRequest {
   shop_input: string
   amount_input: number
   collected_input: string
+  starts_input: string
+  ends_input: string
   reference_input: string
   note_input: string
   request_input: string

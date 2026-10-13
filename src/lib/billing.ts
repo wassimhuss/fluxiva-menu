@@ -16,7 +16,7 @@ function fromWall(parts: number[]) {
   const desired = wallTimestamp(parts)
   let guess = desired
   for (let i = 0; i < 3; i++) guess += desired - wallTimestamp(wallParts(new Date(guess)))
-  if (wallTimestamp(wallParts(new Date(guess))) !== desired) throw new Error('Enter a valid Beirut collection date')
+  if (wallTimestamp(wallParts(new Date(guess))) !== desired) throw new Error('Enter a valid Beirut date and time')
   return new Date(guess)
 }
 export function beirutInput(date = new Date()) {
@@ -26,9 +26,9 @@ export function beirutInput(date = new Date()) {
 }
 export function parseBeirutInput(value: string) {
   const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/.exec(value)
-  if (!match) throw new Error('Enter a valid Beirut collection date')
+  if (!match) throw new Error('Enter a valid Beirut date and time')
   const result = fromWall(match.slice(1).map(Number))
-  if (beirutInput(result) !== value) throw new Error('Enter a valid Beirut collection date')
+  if (beirutInput(result) !== value) throw new Error('Enter a valid Beirut date and time')
   return result.toISOString()
 }
 export function usdCents(value: string) {
@@ -47,20 +47,6 @@ export function cashDate(iso: string | null | undefined, language: Language = 'e
     timeZone: zone, day: 'numeric', month: 'short', year: 'numeric',
     ...(time ? { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' as const } : {}),
   }).format(new Date(iso)) : '—'
-}
-/** Demo calculation mirrors the SQL calendar operation; SQL remains authoritative. */
-export function calendarCoverage(anchor: string, cents: number, annual: number) {
-  const parts = wallParts(new Date(anchor))
-  const months = Math.floor(12 * cents / annual)
-  const remainder = (12 * cents) % annual
-  function boundary(offset: number) {
-    const date = new Date(Date.UTC(parts[0], parts[1] - 1 + offset, 1))
-    const year = date.getUTCFullYear(), month = date.getUTCMonth()
-    const lastDay = new Date(Date.UTC(year, month + 1, 0)).getUTCDate()
-    return fromWall([year, month + 1, Math.min(parts[2], lastDay), ...parts.slice(3)]).getTime()
-  }
-  const start = boundary(months), end = boundary(months + 1)
-  return new Date(start + Math.floor((end - start) / 1000 * remainder / annual) * 1000).toISOString()
 }
 export function billingStatus(shop: ShopBilling): 'Archived' | 'Suspended' | 'Trial' | 'Active' | 'Expired' {
   if (shop.archived) return 'Archived'

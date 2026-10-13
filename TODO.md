@@ -11,10 +11,17 @@ This file is the working product backlog for developers and AI agents. Keep it u
 
 ## Cash subscriptions and subscriber management
 
+### Manual access dates and dashboard actions (2026-10-13)
+
+- [x] Replace amount-based access calculations with required admin-entered start and expiry dates in migration `028`, preserving current access and immutable receipt dates when correcting the ledger.
+- [x] Pass the exact dates through previews, idempotent receipts and the offline demo; keep owner billing read-only and all cash limits unchanged.
+- [x] Replace underlined secondary actions with 44 px Lucide icon buttons, bilingual tooltips, keyboard labels and distinct destructive styling.
+- [~] Verify financial/security regressions, English/Arabic desktop/mobile flows, test/lint/build, production migration and hosted release.
+
 **Status:** `[x]` Implemented and verified; migration `026` applied to production on 2026-10-12. Frontend release `79fa2d6` is deployed and verified on Render.
 
 - [x] Private shop pricing, locked annual agreements, immutable USD receipts and reasoned voids; three valid receipts maximum, final receipt settles the balance.
-- [x] Protected previews/atomic writes, proportional Beirut calendar-month coverage, idempotency, stale-state checks, preserved legacy access and deleted-shop history.
+- [x] Protected previews/atomic writes, manual admin-entered access dates (028 supersedes the original calendar-month rule), idempotency, stale-state checks, preserved legacy access and deleted-shop history.
 - [x] Bilingual subscriber directory, daily collection totals/queue, admin receipt workflow, and read-only owner billing; functional offline demo.
 - [x] 26 financial/security/API tests, clean installation, lint/build, desktop/390 px English/Arabic browser flows, isolated migration validation and production migration with unchanged existing access.
 - [x] Verify the hosted frontend release after pushing the validated source: live admin login, directory, legacy billing and Arabic layout confirmed on Render (2026-10-12).
