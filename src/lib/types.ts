@@ -111,6 +111,43 @@ export interface CashCollections {
   }>
 }
 
+export interface StorageUsageBucket {
+  bucket_id: string
+  file_count: number
+  bytes: number
+}
+
+export interface StorageUsageRestaurant {
+  restaurant_id: string
+  name_en: string
+  name_ar: string
+  slug: string
+  file_count: number
+  bytes: number
+}
+
+export interface StorageUsageOwner {
+  owner_id: string
+  owner_email: string
+  file_count: number
+  bytes: number
+  restaurants: StorageUsageRestaurant[]
+}
+
+export interface PlatformStorageUsage {
+  generated_at: string
+  total_files: number
+  used_bytes: number
+  /** The configured plan quota used to calculate the remaining value. */
+  quota_bytes: number
+  buckets: StorageUsageBucket[]
+  owners: StorageUsageOwner[]
+  unattributed_menu_files: number
+  unattributed_menu_bytes: number
+  shared_gallery_files: number
+  shared_gallery_bytes: number
+}
+
 /** A restaurant as the operator console sees it, with owner and menu context. */
 export interface PlatformRestaurant {
   id: string

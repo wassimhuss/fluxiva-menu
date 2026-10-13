@@ -254,6 +254,32 @@ test('collection totals exclude voids and directory pagination does not omit or 
   assert.equal(bill.payment_count,0)
 })
 
+test('platform storage usage attributes menu files by owner and protects the report',async()=>{
+  const owned=await shop({owner:ids.owner}), other=await shop({owner:ids.other})
+  await db.exec('reset role')
+  await db.query('insert into storage.objects(bucket_id,name,metadata) values ($1,$2,$3),($1,$4,$5),($6,$7,$8),($9,$10,$11),($9,$12,$13)',[
+    'menu-assets',`${owned}/logo.webp`,JSON.stringify({size:100}),`${owned}/item.webp`,JSON.stringify({size:300}),
+    'menu-assets',`${other}/item.webp`,JSON.stringify({size:700}),
+    'gallery-assets','folder/image.webp',JSON.stringify({size:500}),'folder/image-thumb.webp',JSON.stringify({size:200}),
+  ])
+  await db.query("insert into storage.objects(bucket_id,name,metadata) values ('menu-assets','deleted-place/old.webp','{\"size\":200}')")
+  await asUser(ids.admin)
+  const report=await scalar('select public.platform_storage_usage() as value')
+  const owner=report.owners.find(entry=>entry.owner_id===ids.owner)
+  const second=report.owners.find(entry=>entry.owner_id===ids.other)
+  assert.equal(owner.bytes,400); assert.equal(owner.file_count,2)
+  assert.equal(owner.restaurants.find(entry=>entry.restaurant_id===owned).bytes,400)
+  assert.equal(second.bytes,700); assert.equal(report.shared_gallery_bytes,700)
+  assert.equal(report.unattributed_menu_bytes,200)
+  assert.equal(report.used_bytes,2000)
+  await asUser(ids.support)
+  assert.equal((await scalar('select public.platform_storage_usage() as value')).used_bytes,2000)
+  await asUser(ids.owner)
+  await assert.rejects(scalar('select public.platform_storage_usage() as value'),/Platform access/)
+  await asUser(null,'anon')
+  await assert.rejects(scalar('select public.platform_storage_usage() as value'),/permission denied/)
+})
+
 test('suspended trials preserve their underlying trial when the only receipt is voided',async()=>{
   const trialEnd=new Date(Date.now()+10*86400000).toISOString()
   const id=await shop({end:null,status:'suspended'})

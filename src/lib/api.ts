@@ -1,10 +1,10 @@
 import type { Session } from '@supabase/supabase-js'
-import { demoBrand, demoContactCard, demoGalleryCategories, demoGalleryImages, demoMenus, demoMenuViewStats, demoPlatformAudit, demoPlatformRestaurants, demoRestaurants } from './demo'
+import { demoBrand, demoContactCard, demoGalleryCategories, demoGalleryImages, demoMenus, demoMenuViewStats, demoPlatformAudit, demoPlatformRestaurants, demoRestaurants, demoStorageUsage } from './demo'
 import { supabase } from './supabase'
 import { getCachedOwnerQueryClient, getOwnerQueryClient, ownerCacheGeneration } from './queryClient'
 import { patchMenuItem } from './menuState'
 import { subscriptionState } from './subscription'
-import type { AdminRole, BrandGroup, BrandPlaces, Category, GalleryCategory, GalleryImage, ItemExtra, MenuContactCard, MenuItem, MenuViewDay, MenuViewStats, PlatformAuditEntry, PlatformRestaurant, Restaurant, RestaurantMenu, Variant } from './types'
+import type { AdminRole, BrandGroup, BrandPlaces, Category, GalleryCategory, GalleryImage, ItemExtra, MenuContactCard, MenuItem, MenuViewDay, MenuViewStats, PlatformAuditEntry, PlatformRestaurant, PlatformStorageUsage, Restaurant, RestaurantMenu, Variant } from './types'
 import type { CashCollections, CashPaymentPreview, CashPaymentRequest, ShopBilling, SubscriberPage } from './types'
 
 type RestaurantInput = Pick<Restaurant, 'name_en' | 'name_ar' | 'slug' | 'primary_color' | 'phone' | 'whatsapp' | 'instagram' | 'maps_url' | 'address_en' | 'address_ar' | 'currency' | 'temporarily_closed' | 'default_language'>
@@ -92,6 +92,16 @@ async function optimizeImage(file: File, purpose: AssetPurpose) {
 const readSignal = (signal?: AbortSignal) => signal
   ? AbortSignal.any([signal, AbortSignal.timeout(15_000)])
   : AbortSignal.timeout(15_000)
+
+/**
+ * Supabase quotas are organization-level settings, so the frontend receives
+ * the current plan quota as a public build-time value. It is only used for a
+ * progress display; the protected RPC remains the source of actual file bytes.
+ */
+const configuredStorageQuotaGb = Number(import.meta.env?.VITE_SUPABASE_STORAGE_QUOTA_GB)
+export const storageQuotaBytes = Number.isFinite(configuredStorageQuotaGb) && configuredStorageQuotaGb > 0
+  ? Math.round(configuredStorageQuotaGb * 1_000_000_000)
+  : 1_000_000_000
 
 const CATEGORY_COLUMNS = 'id,restaurant_id,name_en,name_ar,sort_order'
 const ITEM_COLUMNS = 'id,restaurant_id,category_id,name_en,name_ar,description_en,description_ar,price,image_url,gallery_image_id,variants,extras,available,highlighted,sort_order'
@@ -791,6 +801,14 @@ export async function getPlatformAudit(limit = 50): Promise<PlatformAuditEntry[]
   const { data, error } = await supabase.rpc('platform_audit', { limit_input: limit })
   if (error) throw error
   return (data ?? []) as PlatformAuditEntry[]
+}
+
+/** Storage object totals and owner attribution, restricted by the database to platform admins. */
+export async function getPlatformStorageUsage(signal?: AbortSignal): Promise<PlatformStorageUsage> {
+  if (!supabase) return { ...demoStorageUsage, quota_bytes: storageQuotaBytes }
+  const { data, error } = await supabase.rpc('platform_storage_usage').abortSignal(readSignal(signal))
+  if (error) throw error
+  return { ...(data as Omit<PlatformStorageUsage, 'quota_bytes'>), quota_bytes: storageQuotaBytes }
 }
 
 /** Suspend/restore only. Restoration preserves the server's existing expiry. */

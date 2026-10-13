@@ -70,9 +70,14 @@ Required environment variables:
 VITE_SUPABASE_URL=https://your-project.supabase.co
 VITE_SUPABASE_PUBLISHABLE_KEY=your-publishable-key
 VITE_APP_URL=https://your-deployed-domain.example
+VITE_SUPABASE_STORAGE_QUOTA_GB=1
 ```
 
 `VITE_APP_URL` is used when generating public-menu QR links. It falls back to `window.location.origin`.
+
+The platform console's **Storage** view uses the protected `platform_storage_usage()` RPC (migration 029) to inventory Storage object metadata. It reports live bytes/files for every bucket, attributes `menu-assets` files to the owning restaurant and account, and keeps shared `gallery-assets` separate as platform-owned. The `VITE_SUPABASE_STORAGE_QUOTA_GB` value controls the remaining-space meter (`1` for Free, `100` for Pro); it is a public display setting, not a credential. Supabase's billable Storage Size is an average GB-hour measure, so the view is an operational file inventory rather than an invoice mirror. No service-role or Management API token is exposed in the frontend.
+
+Migration 029 is applied to production as of 2026-10-13. Verification returned 331 files using 36,993,398 bytes, confirmed admin-only access, and preserved 2 restaurants, 6 categories, 23 items and all restaurant settings/access dates. The organization currently uses the Free plan; the display uses a 1 GB quota.
 
 ## Code map
 

@@ -1,4 +1,4 @@
-import type { BrandGroup, Category, GalleryCategory, GalleryImage, ItemExtra, MenuContactCard, MenuItem, MenuViewDay, MenuViewStats, PlatformAuditEntry, PlatformRestaurant, Restaurant, RestaurantMenu, Variant } from './types'
+import type { BrandGroup, Category, GalleryCategory, GalleryImage, ItemExtra, MenuContactCard, MenuItem, MenuViewDay, MenuViewStats, PlatformAuditEntry, PlatformRestaurant, PlatformStorageUsage, Restaurant, RestaurantMenu, Variant } from './types'
 
 const categories: Category[] = [
   ['manakish', 'Manakish', 'مناقيش'], ['croissants', 'Croissants', 'كرواسون'], ['soiree', 'Soiree', 'سوارية'],
@@ -157,6 +157,31 @@ export const demoPlatformAudit: PlatformAuditEntry[] = [
   { id: 'audit-2', actor_email: 'you@fluxiva.com', action: 'subscription.suspended', restaurant_slug: 'byblos-cafe', details: { previous_ends_at: daysFromNow(-58), ends_at: null }, created_at: daysFromNow(-58) },
   { id: 'audit-3', actor_email: 'you@fluxiva.com', action: 'subscription.active', restaurant_slug: 'beirut-bites', details: { previous_ends_at: null, ends_at: daysFromNow(-6) }, created_at: daysFromNow(-371) },
 ]
+
+/** Sample storage totals keep the operator preview useful without Supabase. */
+export const demoStorageUsage: Omit<PlatformStorageUsage, 'quota_bytes'> = {
+  generated_at: new Date().toISOString(),
+  total_files: 87,
+  used_bytes: 58_400_000,
+  buckets: [
+    { bucket_id: 'gallery-assets', file_count: 18, bytes: 12_600_000 },
+    { bucket_id: 'menu-assets', file_count: 69, bytes: 45_800_000 },
+  ],
+  owners: [
+    {
+      owner_id: 'demo-owner-hilal', owner_email: 'owner@hilaloven.com', file_count: 31, bytes: 19_800_000,
+      restaurants: [{ restaurant_id: 'demo-restaurant', name_en: 'Hilal Oven', name_ar: 'فرن الهلال', slug: 'demo', file_count: 31, bytes: 19_800_000 }],
+    },
+    {
+      owner_id: 'demo-owner-cedar', owner_email: 'hello@cedargrill.com', file_count: 38, bytes: 26_000_000,
+      restaurants: [{ restaurant_id: 'demo-2', name_en: 'Cedar Grill', name_ar: 'مشاوي الأرز', slug: 'cedar-grill', file_count: 38, bytes: 26_000_000 }],
+    },
+  ],
+  unattributed_menu_files: 0,
+  unattributed_menu_bytes: 0,
+  shared_gallery_files: 18,
+  shared_gallery_bytes: 12_600_000,
+}
 
 /** Contact card shown by the unavailable screen in demo mode. */
 export const demoContactCard: MenuContactCard = {

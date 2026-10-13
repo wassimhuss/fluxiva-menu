@@ -34,6 +34,7 @@ Create a new Static Site from this repository. Render reads `render.yaml`. Add t
 - `VITE_SUPABASE_URL`
 - `VITE_SUPABASE_PUBLISHABLE_KEY`
 - `VITE_APP_URL` — the final public Render URL
+- `VITE_SUPABASE_STORAGE_QUOTA_GB` — storage quota displayed in the admin console (`1` for Free, `100` for Pro)
 
 The rewrite rule keeps restaurant URLs such as `/m/cedar-oven` working when opened directly or from a QR code.
 
@@ -54,6 +55,8 @@ The reset email returns to whichever origin requested it, so **every origin you 
 `/platform` lists every restaurant with its owner, menu size, subscription state and whether its public menu is currently being served, ordered so lapsed and soon-to-lapse accounts come first. Subscription changes are recorded in an audit trail with the operator's email.
 
 Access is controlled by `private.platform_admins`, a table in a schema revoked from `anon` and `authenticated`. Two roles exist: `super_admin` may change subscriptions, `support` is read-only. `public.platform_admin_role()` reports the caller's role so the app can hide the console, and the privileged functions re-check the role themselves — a non-operator who reaches the route is redirected, and the database would reject them regardless.
+
+The `/platform` **Storage** view reports live Storage object bytes and file counts, breaks them down by bucket, and attributes `menu-assets` to each owner and restaurant. Shared `gallery-assets` are shown as platform-owned. The report is calculated through the protected `platform_storage_usage()` RPC; no service-role or Supabase Management API token is shipped to the browser. Set `VITE_SUPABASE_STORAGE_QUOTA_GB` to the organization's current plan quota so the remaining-space meter is accurate. Supabase's own billable Storage Size is measured as average GB-hours, so this is a live object inventory rather than an invoice replica.
 
 Grant yourself access after creating your account:
 
