@@ -40,7 +40,7 @@ before(async()=>{
   await db.exec([
     "set timezone='UTC'; create role anon; create role authenticated; create role service_role bypassrls;",
     'create schema auth; create schema storage;',
-    'create table auth.users(id uuid primary key,email text,created_at timestamptz default now());',
+    'create table auth.users(id uuid primary key,email text,created_at timestamptz default now(),updated_at timestamptz,last_sign_in_at timestamptz,email_confirmed_at timestamptz,phone text,phone_confirmed_at timestamptz,banned_until timestamptz,encrypted_password text,raw_user_meta_data jsonb);',
     "create function auth.uid() returns uuid language sql stable as $$select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid$$;",
     'create table storage.buckets(id text primary key,name text,public boolean,allowed_mime_types text[],file_size_limit bigint);',
     'create table storage.objects(id uuid primary key default gen_random_uuid(),bucket_id text,name text,owner uuid,metadata jsonb);',
@@ -65,6 +65,53 @@ before(async()=>{
   await db.query("insert into private.platform_admins(user_id,role) values($1,'super_admin'),($2,'support')",[ids.admin,ids.support])
 })
 after(async()=>{await db.close()})
+
+test('subscriber details include accurate account/shop dates, scoped history and archives without exposing Auth secrets',async()=>{
+  const profileOwner=crypto.randomUUID()
+  await db.exec('reset role')
+  await db.query('insert into auth.users(id,email) values($1,$2)',[profileOwner,'profile@example.com'])
+  const id=await shop({owner:profileOwner,end:new Date(Date.now()+20*86400000).toISOString()})
+  await db.exec('reset role')
+  await db.query("update auth.users set created_at='2024-01-01',updated_at='2024-02-01',last_sign_in_at='2024-03-01',email_confirmed_at='2024-01-02',phone='+96170000000',encrypted_password='secret-hash',raw_user_meta_data='{\"secret\":true}' where id=$1",[profileOwner])
+  const category=await scalar("insert into public.menu_categories(restaurant_id,name_en,name_ar) values($1,'Food','طعام') returning id as value",[id])
+  await db.query("insert into public.menu_items(restaurant_id,category_id,name_en,name_ar,price,available) values($1,$2,'Dish','صنف',10,false)",[id,category])
+  for(let i=0;i<51;i++) await db.query("insert into private.platform_audit_log(action,restaurant_id,restaurant_slug,details,created_at) values('billing.price',$1,'profile',jsonb_build_object('annual_cents',12000),$2)",[id,new Date(Date.UTC(2024,0,1,0,i)).toISOString()])
+  await db.query("insert into private.platform_audit_log(action,details) values('account.suspended',jsonb_build_object('owner_id',$1::uuid))",[profileOwner])
+  await asUser(ids.admin)
+  const details=await scalar('select public.platform_subscriber_details($1,0) as value',[profileOwner])
+  assert.equal(details.account.created_at,'2024-01-01T00:00:00+00:00')
+  assert.equal(details.account.last_sign_in_at,'2024-03-01T00:00:00+00:00')
+  assert.equal(details.account.email_confirmed_at,'2024-01-02T00:00:00+00:00')
+  assert.equal(details.account.phone,'+96170000000')
+  assert.equal(details.account.encrypted_password,undefined);assert.equal(details.account.raw_user_meta_data,undefined)
+  assert.equal(details.brand.owner_id,profileOwner)
+  assert.equal(details.shops[0].restaurant.id,id)
+  assert.ok(details.shops[0].created_at)
+  assert.equal(details.shops[0].category_count,1);assert.equal(details.shops[0].item_count,1);assert.equal(details.shops[0].unavailable_count,1)
+  assert.equal(details.activity.total,53);assert.equal(details.activity.entries.length,25)
+  assert.equal(details.activity.entries[0].action,'account.suspended')
+  await db.exec('reset role')
+  await db.exec(readFileSync(new URL('../supabase/migrations/031_subscriber_details.sql',import.meta.url),'utf8'))
+  await asUser(ids.admin)
+  assert.deepEqual(await scalar('select public.platform_subscriber_details($1,0) as value',[profileOwner]),details)
+  const page2=await scalar('select public.platform_subscriber_details($1,1) as value',[profileOwner])
+  assert.equal(new Set([...details.activity.entries,...page2.activity.entries].map(e=>e.id)).size,50)
+  await asUser(ids.support)
+  assert.equal((await scalar('select public.platform_subscriber_details($1,0) as value',[profileOwner])).account.id,profileOwner)
+  await asUser(ids.owner)
+  await assert.rejects(scalar('select public.platform_subscriber_details($1,0) as value',[profileOwner]),/Platform access/)
+  await asUser(null,'anon')
+  await assert.rejects(scalar('select public.platform_subscriber_details($1,0) as value',[profileOwner]),/permission denied/)
+  await asUser(ids.admin)
+  await assert.rejects(scalar('select public.platform_subscriber_details($1,0) as value',[ids.admin]),/Subscriber not found/)
+  assert.equal((await scalar('select public.platform_subscriber_details($1,0) as value',[ids.empty])).shops.length,0)
+  await receipt(id,4000,new Date(Date.now()-1000).toISOString())
+  await db.exec('reset role');await db.query('delete from auth.users where id=$1',[profileOwner]);await asUser(ids.admin)
+  const archive=await scalar('select public.platform_subscriber_details($1,0) as value',[profileOwner])
+  assert.equal(archive.account.archived,true);assert.equal(archive.account.created_at,null)
+  assert.equal(archive.brand,null);assert.equal(archive.shops[0].restaurant,null)
+  assert.equal(archive.shops[0].billing.paid_cents,4000)
+})
 
 test('admin chooses exact coverage dates independently of the amount, including settlement without extension',async()=>{
   const id=await shop(), dates={start:'2024-01-31T10:00:00+02:00',end:'2024-02-29T20:15:00+02:00'}

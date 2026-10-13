@@ -21,6 +21,22 @@ async function demo() {
   const nonce='// '+crypto.randomUUID()+'\n'
   return import(uri(nonce+compile('billingDemo').replace("'./billing'",JSON.stringify(uri(compile('billing')))).replace("'./demo'",JSON.stringify(uri(nonce+compile('demo'))))))
 }
+test('demo subscriber profiles cover full accounts, empty accounts and scoped live billing/activity refresh',async()=>{
+  const api=await demo(),owner=api.demoSubscribers().subscribers.find(row=>row.shops.some(shop=>shop.restaurant_id==='demo-restaurant'))
+  const first=api.demoSubscriberDetails(owner.id)
+  assert.equal(first.account.created_at,owner.created_at)
+  assert.ok(first.account.last_sign_in_at);assert.ok(first.brand)
+  assert.ok(first.shops.find(shop=>shop.billing.restaurant_id==='demo-restaurant').item_count>0)
+  api.demoSetPrice('demo-restaurant',24000)
+  const refreshed=api.demoSubscriberDetails(owner.id)
+  assert.deepEqual(refreshed.account,first.account)
+  assert.equal(refreshed.shops.find(shop=>shop.billing.restaurant_id==='demo-restaurant').billing.next_annual_cents,24000)
+  assert.equal(refreshed.activity.entries[0].action,'billing.price')
+  assert.ok(refreshed.activity.entries.every(entry=>owner.shops.some(shop=>shop.slug===entry.restaurant_slug)))
+  const empty=api.demoSubscriberDetails('demo-empty')
+  assert.equal(empty.shops.length,0);assert.equal(empty.brand,null);assert.equal(empty.account.last_sign_in_at,null)
+  assert.throws(()=>api.demoSubscriberDetails('missing'),/Subscriber not found/)
+})
 test('cash parsing retains cents, accepts Arabic numerals and rejects malformed/overflow amounts',()=>{
   assert.equal(billing.usdCents('20.35'),2035)
   assert.equal(billing.usdCents('٢٠٫٣٥'),2035)

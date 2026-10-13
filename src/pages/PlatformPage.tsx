@@ -1,11 +1,12 @@
-import { ArrowLeft, ArrowRight, CalendarCheck, ChevronLeft, ChevronRight, LogOut, ReceiptText, RefreshCw, Search, ShieldCheck, ShieldOff, ShieldPlus, Trash2, X } from 'lucide-react'
+import { ArrowLeft, ArrowRight, CalendarCheck, ChevronLeft, ChevronRight, Eye, LogOut, ReceiptText, RefreshCw, Search, ShieldCheck, ShieldOff, ShieldPlus, Trash2, X } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { Brand } from '../components/Brand'
 import { BillingIconButton } from '../components/BillingIconButton'
 import { PlatformGallery } from '../components/PlatformGallery'
 import { ShopBillingPanel } from '../components/ShopBillingPanel'
 import { StorageUsagePanel } from '../components/StorageUsagePanel'
+import { SubscriberDetails } from '../components/SubscriberDetails'
 import { Loading, Notice } from '../components/Status'
 import { deleteSubscriber, getCashCollections, getPlatformAudit, getPlatformStorageUsage, getShopBilling, listSubscribers, setSubscriberStatus, setSubscription } from '../lib/api'
 import { useAuth } from '../lib/auth'
@@ -18,6 +19,9 @@ type View = 'Subscribers' | 'Collections' | 'Activity' | 'Gallery' | 'Storage'
 export function PlatformPage() {
   const { adminRole, session, demoMode, signOut } = useAuth()
   const navigate = useNavigate()
+  const [searchParams,setSearchParams]=useSearchParams()
+  const subscriberId=searchParams.get('subscriber')
+  const closeSubscriber=()=>{setSelected(null);setSearchParams(current=>{const next=new URLSearchParams(current);next.delete('subscriber');return next})}
   const [language, setLanguage] = useState<Language>(() => {
     try { return localStorage.getItem('fluxiva-landing-language') === 'ar' ? 'ar' : 'en' } catch { return 'en' }
   })
@@ -73,6 +77,7 @@ export function PlatformPage() {
     else accountDialog.current?.close()
   }, [accountAction])
   useEffect(() => { window.scrollTo(0, 0) }, [selectedId])
+  useEffect(()=>{setSelected(null);window.scrollTo(0,0)},[subscriberId])
   function changeLanguage() {
     const next = language === 'en' ? 'ar' : 'en'
     setLanguage(next)
@@ -93,7 +98,7 @@ export function PlatformPage() {
     if (!accountAction) return
     setAccountBusy(true); setError(null)
     try {
-      if (accountAction.kind === 'delete') await deleteSubscriber(accountAction.owner.id, accountConfirmation)
+      if (accountAction.kind === 'delete') {await deleteSubscriber(accountAction.owner.id, accountConfirmation);if(subscriberId===accountAction.owner.id)closeSubscriber()}
       else await setSubscriberStatus(accountAction.owner.id, accountAction.kind === 'suspend' ? 'suspended' : 'active')
       setAccountAction(null); setAccountConfirmation(''); setReload(n => n + 1)
     } catch (caught) { setError(caught) }
@@ -115,24 +120,25 @@ export function PlatformPage() {
     <main className="cash-console" dir={language === 'ar' ? 'rtl' : 'ltr'} lang={language}>
       <header className="cash-topbar">
         <Brand light homeLabel={t('Home')} />
-        <nav aria-label={t('Operator console')}>{(['Subscribers', 'Collections', 'Activity', 'Storage', 'Gallery'] as View[]).filter(v => v !== 'Gallery' || canManage).map(item => <button className={view === item && !selected ? 'selected' : ''} aria-current={view === item && !selected ? 'page' : undefined} key={item} onClick={() => { setView(item); setSelected(null); setPage(0) }}>{t(item)}</button>)}</nav>
+        <nav aria-label={t('Operator console')}>{(['Subscribers', 'Collections', 'Activity', 'Storage', 'Gallery'] as View[]).filter(v => v !== 'Gallery' || canManage).map(item => <button className={view === item && !selected ? 'selected' : ''} aria-current={view === item && !selected ? 'page' : undefined} key={item} onClick={() => { setView(item);closeSubscriber();setPage(0) }}>{t(item)}</button>)}</nav>
         <div className="cash-account"><span><bdi>{demoMode ? 'Fluxiva demo' : session?.user.email}</bdi><small><ShieldCheck size={12} /> {t(canManage ? 'Super admin' : 'Support')}</small></span><button onClick={changeLanguage} lang={language === 'en' ? 'ar' : 'en'}>{language === 'en' ? 'العربية' : 'English'}</button><BillingIconButton icon={LogOut} label={t('Sign out')} onClick={async () => { await signOut(); navigate('/login', { replace: true }) }} /></div>
       </header>
       <div className="cash-console-shell">
-        <div className="cash-page-heading"><div><h1>{t(selected ? 'Subscription & payments' : view)}</h1><p>{t(!selected && view === 'Storage' ? 'Monitor Supabase file usage by owner.' : 'Cash subscriptions, clearly recorded.')}</p></div><BillingIconButton icon={RefreshCw} label={t('Refresh')} disabled={loading || busy} onClick={() => { setReload(n => n + 1); if (selected) setBillingRefresh(n => n + 1) }} /></div>
+        <div className="cash-page-heading"><div><h1>{t(selected ? 'Subscription & payments' : subscriberId ? 'Subscriber details' : view)}</h1><p>{t(subscriberId&&!selected?'Account, shops and subscription history.':!selected && view === 'Storage' ? 'Monitor Supabase file usage by owner.' : 'Cash subscriptions, clearly recorded.')}</p></div><BillingIconButton icon={RefreshCw} label={t('Refresh')} disabled={loading || busy} onClick={() => { setReload(n => n + 1); if (selected) setBillingRefresh(n => n + 1) }} /></div>
         {demoMode && <Notice>{t('Sample data. Cash changes stay in this browser session.')}</Notice>}
         {!canManage && <Notice>{t('Read-only access')}</Notice>}
         {Boolean(error) && <Notice tone="error">{billingError(language, error)}<BillingIconButton icon={RefreshCw} label={t('Try again')} onClick={() => setReload(n => n + 1)} /></Notice>}
+        {subscriberId&&<div hidden={Boolean(selected)}><SubscriberDetails key={subscriberId} ownerId={subscriberId} language={language} refreshToken={reload} onBack={closeSubscriber} onBilling={shop=>{setSelected(shop);setError(null)}} onAccountAction={requestAccountAction}/></div>}
         {selected ? <>
-          <div className="cash-detail-heading"><BillingIconButton icon={language === 'ar' ? ArrowRight : ArrowLeft} label={t('Close billing')} onClick={() => setSelected(null)} /><div className="cash-actions"><span className="cash-tag">{t(billingStatus(selected))}</span>{canManage && !selected.archived && <BillingIconButton icon={selected.subscription_status === 'suspended' ? ShieldPlus : ShieldOff} danger={selected.subscription_status !== 'suspended'} label={t(selected.subscription_status === 'suspended' ? 'Restore access' : 'Suspend menu')} disabled={busy} onClick={() => selected.subscription_status === 'suspended' ? void changeSuspension(false) : setSuspending(true)} />}</div></div>
+          <div className="cash-detail-heading"><BillingIconButton icon={language === 'ar' ? ArrowRight : ArrowLeft} label={t(subscriberId?'Back to subscriber':'Close billing')} onClick={() => setSelected(null)} /><div className="cash-actions"><span className="cash-tag">{t(billingStatus(selected))}</span>{canManage && !selected.archived && <BillingIconButton icon={selected.subscription_status === 'suspended' ? ShieldPlus : ShieldOff} danger={selected.subscription_status !== 'suspended'} label={t(selected.subscription_status === 'suspended' ? 'Restore access' : 'Suspend menu')} disabled={busy} onClick={() => selected.subscription_status === 'suspended' ? void changeSuspension(false) : setSuspending(true)} />}</div></div>
           <ShopBillingPanel key={selected.restaurant_id} shopId={selected.restaurant_id} language={language} admin refreshToken={billingRefresh} onChanged={data => { setSelected(data); setReload(n => n + 1) }} />
-        </> : view === 'Gallery' ? <PlatformGallery language={language} /> : <>
+        </> : subscriberId ? null : view === 'Gallery' ? <PlatformGallery language={language} /> : <>
           {view === 'Subscribers' && <form className="cash-search" onSubmit={event => { event.preventDefault(); setSearch(searchDraft.trim()); setPage(0); setReload(n => n + 1) }}><label><span className="sr-only">{t('Search owners, shops or contact numbers')}</span><Search size={18} /><input value={searchDraft} onChange={e => setSearchDraft(e.target.value)} placeholder={t('Search owners, shops or contact numbers')} /></label><BillingIconButton icon={Search} type="submit" label={t('Search')} /></form>}
           {view === 'Collections' && <form className="cash-date-filter" onSubmit={event => { event.preventDefault(); setDates({ from: fromDraft, until: untilDraft }); setPage(0) }}><label>{t('From')}<input type="date" value={fromDraft} onChange={e => setFromDraft(e.target.value)} required /></label><label>{t('Until')}<input type="date" value={untilDraft} min={fromDraft} onChange={e => setUntilDraft(e.target.value)} required /></label><BillingIconButton icon={CalendarCheck} type="submit" label={t('Apply dates')} /></form>}
           {loading ? <Loading label={t(view === 'Subscribers' ? 'Loading subscribers…' : view === 'Collections' ? 'Loading collections…' : view === 'Storage' ? 'Loading storage…' : 'Loading activity…')} /> : <>
             {view === 'Subscribers' && <section className="cash-directory" aria-label={t('Subscribers')}>
               <p className="cash-result-count">{number(directory?.total ?? 0)} {t('subscribers')}</p>
-              {directory?.subscribers.length ? directory.subscribers.map(owner => <article className="cash-subscriber" key={owner.id}><header><h2><bdi>{owner.email}</bdi></h2><span>{t('Registered')} {date(owner.created_at)}</span>{owner.archived && <span className="cash-tag">{t('Archived')}</span>}{canManage && !owner.archived && <div className="cash-account-actions">{owner.shops.length > 0 && <BillingIconButton icon={owner.shops.every(shop => shop.subscription_status === 'suspended') ? ShieldPlus : ShieldOff} danger={!owner.shops.every(shop => shop.subscription_status === 'suspended')} label={t(owner.shops.every(shop => shop.subscription_status === 'suspended') ? 'Restore account access' : 'Suspend account') + ' · ' + owner.email} onClick={() => requestAccountAction(owner, owner.shops.every(shop => shop.subscription_status === 'suspended') ? 'restore' : 'suspend')} />}<BillingIconButton icon={Trash2} danger label={t('Delete account') + ' · ' + owner.email} onClick={() => requestAccountAction(owner, 'delete')} /></div>}</header>{owner.shops.length ? owner.shops.map(shopRow) : <p className="cash-empty">{t('No shop created yet')}</p>}</article>) : <p className="cash-empty">{t('No subscribers match this search.')}</p>}
+              {directory?.subscribers.length ? directory.subscribers.map(owner => <article className="cash-subscriber" key={owner.id}><header><h2><Link className="subscriber-link" to={{search:'?subscriber='+encodeURIComponent(owner.id)}} aria-label={t('Open subscriber')+' · '+owner.email}><bdi>{owner.email}</bdi></Link></h2><BillingIconButton icon={Eye} label={t('Open subscriber')+' · '+owner.email} onClick={()=>setSearchParams({subscriber:owner.id})}/><span>{t('Registered')} {date(owner.created_at)}</span>{owner.archived && <span className="cash-tag">{t('Archived')}</span>}{canManage && !owner.archived && <div className="cash-account-actions">{owner.shops.length > 0 && <BillingIconButton icon={owner.shops.every(shop => shop.subscription_status === 'suspended') ? ShieldPlus : ShieldOff} danger={!owner.shops.every(shop => shop.subscription_status === 'suspended')} label={t(owner.shops.every(shop => shop.subscription_status === 'suspended') ? 'Restore account access' : 'Suspend account') + ' · ' + owner.email} onClick={() => requestAccountAction(owner, owner.shops.every(shop => shop.subscription_status === 'suspended') ? 'restore' : 'suspend')} />}<BillingIconButton icon={Trash2} danger label={t('Delete account') + ' · ' + owner.email} onClick={() => requestAccountAction(owner, 'delete')} /></div>}</header>{owner.shops.length ? owner.shops.map(shopRow) : <p className="cash-empty">{t('No shop created yet')}</p>}</article>) : <p className="cash-empty">{t('No subscribers match this search.')}</p>}
             </section>}
             {view === 'Collections' && collections && <>
               <div className="cash-total"><span>{t('Net cash recorded')}</span><strong><bdi>{money(collections.collected_cents)}</bdi></strong><p>{t('Voided receipts are excluded from the total.')}</p></div>

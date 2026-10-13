@@ -33,6 +33,16 @@ async function loadApi(t) {
   return { api, ...client, ...cache, queryClient }
 }
 const session = (id = 'owner') => ({ user: { id } })
+test('subscriber detail requests use only the protected RPC with cancellation and propagate failures',async(t)=>{
+  const {api,setClient}=await loadApi(t),calls=[],controller=new AbortController()
+  let error=null
+  setClient({rpc:(name,params)=>({abortSignal:signal=>{calls.push({name,params,signal});return Promise.resolve({data:{account:{id:'owner'}},error})}})})
+  assert.equal((await api.getSubscriberDetails('owner',2,controller.signal)).account.id,'owner')
+  assert.equal(calls[0].name,'platform_subscriber_details')
+  assert.deepEqual(calls[0].params,{owner_input:'owner',activity_page_input:2})
+  controller.abort();assert.equal(calls[0].signal.aborted,true)
+  error=new Error('Denied');await assert.rejects(api.getSubscriberDetails('owner'),/Denied/)
+})
 test('cash API forwards exact admin-entered dates to protected manual RPCs', async (t) => {
   const {api,setClient}=await loadApi(t), calls=[]
   setClient({rpc:(name,params)=>{

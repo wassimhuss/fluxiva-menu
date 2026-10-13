@@ -5,7 +5,7 @@ import { getCachedOwnerQueryClient, getOwnerQueryClient, ownerCacheGeneration } 
 import { patchMenuItem } from './menuState'
 import { ownerAccessState, subscriptionState } from './subscription'
 import type { AdminRole, BrandGroup, BrandPlaces, Category, GalleryCategory, GalleryImage, ItemExtra, MenuContactCard, MenuItem, MenuViewDay, MenuViewStats, PlatformAuditEntry, PlatformRestaurant, PlatformStorageUsage, Restaurant, RestaurantMenu, Variant } from './types'
-import type { CashCollections, CashPaymentPreview, CashPaymentRequest, ShopBilling, SubscriberPage } from './types'
+import type { CashCollections, CashPaymentPreview, CashPaymentRequest, ShopBilling, SubscriberDetails, SubscriberPage } from './types'
 
 type RestaurantInput = Pick<Restaurant, 'name_en' | 'name_ar' | 'slug' | 'primary_color' | 'phone' | 'whatsapp' | 'instagram' | 'maps_url' | 'address_en' | 'address_ar' | 'currency' | 'temporarily_closed' | 'default_language'>
 type CategoryInput = Pick<Category, 'restaurant_id' | 'name_en' | 'name_ar' | 'sort_order'>
@@ -768,6 +768,12 @@ export async function listSubscribers(search = '', page = 0, signal?: AbortSigna
   const { data, error } = await supabase.rpc('platform_subscribers', { search_input: search, page_input: page }).abortSignal(readSignal(signal))
   if (error) throw error
   return data as SubscriberPage
+}
+export async function getSubscriberDetails(ownerId: string, activityPage = 0, signal?: AbortSignal): Promise<SubscriberDetails> {
+  if (!supabase) return (await import('./billingDemo')).demoSubscriberDetails(ownerId, activityPage)
+  const {data,error}=await supabase.rpc('platform_subscriber_details',{owner_input:ownerId,activity_page_input:activityPage}).abortSignal(readSignal(signal))
+  if(error) throw error
+  return data as SubscriberDetails
 }
 export async function setSubscriberStatus(ownerId: string, status: 'active' | 'suspended') {
   if (!supabase) { (await import('./billingDemo')).demoSetSubscriberStatus(ownerId, status); return }

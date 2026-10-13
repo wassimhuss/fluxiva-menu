@@ -75,6 +75,19 @@ export interface SubscriberPage {
   page: number
   page_size: number
 }
+export interface SubscriberDetails {
+  account: Pick<PlatformSubscriber, 'id' | 'email' | 'archived'> & {
+    created_at: string | null; updated_at: string | null; last_sign_in_at: string | null;
+    email_confirmed_at: string | null; phone: string | null; phone_confirmed_at: string | null; banned_until: string | null
+  }
+  brand: BrandGroup | null
+  shops: Array<{
+    billing: ShopBilling; restaurant: Restaurant | null; created_at: string | null; updated_at: string | null;
+    category_count: number | null; item_count: number | null; unavailable_count: number | null;
+    views_30d: number | null; storage_files: number | null; storage_bytes: number | null
+  }>
+  activity: { entries: PlatformAuditEntry[]; total: number; page: number; page_size: number }
+}
 export interface CashPaymentPreview {
   restaurant_id: string
   annual_cents: number
@@ -185,7 +198,7 @@ export interface PlatformAuditEntry {
   actor_email?: string
   action: string
   restaurant_slug?: string
-  details: { previous_ends_at?: string | null; ends_at?: string | null; annual_cents?: number; amount_cents?: number; reference?: string; receipt_id?: string; reason?: string }
+  details: { previous_ends_at?: string | null; ends_at?: string | null; annual_cents?: number; amount_cents?: number; reference?: string; receipt_id?: string; reason?: string; owner_id?: string; owner_email?: string }
   created_at: string
 }
 

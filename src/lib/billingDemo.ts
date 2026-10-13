@@ -1,5 +1,5 @@
-import { demoMenus, demoPlatformAudit, demoPlatformRestaurants } from './demo'
-import type { CashAgreement, CashCollections, CashPaymentPreview, CashPaymentRequest, ShopBilling, SubscriberPage, SubscriptionStatus } from './types'
+import { demoBrand, demoMenus, demoPlatformAudit, demoPlatformRestaurants, demoStorageUsage } from './demo'
+import type { CashAgreement, CashCollections, CashPaymentPreview, CashPaymentRequest, ShopBilling, SubscriberDetails, SubscriberPage, SubscriptionStatus } from './types'
 
 type DemoAgreement = CashAgreement & { baseline_until: string | null; baseline_status: SubscriptionStatus }
 type DemoShop = ShopBilling & { agreements: DemoAgreement[]; revision: number; email: string; restore_status: SubscriptionStatus }
@@ -7,6 +7,7 @@ const shops = new Map<string, DemoShop>()
 const requests = new Map<string, CashPaymentRequest>()
 const voidRequests = new Map<string, { receipt: string; reason: string; shop: string }>()
 const now = () => new Date().toISOString()
+const demoSessionStarted=now()
 function audit(shop: DemoShop, action: string, details: typeof demoPlatformAudit[number]['details']) {
   demoPlatformAudit.unshift({ id: crypto.randomUUID(), actor_email: 'demo@fluxiva.com', action,
     restaurant_slug: shop.slug, details, created_at: now() })
@@ -88,14 +89,37 @@ export function demoSubscribers(search = '', page = 0): SubscriberPage {
   ensureShops()
   const grouped = new Map<string, SubscriberPage['subscribers'][number]>()
   for (const shop of shops.values()) {
-    const owner = grouped.get(shop.owner_id) ?? { id: shop.owner_id, email: shop.email, created_at: now(), archived: false, shops: [] }
+    const created=demoPlatformRestaurants.find(source=>source.id===shop.restaurant_id)?.created_at??now()
+    const owner = grouped.get(shop.owner_id) ?? { id: shop.owner_id, email: shop.email, created_at: created, archived: false, shops: [] }
+    if(created<owner.created_at) owner.created_at=created
     const summary = structuredClone(shop); delete (summary as Partial<DemoShop>).agreements
     owner.shops.push(summary); grouped.set(shop.owner_id, owner)
   }
-  grouped.set('demo-empty', { id: 'demo-empty', email: 'new.owner@example.com', created_at: now(), archived: false, shops: [] })
+  grouped.set('demo-empty', { id: 'demo-empty', email: 'new.owner@example.com', created_at: demoSessionStarted, archived: false, shops: [] })
   const term = search.toLocaleLowerCase()
   const all = [...grouped.values()].filter(o => (o.email + ' ' + o.shops.map(s => s.name_en + ' ' + s.name_ar + ' ' + s.slug).join(' ')).toLocaleLowerCase().includes(term))
   return { subscribers: all.slice(page * 25, page * 25 + 25), total: all.length, page, page_size: 25 }
+}
+export function demoSubscriberDetails(ownerId:string,activityPage=0):SubscriberDetails {
+  const owner=demoSubscribers().subscribers.find(row=>row.id===ownerId)
+  if(!owner) fail('Subscriber not found')
+  const details=owner.shops.map(billing=>{
+    const menu=demoMenus.find(entry=>entry.restaurant.id===billing.restaurant_id)
+    const source=demoPlatformRestaurants.find(row=>row.id===billing.restaurant_id)
+    const storage=demoStorageUsage.owners.flatMap(row=>row.restaurants).find(row=>row.restaurant_id===billing.restaurant_id)
+    return {billing,restaurant:menu?.restaurant??(source?{...source,default_language:'en' as const}:null),
+      created_at:source?.created_at??null,updated_at:source?.created_at??null,
+      category_count:menu?.categories.length??null,item_count:menu?.items.length??source?.item_count??null,
+      unavailable_count:menu?.items.filter(item=>!item.available).length??null,views_30d:source?.views_30d??0,
+      storage_files:storage?.file_count??0,storage_bytes:storage?.bytes??0}
+  })
+  const created=details.map(shop=>shop.created_at).filter((value):value is string=>Boolean(value)).sort()[0]??owner.created_at
+  const entries=demoPlatformAudit.filter(entry=>entry.details.owner_id===ownerId||owner.shops.some(shop=>shop.slug===entry.restaurant_slug))
+    .sort((a,b)=>b.created_at.localeCompare(a.created_at)||b.id.localeCompare(a.id))
+  return {account:{id:owner.id,email:owner.email,archived:owner.archived,created_at:created,updated_at:created,last_sign_in_at:owner.shops.length?demoSessionStarted:null,
+    email_confirmed_at:owner.shops.length?created:null,phone:null,phone_confirmed_at:null,banned_until:null},
+    brand:details.some(shop=>shop.billing.restaurant_id==='demo-restaurant')?{...demoBrand,owner_id:ownerId}:null,
+    shops:structuredClone(details),activity:{entries:structuredClone(entries.slice(activityPage*25,activityPage*25+25)),total:entries.length,page:activityPage,page_size:25}}
 }
 export function demoSetSubscriberStatus(ownerId: string, status: 'active' | 'suspended') {
   ensureShops()

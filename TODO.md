@@ -11,6 +11,12 @@ This file is the working product backlog for developers and AI agents. Keep it u
 
 ## Cash subscriptions and subscriber management
 
+### Full subscriber profiles (2026-10-13)
+
+- [x] Open a bilingual account/shop/activity profile from each subscriber email and eye icon, including exact account/shop dates, contact/brand details, menu settings/statistics, billing navigation and archived records.
+- [x] Protect profile reads through migration `031`; exclude Auth secrets and paginate subscriber-specific activity by retained UUIDs.
+- [x] Verify English/Arabic desktop/mobile, populated/empty/archive data, role isolation and demo; pass all 43 tests/lint/build and apply the production migration without changing existing records.
+
 ### Expired-shop owner and guest dialogs (2026-10-13)
 
 - [x] Seven elapsed days of owner editing warnings after paid/trial expiry, then a bilingual blocking dialog with billing, branch switching, access refresh and sign-out.
