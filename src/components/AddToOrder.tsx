@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
 import type { MenuItem } from '../lib/types'
 import type { MenuOrdering } from '../templates/types'
+import { roundUsd, secondaryPrice } from '../lib/pricing'
 import styles from './AddToOrder.module.css'
 
 interface Props {
@@ -11,7 +12,7 @@ interface Props {
   variantIndex: number
   ordering: MenuOrdering
   t: (english: string, arabic: string) => string
-  formatPrice: (value: number) => string
+  formatPrice: (value: number, secondary?: number | null) => string
   rtl: boolean
   className?: string
 }
@@ -54,6 +55,10 @@ export function AddToOrder({ item, variantIndex, ordering, t, formatPrice, rtl, 
   const basePrice = item.variants?.[variantIndex]?.price ?? item.price
   const selectedExtras = extras.filter((extra) => extra.id && selectedExtraIds.includes(extra.id))
   const customizedPrice = basePrice + selectedExtras.reduce((sum, extra) => sum + extra.price, 0)
+  // The formatter owns the restaurant currency; parse neither its display text
+  // nor a total's converted value. Add each explicitly priced component.
+  const priceParts = [item.variants?.[variantIndex] ?? item, ...selectedExtras]
+  const customizedSecondary = roundUsd(priceParts.reduce((sum, part) => sum + secondaryPrice(part, ordering.currency ?? 'LBP'), 0))
 
   const customizationSheet = customizing && createPortal(
     <div className={styles.customizer} dir={rtl ? 'rtl' : 'ltr'}>
@@ -86,7 +91,7 @@ export function AddToOrder({ item, variantIndex, ordering, t, formatPrice, rtl, 
               >
                 <span className={styles.check}>{selected && <Check />}</span>
                 <span>{t(extra.name_en, extra.name_ar)}</span>
-                <b>+ {formatPrice(extra.price)}</b>
+                <b dir="ltr">+ {formatPrice(extra.price, extra.price_secondary)}</b>
               </button>
             )
           })}
@@ -100,7 +105,7 @@ export function AddToOrder({ item, variantIndex, ordering, t, formatPrice, rtl, 
           }}
         >
           <span>{t('Add to order', 'أضف إلى الطلب')}</span>
-          <b>{formatPrice(customizedPrice)}</b>
+          <b dir="ltr">{formatPrice(roundUsd(customizedPrice), customizedSecondary)}</b>
         </button>
       </section>
     </div>,

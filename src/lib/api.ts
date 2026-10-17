@@ -3,6 +3,7 @@ import { demoBrand, demoContactCard, demoGalleryCategories, demoGalleryImages, d
 import { supabase } from './supabase'
 import { getCachedOwnerQueryClient, getOwnerQueryClient, ownerCacheGeneration } from './queryClient'
 import { patchMenuItem } from './menuState'
+import { swapMenuCurrency } from './pricing'
 import { ownerAccessState, subscriptionState } from './subscription'
 import type { AdminRole, BrandGroup, BrandPlaces, Category, GalleryCategory, GalleryImage, ItemExtra, MenuContactCard, MenuItem, MenuViewDay, MenuViewStats, PlatformAuditEntry, PlatformRestaurant, PlatformStorageUsage, Restaurant, RestaurantMenu, Variant } from './types'
 import type { BranchRequestInput, BranchRequestPage, CashCollections, CashPaymentPreview, CashPaymentRequest, ShopBilling, SubscriberDetails, SubscriberFilters, SubscriberPage } from './types'
@@ -35,7 +36,7 @@ export async function listAnnouncements(page = 0, signal?: AbortSignal): Promise
 
 type RestaurantInput = Pick<Restaurant, 'name_en' | 'name_ar' | 'slug' | 'primary_color' | 'phone' | 'whatsapp' | 'instagram' | 'maps_url' | 'address_en' | 'address_ar' | 'currency' | 'temporarily_closed' | 'default_language'>
 type CategoryInput = Pick<Category, 'restaurant_id' | 'name_en' | 'name_ar' | 'sort_order'>
-type ItemInput = Pick<MenuItem, 'restaurant_id' | 'category_id' | 'name_en' | 'name_ar' | 'description_en' | 'description_ar' | 'price' | 'image_url' | 'gallery_image_id' | 'variants' | 'extras' | 'available' | 'highlighted' | 'sort_order'>
+type ItemInput = Pick<MenuItem, 'restaurant_id' | 'category_id' | 'name_en' | 'name_ar' | 'description_en' | 'description_ar' | 'price' | 'price_secondary' | 'image_url' | 'gallery_image_id' | 'variants' | 'extras' | 'available' | 'highlighted' | 'sort_order'>
 type AssetPurpose = 'cover' | 'item' | 'logo' | 'gallery-thumb'
 export type GalleryImageInput = Pick<GalleryImage, 'category_id' | 'name_en' | 'name_ar' | 'tags_en' | 'tags_ar'> & Pick<GalleryImage, 'source' | 'license_notes'>
 
@@ -130,7 +131,7 @@ export const storageQuotaBytes = Number.isFinite(configuredStorageQuotaGb) && co
   : 1_000_000_000
 
 const CATEGORY_COLUMNS = 'id,restaurant_id,name_en,name_ar,sort_order'
-const ITEM_COLUMNS = 'id,restaurant_id,category_id,name_en,name_ar,description_en,description_ar,price,image_url,gallery_image_id,variants,extras,available,highlighted,sort_order'
+const ITEM_COLUMNS = 'id,restaurant_id,category_id,name_en,name_ar,description_en,description_ar,price,price_secondary,image_url,gallery_image_id,variants,extras,available,highlighted,sort_order'
 const RESTAURANT_COLUMNS = 'id,owner_id,brand_id,slug,name_en,name_ar,description_en,description_ar,logo_url,cover_image_url,primary_color,phone,whatsapp,instagram,maps_url,address_en,address_ar,currency,temporarily_closed,is_published,menu_copy_pending,template_id,show_item_images,takeaway_enabled,default_language,subscription_status,trial_ends_at,subscription_ends_at'
 const MENU_COLUMNS = `${RESTAURANT_COLUMNS},categories:menu_categories(${CATEGORY_COLUMNS}),items:menu_items(${ITEM_COLUMNS})`
 const orderRows = <T extends { sort_order: number; id: string }>(rows: T[]) => [...rows].sort((a, b) => a.sort_order - b.sort_order || a.id.localeCompare(b.id))
@@ -283,7 +284,8 @@ function patchOwnerMenus(matches: (menu: RestaurantMenu) => boolean, change: (me
 }
 
 function patchRestaurant(restaurant: Restaurant) {
-  patchOwnerMenus((menu) => menu.restaurant.id === restaurant.id, (menu) => ({ ...menu, restaurant }))
+  patchOwnerMenus((menu) => menu.restaurant.id === restaurant.id, (menu) => ({ ...menu, restaurant,
+    items: (menu.restaurant.currency ?? 'LBP') !== (restaurant.currency ?? 'LBP') ? menu.items.map(item => swapMenuCurrency(item, menu.restaurant.currency ?? 'LBP')) : menu.items }))
 }
 function patchCategories(categories: Category[]) {
   if (!categories.length) return
@@ -458,6 +460,10 @@ export async function updateRestaurant(id: string, values: Partial<Restaurant>) 
   if (!supabase) {
     const restaurant = demoRestaurants.find((place) => place.id === id)
     if (!restaurant) throw new Error('Restaurant not found.')
+    if (values.currency && values.currency !== (restaurant.currency ?? 'LBP')) {
+      const menu = demoMenus.find(entry => entry.restaurant.id === id)
+      if (menu) menu.items = menu.items.map(item => swapMenuCurrency(item, restaurant.currency ?? 'LBP'))
+    }
     Object.assign(restaurant, values)
     patchRestaurant(structuredClone(restaurant))
     return structuredClone(restaurant)
@@ -1091,7 +1097,7 @@ function galleryStoragePath(publicUrl?: string) {
 export function cleanVariants(variants: Variant[]) {
   return variants
     .filter((variant) => variant.name_en.trim() && variant.price > 0)
-    .map((variant) => ({ id: variant.id, name_en: variant.name_en.trim(), price: variant.price }))
+    .map((variant) => ({ id: variant.id ?? crypto.randomUUID(), name_en: variant.name_en.trim(), price: variant.price, ...(variant.price_secondary != null ? { price_secondary: variant.price_secondary } : {}) }))
 }
 
 export function cleanExtras(extras: ItemExtra[]) {
@@ -1102,5 +1108,6 @@ export function cleanExtras(extras: ItemExtra[]) {
       name_en: extra.name_en.trim(),
       name_ar: extra.name_ar.trim(),
       price: extra.price,
+      ...(extra.price_secondary != null ? { price_secondary: extra.price_secondary } : {}),
     }))
 }

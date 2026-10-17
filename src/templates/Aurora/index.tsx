@@ -1,3 +1,4 @@
+import { PriceLabel } from '../../components/PriceLabel'
 import { RecommendedBadge } from '../../components/RecommendedBadge'
 import { Instagram, MapPin } from 'lucide-react'
 import { useState } from 'react'
@@ -37,7 +38,7 @@ function AuroraCard({ item, index, t, formatPrice, rtl, ordering }: {
         {item.image_url
           ? <img className={styles.image} src={item.image_url} alt="" loading="lazy" />
           : <span className={styles.placeholderMark}>{name.slice(0, 2).toUpperCase()}</span>}
-        <span className={styles.priceBadge}>{formatPrice(price)}</span>
+        <span className={`${styles.priceBadge} menu-dual-price`} dir="ltr"><PriceLabel text={formatPrice(price, (variant ?? item).price_secondary)} /></span>
       </div>
       <div className={styles.cardBody}>
         <h3 className={styles.itemName}>{name}</h3>

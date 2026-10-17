@@ -22,10 +22,12 @@ async function loadApi(t) {
   const clientUri = uri(nonce + 'export let supabase=null;export function setClient(client){supabase=client}')
   const cacheUri = uri(nonce + compile('queryClient').replace("'@tanstack/react-query'", JSON.stringify(import.meta.resolve('@tanstack/react-query'))))
   const stateUri = uri(compile('menuState'))
+  const pricingUri = uri(compile('pricing').replace("'./format'", JSON.stringify(uri(compile('format')))))
   const filtersUri=uri(compile('subscriberFilters').replace("'./subscription'",JSON.stringify(uri(compile('subscription')))))
   const code = compile('api').replace("'./demo'", JSON.stringify(uri(nonce + compile('demo'))))
     .replace("'./supabase'", JSON.stringify(clientUri)).replace("'./subscription'", JSON.stringify(uri(compile('subscription'))))
     .replace("'./queryClient'", JSON.stringify(cacheUri)).replace("'./menuState'", JSON.stringify(stateUri))
+    .replace("'./pricing'", JSON.stringify(pricingUri))
     .replace("'./subscriberFilters'",JSON.stringify(filtersUri))
   const api = await import(uri(code))
   const client = await import(clientUri)
@@ -35,6 +37,26 @@ async function loadApi(t) {
   return { api, ...client, ...cache, queryClient }
 }
 const session = (id = 'owner') => ({ user: { id } })
+test('alternate prices survive item saves, cleaning and cached/demo primary currency changes',async(t)=>{
+  const {api}=await loadApi(t)
+  const original=await api.getOwnerMenu(null)
+  const input={restaurant_id:original.restaurant.id,category_id:original.categories[0].id,name_en:'Paired price',name_ar:'سعران',price:895000,price_secondary:12.5,image_url:null,gallery_image_id:null,available:true,highlighted:false,sort_order:100,
+    variants:api.cleanVariants([{id:'large',name_en:' L ',name_ar:'legacy',price:179000,price_secondary:3}]),
+    extras:api.cleanExtras([{id:'cheese',name_en:' Cheese ',name_ar:'جبنة',price:89500,price_secondary:0}])}
+  const item=await api.createItem(input)
+  assert.equal(item.price_secondary,12.5)
+  assert.deepEqual(item.variants,[{id:'large',name_en:'L',price:179000,price_secondary:3}])
+  assert.equal(item.extras[0].price_secondary,0)
+  await api.updateItem(item.id,{price_secondary:11.5})
+  assert.equal((await api.getOwnerMenu(null)).items.find(row=>row.id===item.id).price_secondary,11.5)
+  await api.updateRestaurant(original.restaurant.id,{currency:'USD'})
+  const usd=(await api.getOwnerMenu(null)).items.find(row=>row.id===item.id)
+  assert.equal(usd.price,11.5);assert.equal(usd.price_secondary,895000)
+  assert.equal(usd.variants[0].price,3);assert.equal(usd.extras[0].price,0)
+  await api.updateRestaurant(original.restaurant.id,{currency:'LBP'})
+  const lbp=(await api.getOwnerMenu(null)).items.find(row=>row.id===item.id)
+  assert.equal(lbp.price,895000);assert.equal(lbp.price_secondary,11.5)
+})
 test('notification APIs use owner-scoped and protected admin RPCs with cancellation and stable send IDs',async(t)=>{
   const {api,setClient}=await loadApi(t),calls=[],controller=new AbortController()
   let error=null

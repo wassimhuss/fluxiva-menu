@@ -9,7 +9,8 @@ import { getMenuContactCard, getPublicMenu, recordMenuView } from '../lib/api'
 import { subscriptionState } from '../lib/subscription'
 import { useSubscriptionClock } from '../lib/useSubscriptionClock'
 import { useAuth } from '../lib/auth'
-import { formatMoney, localText } from '../lib/format'
+import { localText } from '../lib/format'
+import { formatMenuPrice } from '../lib/pricing'
 import { deriveTheme } from '../lib/theme'
 import { useImagePreload } from '../lib/useImagePreload'
 import { useOrder } from '../lib/useOrder'
@@ -251,7 +252,7 @@ export function PublicMenuPage() {
   /* Every design receives its formatter rather than reaching for one, so the
      restaurant's currency reaches all eight from a single place. */
   const currency = menu?.restaurant.currency ?? 'LBP'
-  const formatPrice = useCallback((value: number) => formatMoney(value, currency), [currency])
+  const formatPrice = useCallback((value: number, secondary?: number | null) => formatMenuPrice(value, currency, secondary), [currency])
 
   // The owner's saved design, unless a `?template=` override is present — which
   // is how the dashboard previews a design before it is saved.
@@ -289,8 +290,8 @@ export function PublicMenuPage() {
   const orderingAllowed = canOrder && (!askService || serviceMode === 'takeaway')
   const { quantityOf, add, setQuantity } = order
   const templateOrdering = useMemo(
-    () => ({ quantityOf, add, setQuantity }),
-    [quantityOf, add, setQuantity],
+    () => ({ quantityOf, add, setQuantity, currency }),
+    [quantityOf, add, setQuantity, currency],
   )
 
 

@@ -1,6 +1,6 @@
 import { Minus, Plus, ShoppingBag, Trash2, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { buildOrderMessage, lineKey, orderTotal, resolveLines, whatsappOrderLink, MAX_QUANTITY } from '../lib/order'
+import { buildOrderMessage, lineKey, orderTotal, orderTotalSecondary, resolveLines, whatsappOrderLink, MAX_QUANTITY } from '../lib/order'
 import type { Language, MenuItem, Restaurant } from '../lib/types'
 import type { OrderApi } from '../lib/useOrder'
 import styles from './OrderBar.module.css'
@@ -12,7 +12,7 @@ interface Props {
   language: Language
   rtl: boolean
   t: (english: string, arabic: string) => string
-  formatPrice: (value: number) => string
+  formatPrice: (value: number, secondary?: number | null) => string
   brand: string
   brandInk: string
 }
@@ -28,7 +28,7 @@ export function OrderBar({ restaurant, items, order, language, rtl, t, formatPri
   const [open, setOpen] = useState(false)
   const [note, setNote] = useState('')
 
-  const lines = resolveLines(order.lines, items)
+  const lines = resolveLines(order.lines, items, restaurant.currency ?? 'LBP')
   const total = orderTotal(lines)
 
   /* The button floats over whichever design is running, and two of them anchor
@@ -92,10 +92,10 @@ export function OrderBar({ restaurant, items, order, language, rtl, t, formatPri
                   {lines.map((line) => (
                     <div className={styles.line} key={lineKey(line.itemId, line.variantIndex, line.extraIds)}>
                       <span className={styles.lineName}>{t(line.item.name_en, line.item.name_ar)}</span>
-                      <span className={styles.lineTotal}>{formatPrice(line.lineTotal)}</span>
+                      <span className={styles.lineTotal} dir="ltr">{formatPrice(line.lineTotal, line.lineTotalSecondary)}</span>
                       <span className={styles.lineMeta}>
                         {[line.variantName, ...line.extras.map((extra) => t(extra.name_en, extra.name_ar))].filter(Boolean).join(' · ')}
-                        {(line.variantName || line.extras.length) ? ' · ' : ''}{formatPrice(line.unitPrice)}
+                        {(line.variantName || line.extras.length) ? ' · ' : ''}<bdi dir="ltr">{formatPrice(line.unitPrice, line.unitPriceSecondary)}</bdi>
                       </span>
                       <span className={styles.stepper}>
                         <button
@@ -132,7 +132,7 @@ export function OrderBar({ restaurant, items, order, language, rtl, t, formatPri
                 <footer className={styles.foot}>
                   <div className={styles.totalRow}>
                     <span>{t('Total', 'المجموع')}</span>
-                    <b>{formatPrice(total)}</b>
+                    <b dir="ltr">{formatPrice(total, orderTotalSecondary(lines))}</b>
                   </div>
                   <a
                     className={styles.send}

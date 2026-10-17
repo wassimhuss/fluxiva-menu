@@ -53,6 +53,8 @@ Demo mode is active when `VITE_SUPABASE_URL` or `VITE_SUPABASE_PUBLISHABLE_KEY` 
 
 Demo mode is a deliberate development and sales-preview feature. Do not remove it when adding production integrations.
 
+The hosted `/m/demo` uses the real Supabase restaurant `00000000-0000-0000-0000-000000000001` when backend variables are configured; it is separate from the bundled offline sample. On 2026-10-17, the approved content seed `supabase/seeds/demo_pasta.sql` added Pasta / باستا using all 13 existing active photos from the Pastas gallery folder. All dishes cost the user-approved sample price of 500,000 LBP. The pre-existing Fettuccine Alfredo was moved from Manakish and repriced with approval, retaining its ID, photo and other content; 12 dishes were newly inserted. The hosted demo now has 7 categories and 35 items. Restaurant/gallery row checksums and all 331 Storage files remained unchanged. This content-only seed is not a numbered schema migration and does not change the offline fixtures.
+
 ### Supabase mode
 
 - `src/lib/supabase.ts` creates the client from the two public Vite environment variables.
@@ -155,6 +157,16 @@ Belongs to both a restaurant and category. Contains paired English/Arabic names 
 ### `variants`
 
 Variants are stored as a JSON array on each menu item, shaped as `{ id?, name_en, price }`. Size labels intentionally use one English value in both menu languages. `cleanVariants` removes empty or zero-price draft variants and strips the legacy `name_ar` key before persistence.
+
+### Dual menu pricing (036)
+
+Item/size/extra editors show LBP and USD together. The product-defined fixed rate is **1 USD = 89,500 LBP**; this is not a live rate feed. Editing LBP calculates USD rounded to cents, then USD may be overridden independently. Another LBP edit or Recalculate USD replaces that override with the calculated amount. For example, 895,000 LBP initially shows $10.00; an owner can keep that LBP amount and choose $12.50 instead.
+
+The existing `price` remains in `Restaurant.currency` for compatibility. Optional nullable `price_secondary` stores the explicit alternate amount (USD for LBP-primary menus, LBP for USD-primary menus), including on variant/extra JSON. Null/missing means automatic conversion; explicit zero is preserved. Existing rows need no backfill. Both prices display on all eight designs, and basket/customization/WhatsApp totals sum the resolved component prices in each currency rather than reconverting the LBP total and losing overrides. Dollar arithmetic rounds to cents; LBP display remains whole pounds. Menu pricing is separate from subscription billing.
+
+`036_dual_menu_prices.sql` was applied transactionally to production on 2026-10-17 (`20261017155000`, `dual_menu_prices`; source MD5 `1af88d170ee207ecb4d2bb7b9bb89296`). It adds the alternate column/validation, preserves it in protected branch copying and swaps complete price pairs atomically when an owner explicitly changes the primary currency. Existing RLS, branch approval and expiry triggers remain. Migration application itself does not rewrite prices, restaurant settings or photos. Demo/cache/local settings reflect the same currency swap. Excel keeps its existing required columns and appends optional `price_secondary` to Items, Variants and Extras; blank means automatic conversion, old workbooks remain compatible and exports preserve overrides. Blank templates use the selected restaurant's primary currency. Noir price text uses a readable brand-derived light shade on its dark surface; two-line price labels prevent mobile name/price collisions.
+
+Production before/after checksums matched for all 3 restaurants/brands, 7 categories, 35 items (excluding only the newly added null column), 159 gallery images, 15 folders, 331 Storage files, 4 Auth account identities/statuses, the branch request, operator/audit records, empty billing tables and existing RLS policies. Post-commit checks confirmed the source checksum, validated constraints, enabled currency/approval/expiry triggers, authenticated-only copying, protected trigger execution, 895,000 LBP → $10.00, manual/zero overrides and invalid-price rejection. An anonymous REST read returned all 35 demo items with the new column null. No production prices, branches or broadcasts were changed for QA. Matching frontend deployment remains pending; unrelated migration 035 is still unapplied and must be applied before deploying the notifications UI.
 
 ### `extras`
 

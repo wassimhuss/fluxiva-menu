@@ -1,3 +1,4 @@
+import { PriceLabel } from '../../components/PriceLabel'
 import { RecommendedBadge } from '../../components/RecommendedBadge'
 import { Instagram, MapPin } from 'lucide-react'
 import { useState } from 'react'
@@ -39,7 +40,7 @@ function MaisonItem({ item, index, t, formatPrice, rtl, ordering }: {
         <div className={styles.itemHeading}>
           <h3>{name}</h3>
           <span className={styles.leader} aria-hidden="true" />
-          <strong>{formatPrice(price)}</strong>
+          <strong className="menu-dual-price" dir="ltr"><PriceLabel text={formatPrice(price, (variant ?? item).price_secondary)} /></strong>
         </div>
         <RecommendedBadge item={item} t={t} />
         {description && <p>{description}</p>}

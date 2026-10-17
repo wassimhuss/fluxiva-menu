@@ -1,4 +1,5 @@
-import type { ItemExtra, Language, MenuItem } from './types'
+import type { Currency, ItemExtra, Language, MenuItem } from './types'
+import { secondaryPrice, roundUsd } from './pricing'
 
 /**
  * A takeaway order, held only in the diner's browser.
@@ -24,6 +25,8 @@ export interface ResolvedLine extends OrderLine {
   extras: ItemExtra[]
   unitPrice: number
   lineTotal: number
+  unitPriceSecondary: number
+  lineTotalSecondary: number
 }
 
 export const MAX_QUANTITY = 99
@@ -41,7 +44,7 @@ export function lineKey(itemId: string, variantIndex: number, extraIds: string[]
  * exists. A menu can change between the diner adding a dish and sending the
  * order — an item deleted or marked unavailable must not travel with it.
  */
-export function resolveLines(lines: OrderLine[], items: MenuItem[]): ResolvedLine[] {
+export function resolveLines(lines: OrderLine[], items: MenuItem[], currency: Currency = 'LBP'): ResolvedLine[] {
   const byId = new Map(items.map((item) => [item.id, item]))
   const resolved: ResolvedLine[] = []
   for (const line of lines) {
@@ -52,7 +55,8 @@ export function resolveLines(lines: OrderLine[], items: MenuItem[]): ResolvedLin
     // than sending a price nobody offers.
     const selectedIds = new Set(normalizeExtraIds(line.extraIds))
     const extras = (item.extras ?? []).filter((extra) => extra.id && selectedIds.has(extra.id))
-    const unitPrice = (variant?.price ?? item.price) + extras.reduce((sum, extra) => sum + extra.price, 0)
+    const unitPrice = roundUsd((variant?.price ?? item.price) + extras.reduce((sum, extra) => sum + extra.price, 0))
+    const unitPriceSecondary = roundUsd(secondaryPrice(variant ?? item, currency) + extras.reduce((sum, extra) => sum + secondaryPrice(extra, currency), 0))
     resolved.push({
       ...line,
       // Keep the stored key stable even if the owner removes an extra while a
@@ -63,14 +67,20 @@ export function resolveLines(lines: OrderLine[], items: MenuItem[]): ResolvedLin
       variantName: variant?.name_en ?? '',
       extras,
       unitPrice,
-      lineTotal: unitPrice * line.quantity,
+      lineTotal: roundUsd(unitPrice * line.quantity),
+      unitPriceSecondary,
+      lineTotalSecondary: roundUsd(unitPriceSecondary * line.quantity),
     })
   }
   return resolved
 }
 
 export function orderTotal(lines: ResolvedLine[]) {
-  return lines.reduce((sum, line) => sum + line.lineTotal, 0)
+  return roundUsd(lines.reduce((sum, line) => sum + line.lineTotal, 0))
+}
+
+export function orderTotalSecondary(lines: ResolvedLine[]) {
+  return roundUsd(lines.reduce((sum, line) => sum + line.lineTotalSecondary, 0))
 }
 
 export function orderCount(lines: OrderLine[]) {
@@ -87,7 +97,7 @@ interface MessageInput {
   restaurantName: string
   lines: ResolvedLine[]
   language: Language
-  formatPrice: (value: number) => string
+  formatPrice: (value: number, secondary?: number | null) => string
   note?: string
 }
 
@@ -108,11 +118,11 @@ export function buildOrderMessage({ restaurantName, lines, language, formatPrice
     const extras = line.extras.length
       ? ` + ${line.extras.map((extra) => ar ? extra.name_ar : extra.name_en).join(', ')}`
       : ''
-    return `${line.quantity} × ${name}${size}${extras} — ${formatPrice(line.lineTotal)}`
+    return `${line.quantity} × ${name}${size}${extras} — ${formatPrice(line.lineTotal, line.lineTotalSecondary)}`
   })
 
   const tail = () => {
-    const parts = [`${totalLabel}: ${formatPrice(orderTotal(lines))}`]
+    const parts = [`${totalLabel}: ${formatPrice(orderTotal(lines), orderTotalSecondary(lines))}`]
     if (note?.trim()) parts.push(`${noteLabel}: ${note.trim()}`)
     return parts
   }

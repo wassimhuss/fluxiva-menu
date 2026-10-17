@@ -1,3 +1,4 @@
+import { PriceLabel } from '../../components/PriceLabel'
 import { RecommendedBadge } from '../../components/RecommendedBadge'
 import { ChevronUp, Instagram, MapPin } from 'lucide-react'
 import { useState } from 'react'
@@ -73,7 +74,7 @@ function ReelSlide({ item, index, total, category, active, nearby, t, formatPric
 
         <div className={styles.priceRow}>
           {item.available
-            ? <span className={styles.price}>{formatPrice(price)}</span>
+            ? <span className={`${styles.price} menu-dual-price`} dir="ltr"><PriceLabel text={formatPrice(price, (variant ?? item).price_secondary)} /></span>
             : <span className={styles.soldOut}>{t('Sold out', 'نفد')}</span>}
           {ordering && <AddToOrder item={item} variantIndex={variantIndex} ordering={ordering} t={t} formatPrice={formatPrice} rtl={rtl} className={styles.addToOrder} />}
         </div>

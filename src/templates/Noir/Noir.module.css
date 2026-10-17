@@ -321,7 +321,7 @@
   font-size: 14px;
   font-weight: 700;
   letter-spacing: .3px;
-  color: var(--noir-accent);
+  color: var(--noir-price);
   white-space: nowrap;
 }
 

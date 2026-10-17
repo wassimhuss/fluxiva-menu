@@ -1,3 +1,4 @@
+import { PriceLabel } from '../../components/PriceLabel'
 import { RecommendedBadge } from '../../components/RecommendedBadge'
 import { ChevronLeft, ChevronRight, Instagram, MapPin } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
@@ -187,7 +188,7 @@ export default function CarouselTemplate(props: MenuTemplateProps) {
 
           <div className={styles.buy}>
             {activeItem.available
-              ? <span className={styles.price}>{formatPrice(activePrice)}</span>
+              ? <span className={`${styles.price} menu-dual-price`} dir="ltr"><PriceLabel text={formatPrice(activePrice, (activeVariant ?? activeItem).price_secondary)} /></span>
               : <span className={styles.unavailable}>{t('Currently unavailable', 'غير متوفر حالياً')}</span>}
             {ordering && <AddToOrder item={activeItem} variantIndex={activeVariantIndex} ordering={ordering} t={t} formatPrice={formatPrice} rtl={rtl} className={styles.addToOrder} />}
           </div>

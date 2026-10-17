@@ -1,3 +1,4 @@
+import { PriceLabel } from '../../components/PriceLabel'
 import { RecommendedBadge } from '../../components/RecommendedBadge'
 import { Instagram, MapPin } from 'lucide-react'
 import { useState } from 'react'
@@ -36,7 +37,7 @@ function KioskCard({ item, index, t, formatPrice, rtl, ordering }: {
           ? <img className={styles.image} src={item.image_url} alt="" loading="lazy" />
           : <span className={styles.mediaEmptyMark}>{name.slice(0, 2).toUpperCase()}</span>}
         {item.image_url && <div className={styles.scrim} />}
-        <span className={styles.price}>{formatPrice(price)}</span>
+        <span className={`${styles.price} menu-dual-price`} dir="ltr"><PriceLabel text={formatPrice(price, (variant ?? item).price_secondary)} /></span>
         {!item.available && <span className={styles.soldOutTag}>{t('Sold out', 'نفد')}</span>}
         {ordering && (
           <div className={styles.cardOrder}>

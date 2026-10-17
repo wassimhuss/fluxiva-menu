@@ -5,6 +5,12 @@ import type { Language } from './types'
  * possible to add Arabic without mixing translation logic into data handling.
  */
 const arabic: Record<string, string> = {
+  'Price in LBP': 'السعر بالليرة اللبنانية',
+  'Price in USD': 'السعر بالدولار',
+  '1 USD = 89,500 LBP. Enter LBP to calculate USD, then edit USD if needed.': '١ دولار = ٨٩٬٥٠٠ ليرة. أدخل السعر بالليرة لحساب الدولار، ثم عدّل الدولار إذا أردت.',
+  'Recalculate USD': 'إعادة حساب الدولار',
+  'Remove size': 'إزالة الحجم',
+  'Switches the primary currency for editing and Excel. Both displayed prices are preserved.': 'يغيّر العملة الأساسية للتعديل وإكسل مع الحفاظ على السعرين المعروضين.',
   'Shop editing is locked; arrange cash collection with Fluxiva': 'التعديل موقوف لهذا المطعم. نسّق تحصيل دفعة نقدية مع فلوكسيفا.',
   'Resolve expired or suspended shops before adding another place': 'راجع اشتراكات المطاعم المنتهية أو الموقوفة قبل إضافة فرع آخر.',
   'Resolve expired or suspended shops before deleting this place': 'راجع اشتراك هذا المطعم المنتهي أو الموقوف قبل حذفه.',

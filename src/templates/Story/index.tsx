@@ -1,3 +1,4 @@
+import { PriceLabel } from '../../components/PriceLabel'
 import { RecommendedBadge } from '../../components/RecommendedBadge'
 import { ChevronDown, Instagram, MapPin } from 'lucide-react'
 import { useState } from 'react'
@@ -47,7 +48,7 @@ function Chapter({ item, index, active, t, formatPrice, rtl, ordering }: {
 
         <div className={styles.priceRow}>
           {item.available
-            ? <span className={styles.price}>{formatPrice(price)}</span>
+            ? <span className={`${styles.price} menu-dual-price`} dir="ltr"><PriceLabel text={formatPrice(price, (variant ?? item).price_secondary)} /></span>
             : <span className={styles.soldOut}>{t('Unavailable', 'غير متوفر')}</span>}
           {ordering && <AddToOrder item={item} variantIndex={variantIndex} ordering={ordering} t={t} formatPrice={formatPrice} rtl={rtl} className={styles.addToOrder} />}
         </div>

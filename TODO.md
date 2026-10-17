@@ -11,12 +11,23 @@ This file is the working product backlog for developers and AI agents. Keep it u
 
 ## Cash subscriptions and subscriber management
 
+<<<<<<< Updated upstream
 ### Simpler owner subscription view (2026-10-17)
 
 - [x] Give owners plain English/Arabic status and access dates, Annual price / Paid so far / Left to pay, cash-collection guidance and expandable receipt/older-subscription details.
 - [x] Preserve unknown historical payments, manual dates, suspension/expiry behavior, owner read-only access and admin billing tools.
 - [x] Pass 70 tests, lint/build and diff checks, including rendered owner billing states, Arabic, receipt disclosures and staff-field omission.
 - [ ] Complete desktop/mobile browser and console verification; Windows Computer Use could not confirm the current browser URL during this session.
+=======
+### Dual menu prices (2026-10-17)
+
+- [x] Add paired LBP/USD inputs for item, size and extra prices; LBP entry calculates USD at 89,500 LBP per dollar (rounded to cents), followed by an optional manual USD override and Recalculate USD action.
+- [x] Display both prices across all eight menu templates, owner item summaries, customization, basket and WhatsApp drafts; total each saved currency independently.
+- [x] Preserve alternate prices through caching, branch copies, demo mode and Excel (optional backwards-compatible `price_secondary` column); preserve both prices when explicitly switching the primary currency.
+- [x] Verify all 74 tests, lint/build, mobile/desktop English/Arabic editor and eight-template layouts, save/reopen overrides, and independent basket/WhatsApp draft totals without sending messages or changing production prices.
+- [x] Apply migration `036_dual_menu_prices.sql` to production (2026-10-17, `20261017155000`), verifying unchanged existing prices/content/files, access policies and protected functions.
+- [ ] Deploy the tested dual-pricing frontend; apply the still-pending 035 first if releasing the notifications UI together.
+>>>>>>> Stashed changes
 
 ### Owner notifications and admin messages (2026-10-17)
 
@@ -248,6 +259,7 @@ Build a curated **Fluxiva Gallery** that lets every restaurant owner either sele
 
 ## Completed product improvements
 
+- [x] Add live-demo Pasta / باستا with all 13 existing pasta gallery photos at the approved 500,000 LBP sample price; move/reprice the existing Alfredo without duplication, preserve other menu/gallery data and verify repeat-safe content seeding (2026-10-17).
 - [x] Replace Reel's forced one-item gesture lock with native momentum and clean CSS snap landing, warm nearby photos with async decoding, shorten caption transitions, and preserve keyboard/RTL/ordering controls; verify fast wheel/touch bursts and direction reversals (2026-10-12).
 - [x] Align Reel footer labels independently of their icon widths, keep every icon in one RTL-aware column, and isolate Instagram handles so `@` stays at the start in Arabic; verify narrow/mobile/desktop layouts and wrapped addresses (2026-10-12).
 - [x] Connect the Reel closing/footer card to the dashboard palette in saved menus and live previews, including contrast-aware text/icons and contact surfaces; verify English/Arabic at 390/1280 px with all presets and light/dark custom colors (2026-10-11).

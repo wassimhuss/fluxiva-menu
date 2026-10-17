@@ -1,3 +1,4 @@
+import { PriceLabel } from '../../components/PriceLabel'
 import { RecommendedBadge } from '../../components/RecommendedBadge'
 import { Instagram, MapPin } from 'lucide-react'
 import { useState } from 'react'
@@ -33,7 +34,7 @@ function MenuCard({ item, index, t, formatPrice, color, unavailableLabel, rtl, o
       <div className="public-item-content">
         <div className="item-heading">
           <h3>{name}</h3>
-          <strong style={{ color }}>{formatPrice(price)}</strong>
+          <strong className="menu-dual-price" dir="ltr" style={{ color }}><PriceLabel text={formatPrice(price, (variant ?? item).price_secondary)} /></strong>
         </div>
         <RecommendedBadge item={item} t={t} />
         {(item.description_en || item.description_ar) && <p>{t(item.description_en ?? '', item.description_ar ?? '')}</p>}

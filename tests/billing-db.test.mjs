@@ -66,6 +66,67 @@ before(async()=>{
 })
 after(async()=>{await db.close()})
 
+test('dual prices validate overrides, preserve owner isolation, copy all prices and swap currencies atomically',async()=>{
+  await db.exec('reset role')
+  // Run after a rollback so this fixture cannot change other tests' directory
+  // or broadcast recipient counts.
+  await db.exec('begin')
+  try {
+    const owner=crypto.randomUUID()
+    await db.query("insert into auth.users(id,email) values($1,'dual-prices@example.com')",[owner])
+    const id=await shop({owner,end:'2099-01-01T00:00:00Z'})
+    await asUser(owner)
+    const category=await scalar("insert into public.menu_categories(restaurant_id,name_en,name_ar) values($1,'Food','طعام') returning id as value",[id])
+    const variants=[{id:'large',name_en:'L',price:895000,price_secondary:11.25}]
+    const extras=[{id:'cheese',name_en:'Cheese',name_ar:'جبنة',price:89500,price_secondary:1.5}]
+    const item=await scalar("insert into public.menu_items(restaurant_id,category_id,name_en,name_ar,price,price_secondary,variants,extras) values($1,$2,'Dish','طبق',895000,12.5,$3,$4) returning id as value",[id,category,JSON.stringify(variants),JSON.stringify(extras)])
+    const get=()=>scalar('select to_jsonb(i) as value from public.menu_items i where id=$1',[item])
+    assert.equal((await get()).price_secondary,12.5)
+    for(const invalid of [-1,1.001,'NaN','Infinity']) {
+      await db.exec('savepoint bad_price')
+      await assert.rejects(scalar('update public.menu_items set price_secondary=$1 where id=$2 returning id as value',[invalid,item]),/check constraint/)
+      await db.exec('rollback to bad_price')
+    }
+    for(const invalid of [-1,1.001,'2']) {
+      await db.exec('savepoint bad_variant')
+      await assert.rejects(scalar('update public.menu_items set variants=$1 where id=$2 returning id as value',[JSON.stringify([{name_en:'L',price:1,price_secondary:invalid}]),item]),/check constraint/)
+      await db.exec('rollback to bad_variant')
+    }
+    await asUser(ids.other)
+    assert.equal(await scalar('update public.menu_items set price_secondary=99 where id=$1 returning id as value',[item]),undefined)
+    await asUser(null,'anon')
+    await db.exec('savepoint anonymous_write')
+    await assert.rejects(scalar('update public.menu_items set price_secondary=99 where id=$1 returning id as value',[item]),/permission denied/)
+    await db.exec('rollback to anonymous_write')
+    await asUser(owner)
+    const input={name_en:'Second',name_ar:'الثاني',slug:'dual-'+owner,address_en:'Beirut',address_ar:'بيروت',whatsapp:'+96170123456'}
+    const request=await scalar('select public.owner_request_branch($1) as value',[input])
+    await asUser(ids.admin)
+    await scalar("select public.platform_review_branch_request($1,true,'') as value",[request])
+    await asUser(owner)
+    const copied=await scalar('select public.owner_create_place_with_menu($1,$2) as value',[id,input])
+    assert.equal(copied.items[0].price_secondary,12.5)
+    assert.deepEqual(copied.items[0].variants,variants);assert.deepEqual(copied.items[0].extras,extras)
+    await scalar("update public.restaurants set currency='USD' where id=$1 returning id as value",[id])
+    const usd=await get()
+    assert.equal(usd.price,12.5);assert.equal(usd.price_secondary,895000)
+    assert.equal(usd.variants[0].price,11.25);assert.equal(usd.variants[0].price_secondary,895000)
+    assert.equal(usd.extras[0].price,1.5);assert.equal(usd.extras[0].price_secondary,89500)
+    await scalar("update public.restaurants set currency='LBP' where id=$1 returning id as value",[id])
+    assert.equal((await get()).price_secondary,12.5)
+    assert.deepEqual((await get()).variants,variants)
+    await scalar('update public.menu_items set price_secondary=0 where id=$1 returning id as value',[item])
+    assert.equal((await get()).price_secondary,0)
+    await scalar('update public.menu_items set price_secondary=null where id=$1 returning id as value',[item])
+    await scalar("update public.restaurants set currency='USD' where id=$1 returning id as value",[id])
+    assert.equal((await get()).price,10) // Legacy/null values convert at the fixed rate.
+    await db.exec('reset role')
+    const before=await get()
+    await db.exec(readFileSync(new URL('../supabase/migrations/036_dual_menu_prices.sql',import.meta.url),'utf8'))
+    assert.deepEqual(await get(),before)
+  } finally {await db.exec('rollback');await db.exec('reset role')}
+})
+
 test('broadcasts snapshot owner recipients, protect private reads, isolate read receipts and retry atomically',async()=>{
   const input={title_en:'Important update',title_ar:'تحديث مهم',body_en:'A message\nfor all owners.',body_ar:'رسالة\nلجميع أصحاب المطاعم.'},id=crypto.randomUUID()
   const send=(request=id,draft=input)=>scalar('select public.platform_send_announcement($1,$2) as value',[request,draft])

@@ -1,4 +1,4 @@
-import type { ItemExtra, Language, RestaurantMenu, Variant } from './types'
+import type { Currency, ItemExtra, Language, RestaurantMenu, Variant } from './types'
 
 export type WorkbookMenuItem = {
   itemKey: string
@@ -9,6 +9,7 @@ export type WorkbookMenuItem = {
   descriptionEn: string
   descriptionAr: string
   price: number
+  price_secondary?: number | null
   available: boolean
   variants: Variant[]
   extras: ItemExtra[]
@@ -66,6 +67,7 @@ function rowsFromSheet(sheet: import('exceljs').Worksheet | undefined, requiredH
   sheet.eachRow((row, rowNumber) => {
     if (rowNumber === 1) return
     const values = Object.fromEntries(requiredHeaders.map((header) => [header, row.getCell(positions.get(header)!).text.trim()]))
+    if (positions.has('price_secondary')) values.price_secondary = row.getCell(positions.get('price_secondary')!).text.trim()
     if (Object.values(values).some(Boolean)) rows.push({ ...values, __row: String(rowNumber) })
   })
   return rows
@@ -89,6 +91,13 @@ function parseAvailable(value: string, location: string, errors: string[], langu
   if (['false', 'no', '0', 'لا'].includes(normalized)) return false
   errors.push(localized(language, `${location}: available must be TRUE or FALSE.`, `${location}: يجب أن تكون available إما TRUE أو FALSE.`))
   return true
+}
+
+function parseSecondary(value: string | undefined, location: string, errors: string[], language: Language) {
+  if (!value?.trim()) return null
+  const price = parsePrice(value, location, errors, language)
+  if (price > 999999999999.99 || Math.abs(price * 100 - Math.round(price * 100)) > 0.0001) errors.push(localized(language, `${location}: alternate price must have at most two decimals.`, `${location}: يجب ألا يتجاوز السعر بالعملة الأخرى منزلتين عشريتين.`))
+  return price
 }
 
 /** Reads and fully validates a Fluxiva workbook before any database write. */
@@ -121,6 +130,7 @@ export async function readMenuWorkbook(file: File, language: Language): Promise<
       descriptionEn: row.description_en,
       descriptionAr: row.description_ar,
       price: parsePrice(row.price, location, errors, language, true),
+      price_secondary: parseSecondary(row.price_secondary, location, errors, language),
       available: parseAvailable(row.available, location, errors, language),
       variants: [] as Variant[],
       extras: [] as ItemExtra[],
@@ -133,7 +143,7 @@ export async function readMenuWorkbook(file: File, language: Language): Promise<
     const item = itemByKey.get(row.item_key.toLowerCase())
     if (!item) { errors.push(localized(language, `${location}: item_key “${row.item_key}” was not found in Items.`, `${location}: لم يتم العثور على item_key “${row.item_key}” في صفحة Items.`)); return }
     if (!row.name) { errors.push(localized(language, `${location}: name is required.`, `${location}: حقل name مطلوب.`)); return }
-    item.variants.push({ name_en: row.name, price: parsePrice(row.price, location, errors, language, false, true) })
+    item.variants.push({ name_en: row.name, price: parsePrice(row.price, location, errors, language, false, true), price_secondary: parseSecondary(row.price_secondary, location, errors, language) })
   })
   extraRows.forEach((row) => {
     const location = `Extras row ${row.__row}`
@@ -141,7 +151,7 @@ export async function readMenuWorkbook(file: File, language: Language): Promise<
     if (!item) { errors.push(localized(language, `${location}: item_key “${row.item_key}” was not found in Items.`, `${location}: لم يتم العثور على item_key “${row.item_key}” في صفحة Items.`)); return }
     if (!row.name_en) errors.push(localized(language, `${location}: name_en is required.`, `${location}: حقل name_en مطلوب.`))
     if (!row.name_ar) errors.push(localized(language, `${location}: name_ar is required.`, `${location}: حقل name_ar مطلوب.`))
-    item.extras.push({ name_en: row.name_en, name_ar: row.name_ar, price: parsePrice(row.price, location, errors, language) })
+    item.extras.push({ name_en: row.name_en, name_ar: row.name_ar, price: parsePrice(row.price, location, errors, language), price_secondary: parseSecondary(row.price_secondary, location, errors, language) })
   })
 
   if (!items.length && !errors.length) errors.push(localized(language, 'The Items sheet does not contain any menu items.', 'لا تحتوي صفحة Items على أي أصناف.'))
@@ -209,38 +219,40 @@ function addExample(workbook: import('exceljs').Workbook, currency: string) {
   styleSheet(sheet, [20, 62])
 }
 
-async function buildWorkbook(menu?: RestaurantMenu) {
+async function buildWorkbook(menu?: RestaurantMenu, currencyOverride?: Currency) {
   const workbook = await createExcelWorkbook()
   workbook.creator = 'Fluxiva Menu'
   workbook.created = new Date()
-  const currency = menu?.restaurant.currency ?? 'LBP'
+  const currency = currencyOverride ?? menu?.restaurant.currency ?? 'LBP'
   addInstructions(workbook, currency)
+  workbook.getWorksheet('Instructions')?.addRow(['Alternate prices', `price_secondary is optional: ${currency === 'LBP' ? 'USD' : 'LBP'}. Blank = automatic conversion at 1 USD = 89,500 LBP. An entered value overrides conversion.`])
 
   const items = workbook.addWorksheet('Items', { properties: { tabColor: { argb: 'FF173F35' } } })
-  items.addRow(ITEM_HEADERS)
+  items.addRow([...ITEM_HEADERS, 'price_secondary'])
   const variants = workbook.addWorksheet('Variants', { properties: { tabColor: { argb: 'FFD76A42' } } })
-  variants.addRow(VARIANT_HEADERS)
+  variants.addRow([...VARIANT_HEADERS, 'price_secondary'])
   const extras = workbook.addWorksheet('Extras', { properties: { tabColor: { argb: 'FF4C7C6F' } } })
-  extras.addRow(EXTRA_HEADERS)
+  extras.addRow([...EXTRA_HEADERS, 'price_secondary'])
 
   if (menu) {
     const categoryById = new Map(menu.categories.map((category) => [category.id, category]))
     menu.items.forEach((item, index) => {
       const key = `item_${String(index + 1).padStart(3, '0')}`
       const category = categoryById.get(item.category_id)
-      items.addRow([key, category?.name_en ?? '', category?.name_ar ?? '', item.name_en, item.name_ar, item.description_en ?? '', item.description_ar ?? '', item.price, item.available])
-      item.variants.forEach((variant) => variants.addRow([key, variant.name_en, variant.price]))
-      item.extras.forEach((extra) => extras.addRow([key, extra.name_en, extra.name_ar, extra.price]))
+      items.addRow([key, category?.name_en ?? '', category?.name_ar ?? '', item.name_en, item.name_ar, item.description_en ?? '', item.description_ar ?? '', item.price, item.available, item.price_secondary ?? null])
+      item.variants.forEach((variant) => variants.addRow([key, variant.name_en, variant.price, variant.price_secondary ?? null]))
+      item.extras.forEach((extra) => extras.addRow([key, extra.name_en, extra.name_ar, extra.price, extra.price_secondary ?? null]))
     })
   }
 
-  styleSheet(items, [18, 22, 22, 28, 28, 42, 42, 14, 14])
-  styleSheet(variants, [18, 28, 14])
-  styleSheet(extras, [18, 28, 28, 14])
+  styleSheet(items, [18, 22, 22, 28, 28, 42, 42, 14, 14, 18])
+  styleSheet(variants, [18, 28, 14, 18])
+  styleSheet(extras, [18, 28, 28, 14, 18])
   const priceFormat = currency === 'USD' ? '#,##0.00' : '#,##0'
   items.getColumn(8).numFmt = priceFormat
   variants.getColumn(3).numFmt = priceFormat
   extras.getColumn(4).numFmt = priceFormat
+  items.getColumn(10).numFmt = variants.getColumn(4).numFmt = extras.getColumn(5).numFmt = currency === 'USD' ? '#,##0' : '#,##0.00'
   ;[3, 5, 7].forEach((column) => { items.getColumn(column).alignment = { horizontal: 'right' } })
   extras.getColumn(3).alignment = { horizontal: 'right' }
   for (let row = 2; row <= 1000; row += 1) {
@@ -254,8 +266,8 @@ function safeFileName(value: string) {
   return value.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'menu'
 }
 
-async function downloadWorkbook(fileName: string, menu?: RestaurantMenu) {
-  const workbook = await buildWorkbook(menu)
+async function downloadWorkbook(fileName: string, menu?: RestaurantMenu, currency?: Currency) {
+  const workbook = await buildWorkbook(menu, currency)
   const buffer = await workbook.xlsx.writeBuffer()
   const url = URL.createObjectURL(new Blob([buffer as ArrayBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }))
   const anchor = document.createElement('a')
@@ -265,8 +277,8 @@ async function downloadWorkbook(fileName: string, menu?: RestaurantMenu) {
   window.setTimeout(() => URL.revokeObjectURL(url), 1000)
 }
 
-export function downloadMenuTemplate() {
-  return downloadWorkbook('fluxiva-menu-template.xlsx')
+export function downloadMenuTemplate(currency: Currency = 'LBP') {
+  return downloadWorkbook('fluxiva-menu-template.xlsx', undefined, currency)
 }
 
 export function exportMenuWorkbook(menu: RestaurantMenu) {

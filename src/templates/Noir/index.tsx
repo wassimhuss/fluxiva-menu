@@ -1,3 +1,4 @@
+import { PriceLabel } from '../../components/PriceLabel'
 import { RecommendedBadge } from '../../components/RecommendedBadge'
 import { Instagram, MapPin } from 'lucide-react'
 import { useState } from 'react'
@@ -38,7 +39,7 @@ function NoirItem({ item, index, t, formatPrice, rtl, ordering }: {
           : <span className={`${styles.thumb} ${styles.thumbPlaceholder}`} aria-hidden="true">{initials}</span>}
         <h3 className={styles.itemName}>{name}</h3>
         <span className={styles.dots} aria-hidden="true" />
-        <strong className={styles.price}>{formatPrice(price)}</strong>
+        <strong className={`${styles.price} menu-dual-price`} dir="ltr"><PriceLabel text={formatPrice(price, (variant ?? item).price_secondary)} /></strong>
       </div>
       <RecommendedBadge item={item} t={t} />
       {description && <p className={styles.desc}>{description}</p>}
@@ -80,6 +81,7 @@ export default function NoirTemplate(props: MenuTemplateProps) {
         '--noir-accent': theme.brand,
         '--noir-brand': theme.brand,
         '--noir-ink': theme.brandInk,
+        '--noir-price': theme.isLight ? theme.brand : theme.brandTint,
         '--noir-cover': coverUrl ? `url(${coverUrl})` : `linear-gradient(150deg, ${theme.brandStrong}, #0a0c0b)`,
       } as React.CSSProperties}
     >

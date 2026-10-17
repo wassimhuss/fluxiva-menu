@@ -1,6 +1,6 @@
 import type { ComponentType } from 'react'
 import type { ThemeTokens } from '../lib/theme'
-import type { Category, Language, MenuItem, Restaurant } from '../lib/types'
+import type { Category, Currency, Language, MenuItem, Restaurant } from '../lib/types'
 
 /**
  * The contract every menu template renders against.
@@ -26,7 +26,7 @@ export interface MenuTemplateProps {
   theme: ThemeTokens
   /** Picks the English or Arabic string for the current language. */
   t: (english: string, arabic: string) => string
-  formatPrice: (value: number) => string
+  formatPrice: (value: number, secondary?: number | null) => string
   /** Resolved cover photo URL, or an empty string when none is set. */
   coverUrl: string
   /** Present only when this restaurant takes takeaway orders. */
@@ -42,6 +42,7 @@ export interface MenuTemplateProps {
  * feel native to its own design.
  */
 export interface MenuOrdering {
+  currency?: Currency
   /** Units of this dish and size already in the order. */
   quantityOf: (itemId: string, variantIndex: number, extraIds?: string[]) => number
   add: (itemId: string, variantIndex: number, extraIds?: string[]) => void
