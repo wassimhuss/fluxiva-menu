@@ -228,7 +228,7 @@ export interface PlatformAuditEntry {
   actor_email?: string
   action: string
   restaurant_slug?: string
-  details: { previous_ends_at?: string | null; ends_at?: string | null; annual_cents?: number; amount_cents?: number; reference?: string; receipt_id?: string; reason?: string; owner_id?: string; owner_email?: string }
+  details: { previous_ends_at?: string | null; ends_at?: string | null; annual_cents?: number; amount_cents?: number; reference?: string; receipt_id?: string; reason?: string; owner_id?: string; owner_email?: string; slug?: string; previous_slug?: string }
   created_at: string
 }
 

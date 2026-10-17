@@ -12,6 +12,14 @@ const arabic: Record<string, string> = {
   'The owner will see your decision and note.': 'سيظهر قرارك وملاحظتك لصاحب المطعم.',
   'Note to owner (optional)': 'ملاحظة لصاحب المطعم (اختيارية)', 'Create approved branch': 'إنشاء الفرع المقبول',
   'Request approved.': 'تمت الموافقة على الطلب.', 'Request rejected.': 'تم رفض الطلب.',
+  'Edit menu link': 'تعديل رابط القائمة', 'Menu link': 'رابط القائمة', 'Save link': 'حفظ الرابط',
+  'Menu link updated.': 'تم تحديث رابط القائمة.',
+  'The owner will use this link when creating the approved branch. Saving the link does not approve the request.': 'سيستخدم صاحب المطعم هذا الرابط عند إنشاء الفرع المقبول. حفظ الرابط لا يعني الموافقة على الطلب.',
+  'Only pending branch requests can be edited': 'يمكن تعديل طلبات الفروع قيد المراجعة فقط',
+  'The request link changed. Refresh and try again.': 'تغيّر رابط الطلب. حدّث الصفحة وحاول مجدداً.',
+  'Use lowercase letters, numbers and single hyphens for the menu link': 'استخدم أحرفاً إنجليزية صغيرة وأرقاماً وشرطات مفردة لرابط القائمة',
+  'This menu link is already taken. Choose a different one.': 'رابط القائمة هذا مستخدم بالفعل. اختر رابطاً آخر.',
+  'Could not update the menu link.': 'تعذّر تحديث رابط القائمة.',
   'Loading requests…': 'جارٍ تحميل الطلبات…', 'Refresh': 'تحديث', 'Cancel': 'إلغاء', 'Saving…': 'جارٍ الحفظ…',
   'Previous': 'السابق', 'Next': 'التالي', 'Page': 'الصفحة', 'pending': 'قيد المراجعة',
   'Could not load branch requests.': 'تعذّر تحميل طلبات الفروع.', 'Could not review this request.': 'تعذّرت مراجعة هذا الطلب.',
@@ -21,3 +29,7 @@ const arabic: Record<string, string> = {
   'Resolve expired or suspended shops before adding another place': 'عالج حالة المطاعم المنتهية أو الموقوفة قبل إضافة فرع آخر',
 }
 export function branchRequestText(language: Language, text: string) { return language === 'ar' ? arabic[text] ?? text : text }
+export function branchRequestError(error: unknown, fallback: string) {
+  const message = error && typeof error === 'object' && 'message' in error ? String(error.message) : ''
+  return Object.prototype.hasOwnProperty.call(arabic, message) ? message : fallback
+}

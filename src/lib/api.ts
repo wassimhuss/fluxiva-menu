@@ -764,9 +764,14 @@ export async function listBranchRequests(admin = false, page = 0, signal?: Abort
   if (error) throw error
   return data as BranchRequestPage
 }
-export async function reviewBranchRequest(id: string, approve: boolean, note: string) {
-  if (!supabase) return (await import('./branchRequestsDemo')).demoReviewBranch(id, approve, note)
-  const { error } = await supabase.rpc('platform_review_branch_request', { request_input: id, approve_input: approve, note_input: note })
+export async function updateBranchRequestLink(id: string, slug: string, previousSlug: string) {
+  if (!supabase) return (await import('./branchRequestsDemo')).demoUpdateBranchRequestLink(id, slug, previousSlug)
+  const { error } = await supabase.rpc('platform_update_branch_request_link', { request_input: id, slug_input: slug, previous_slug_input: previousSlug })
+  if (error) throw error
+}
+export async function reviewBranchRequest(id: string, approve: boolean, note: string, expectedSlug: string) {
+  if (!supabase) return (await import('./branchRequestsDemo')).demoReviewBranch(id, approve, note, expectedSlug)
+  const { error } = await supabase.rpc('platform_review_branch_request_with_link', { request_input: id, approve_input: approve, note_input: note, expected_slug_input: expectedSlug })
   if (error) throw error
 }
 

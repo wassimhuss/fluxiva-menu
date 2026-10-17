@@ -5,6 +5,27 @@ import ts from 'typescript'
 const uri = code => 'data:text/javascript;base64,'+Buffer.from(code).toString('base64')
 const compile = name => ts.transpileModule(readFileSync(new URL('../src/lib/'+name+'.ts',import.meta.url),'utf8'),{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText
 const billing = await import(uri(compile('billing')))
+test('demo branch edits validate pending links, preserve owners and require the edited slug for approval and creation',async()=>{
+  const sourceUri=uri('// '+crypto.randomUUID()+'\n'+compile('demo'))
+  const demo=await import(uri('// '+crypto.randomUUID()+'\n'+compile('branchRequestsDemo').replace("'./demo'",JSON.stringify(sourceUri))))
+  const input={name_en:'Branch',name_ar:'فرع',address_en:'Beirut',address_ar:'بيروت',slug:'requested-link',whatsapp:''}
+  const id=demo.demoRequestBranch(input)
+  for(const slug of ['','UPPER','bad--link','a'.repeat(101)]) assert.throws(()=>demo.demoUpdateBranchRequestLink(id,slug,input.slug),/lowercase/)
+  const source=await import(sourceUri)
+  assert.throws(()=>demo.demoUpdateBranchRequestLink(id,source.demoMenus[0].restaurant.slug,input.slug),/already taken/)
+  demo.demoRequestBranch({...input,slug:'another-request'})
+  assert.throws(()=>demo.demoUpdateBranchRequestLink(id,'another-request',input.slug),/already pending/)
+  demo.demoUpdateBranchRequestLink(id,' corrected-link ',input.slug)
+  const row=demo.demoBranchRequests().requests.find(row=>row.id===id)
+  assert.deepEqual(row,{...row,...input,slug:'corrected-link'})
+  assert.equal(row.status,'pending')
+  assert.throws(()=>demo.demoUpdateBranchRequestLink(id,'next',input.slug),/link changed/)
+  assert.throws(()=>demo.demoReviewBranch(id,true,'',input.slug),/link changed/)
+  demo.demoReviewBranch(id,true,'Approved','corrected-link')
+  assert.throws(()=>demo.demoUpdateBranchRequestLink(id,'next','corrected-link'),/Only pending/)
+  assert.throws(()=>demo.demoApprovedBranch(id,input.slug),/Request approval/)
+  assert.equal(demo.demoApprovedBranch(id,'corrected-link').status,'approved')
+})
 test('an interrupted receipt from the previous release retains its ID and preview for reconciliation',async()=>{
   const source=ts.createSourceFile('ShopBillingPanel.tsx',readFileSync(new URL('../src/components/ShopBillingPanel.tsx',import.meta.url),'utf8'),ts.ScriptTarget.ES2022,true,ts.ScriptKind.TSX)
   const fn=source.statements.find(n=>ts.isFunctionDeclaration(n)&&n.name?.text==='restoredReceipt')

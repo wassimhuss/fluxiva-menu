@@ -56,6 +56,7 @@ export function SubscriberDetails({ownerId,language,refreshToken,onBack,onBillin
     'subscription.suspended':'Menu suspended','subscription.active':'Menu activated','subscription.trial':'Trial activated',
     'billing.legacy_review':'Existing access reviewed',
     'branch.approved':'Branch request approved','branch.rejected':'Branch request rejected',
+    'branch.link_updated':'Branch request link updated',
   } as Record<string,BillingCopyKey>)[action]??'Access updated'
   return <div className="subscriber-profile" aria-busy={loading}>
     <header className="subscriber-heading">{back}<div><h2 ref={heading} tabIndex={-1}><bdi>{account.email}</bdi></h2><p>{account.archived?t('Deleted account — retained financial history'):t('Registered')+' '+date(account.created_at)}</p></div>
@@ -111,6 +112,8 @@ export function SubscriberDetails({ownerId,language,refreshToken,onBack,onBillin
     {tab==='Activity'&&<section className="subscriber-section"><h3>{t('Recent activity')}</h3><p className="subscriber-note">{t('Recorded admin activity for this subscriber. Sign-in history is not included.')}</p>{loading?<Loading label={t('Loading activity…')}/>:<>
       {activity.entries.length?<ol className="subscriber-activity">{activity.entries.map(entry=><li key={entry.id}><div><strong>{t(actionName(entry.action))}</strong><time dateTime={entry.created_at}>{date(entry.created_at)}</time></div>{rows([
         ['Recorded by',text(entry.actor_email)],...(entry.restaurant_slug?[['Shop',<bdi>/m/{entry.restaurant_slug}</bdi>] as [BillingCopyKey,ReactNode]]:[]),
+        ...(entry.details.slug?[['Menu link',<bdi>/m/{entry.details.slug}</bdi>] as [BillingCopyKey,ReactNode]]:[]),
+        ...(entry.details.previous_slug?[['Previous menu link',<bdi>/m/{entry.details.previous_slug}</bdi>] as [BillingCopyKey,ReactNode]]:[]),
         ...(entry.details.amount_cents!=null?[['Amount',<bdi>{cashMoney(entry.details.amount_cents,language)}</bdi>] as [BillingCopyKey,ReactNode]]:[]),
         ...(entry.details.annual_cents!=null?[['Annual price',<bdi>{cashMoney(entry.details.annual_cents,language)}</bdi>] as [BillingCopyKey,ReactNode]]:[]),
         ...(entry.details.reference?[['Receipt reference',text(entry.details.reference)] as [BillingCopyKey,ReactNode]]:[]),

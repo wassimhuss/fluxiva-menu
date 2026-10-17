@@ -18,6 +18,8 @@ This file is the working product backlog for developers and AI agents. Keep it u
 - [x] Enforce one approved owner/slug per branch creation, including menu copying, and preserve first-place onboarding and expiry rules.
 - [x] Verify isolated PostgreSQL role boundaries, approval reuse, failed inserts and unfinished-copy cleanup, plus English/Arabic desktop/mobile demo flow.
 - [x] Apply migration `033_branch_requests.sql` to production and verify preserved data, protected RPCs and enabled approval triggers (2026-10-17).
+- [x] Let super admins edit pending branch menu links before approval, with bilingual UI, conflict/stale checks, audit history and owner creation using the corrected link.
+- [x] Apply migration `034_branch_request_links.sql` to production and verify preserved requests/restaurant data and protected functions (2026-10-17).
 - [ ] Deploy the tested branch-request frontend.
 
 ### Subscriber search filters (2026-10-13)

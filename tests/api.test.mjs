@@ -35,6 +35,20 @@ async function loadApi(t) {
   return { api, ...client, ...cache, queryClient }
 }
 const session = (id = 'owner') => ({ user: { id } })
+test('branch link edits and decisions forward the reviewed slug to protected RPCs and propagate failures',async(t)=>{
+  const {api,setClient}=await loadApi(t),calls=[]
+  let error=null
+  setClient({rpc:async(name,params)=>{calls.push({name,params});return {error}}})
+  await api.updateBranchRequestLink('request','new-link','old-link')
+  await api.reviewBranchRequest('request',true,'Approved','new-link')
+  assert.deepEqual(calls,[
+    {name:'platform_update_branch_request_link',params:{request_input:'request',slug_input:'new-link',previous_slug_input:'old-link'}},
+    {name:'platform_review_branch_request_with_link',params:{request_input:'request',approve_input:true,note_input:'Approved',expected_slug_input:'new-link'}},
+  ])
+  error=new Error('The request link changed. Refresh and try again.')
+  await assert.rejects(api.updateBranchRequestLink('request','another','old-link'),/link changed/)
+  await assert.rejects(api.reviewBranchRequest('request',false,'','old-link'),/link changed/)
+})
 test('subscriber search forwards combined filters and sort with cancellation through the operator RPC',async(t)=>{
   const {api,setClient}=await loadApi(t),controller=new AbortController(),calls=[]
   setClient({rpc:(name,params)=>({abortSignal:signal=>{calls.push({name,params,signal});return Promise.resolve({data:{total:0,subscribers:[]},error:null})}})})
