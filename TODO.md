@@ -11,6 +11,13 @@ This file is the working product backlog for developers and AI agents. Keep it u
 
 ## Cash subscriptions and subscriber management
 
+### Simpler owner subscription view (2026-10-17)
+
+- [x] Give owners plain English/Arabic status and access dates, Annual price / Paid so far / Left to pay, cash-collection guidance and expandable receipt/older-subscription details.
+- [x] Preserve unknown historical payments, manual dates, suspension/expiry behavior, owner read-only access and admin billing tools.
+- [x] Pass 70 tests, lint/build and diff checks, including rendered owner billing states, Arabic, receipt disclosures and staff-field omission.
+- [ ] Complete desktop/mobile browser and console verification; Windows Computer Use could not confirm the current browser URL during this session.
+
 ### Owner notifications and admin messages (2026-10-17)
 
 - [x] Move the mobile pending-request Overview card into Notifications with Messages / Branch requests, header badge and mobile shortcut; retain desktop request overview and unsaved-change protections.

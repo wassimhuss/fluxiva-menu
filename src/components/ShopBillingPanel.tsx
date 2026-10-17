@@ -8,6 +8,7 @@ import type { BillingCopyKey } from '../lib/billingI18n'
 import type { CashPaymentPreview, CashPaymentRequest, CashReceipt, Language, ShopBilling } from '../lib/types'
 import { Loading, Notice } from './Status'
 import { BillingIconButton } from './BillingIconButton'
+import { OwnerBillingSummary } from './OwnerBillingSummary'
 
 interface PreparedReceipt { request: CashPaymentRequest; preview: CashPaymentPreview }
 function restoredReceipt(key: string): PreparedReceipt | null {
@@ -153,10 +154,12 @@ export function ShopBillingPanel({ shopId, language, admin = false, onChanged, r
   }
   if (!billing && loading) return <Loading label={t('Loading billing…')} />
   if (!billing) return <div><Notice tone="error">{billingError(language, error)}</Notice><button className="button button-outline" onClick={refresh}>{t('Try again')}</button></div>
+  if (!admin) return <OwnerBillingSummary billing={billing} language={language} loading={loading} onRefresh={refresh} supportContact={import.meta.env.VITE_SUPPORT_WHATSAPP}>
+    {Boolean(error)&&<Notice tone="error">{billingError(language,error)}</Notice>}
+  </OwnerBillingSummary>
   const money = (cents: number | null) => cashMoney(cents, language)
   const date = (iso: string | null, time = false) => cashDate(iso, language, time)
   const latest = billing.agreements?.[0]
-  const contact = import.meta.env.VITE_SUPPORT_WHATSAPP as string | undefined
   const number = (value: number) => language === 'ar' ? '\u200e' + value.toLocaleString('ar-LB') + '\u200e' : value.toLocaleString('en-US')
   const Heading = admin ? 'h2' : 'h1'
   return (
@@ -178,7 +181,6 @@ export function ShopBillingPanel({ shopId, language, admin = false, onChanged, r
         ] as [BillingCopyKey, string][]).map(([label, value]) => <div key={label}><dt>{t(label)}</dt><dd><bdi dir={label === 'Payments recorded' ? 'ltr' : 'auto'}>{value}</bdi></dd></div>)}
       </dl>
       <p className="cash-explanation">{t('At most three payments per annual agreement. The third must settle the balance.')}</p>
-      {!admin && <div className="cash-owner-contact"><p>{t('Your shop’s billing is read-only. Contact Fluxiva to arrange cash collection.')}</p>{contact && <a className="button button-outline" href={'https://wa.me/' + contact.replace(/\D/g, '')} target="_blank" rel="noreferrer">{t('Arrange cash collection')}</a>}</div>}
       {canManage && !billing.archived && <div className="cash-management">
         <div><form className="cash-price-form" onSubmit={event => {
           event.preventDefault()

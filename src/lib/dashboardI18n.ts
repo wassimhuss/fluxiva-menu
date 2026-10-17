@@ -9,7 +9,7 @@ const arabic: Record<string, string> = {
   'Resolve expired or suspended shops before adding another place': 'راجع اشتراكات المطاعم المنتهية أو الموقوفة قبل إضافة فرع آخر.',
   'Resolve expired or suspended shops before deleting this place': 'راجع اشتراك هذا المطعم المنتهي أو الموقوف قبل حذفه.',
   'Subscription & payments': 'الاشتراك والدفعات',
-  'Price, cash receipts and paid access': 'السعر والإيصالات النقدية ومدة الوصول',
+  'Your access dates and payment history': 'مدة الاشتراك وسجل دفعاتك',
   'until paid access ends': 'حتى نهاية مدة الوصول المدفوعة',
   'Your paid access ends in': 'تنتهي مدة الوصول المدفوعة خلال',
   'Arrange cash collection': 'تنسيق التحصيل النقدي',

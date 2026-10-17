@@ -191,6 +191,10 @@ Check internal links and command accuracy.
 
 ### UI or client-logic changes
 
+For owner billing, check `/dashboard` → Subscription & payments at 1280/390 px in English/Arabic. Verify active/trial/expired/suspended/hidden and undated access, partial/settled/unknown amounts, empty history, cancelled receipts, older subscriptions, keyboard disclosure controls, refresh/error recovery, shop switching and support contact with/without configuration. `tests/owner-billing.test.mjs` renders the real owner component to verify these content distinctions, RTL and omission of admin-only receipt fields; it does not replace browser layout verification. During the 2026-10-17 simplification, Windows Computer Use ended because it could not confidently determine the current browser URL. Browser screenshots and interaction checks remain unverified; no production data was changed or migration added.
+
+The simplification passes all 70 tests, lint, TypeScript/Vite build and diff checks; existing main/Excel bundle-size warnings remain. It is local source only, not pushed/deployed. The Impeccable detector found no new issues in the owner component; its stylesheet findings were pre-existing landing/storage/notification rules.
+
 ```bash
 npm run test
 npm run lint
