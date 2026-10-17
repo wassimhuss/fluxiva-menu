@@ -1,4 +1,23 @@
 export type Language = 'en' | 'ar'
+export type BranchRequestStatus = 'pending' | 'approved' | 'rejected' | 'created'
+export type BranchRequestInput = Pick<Restaurant, 'name_en' | 'name_ar' | 'slug' | 'address_en' | 'address_ar' | 'whatsapp'>
+export interface BranchRequest extends BranchRequestInput {
+  id: string
+  owner_id: string
+  owner_email: string
+  status: BranchRequestStatus
+  decision_note: string
+  created_at: string
+  reviewed_at: string | null
+  restaurant_id: string | null
+}
+export interface BranchRequestPage {
+  requests: BranchRequest[]
+  total: number
+  pending_count: number
+  page: number
+  page_size: number
+}
 export type SubscriptionStatus = 'trial' | 'active' | 'suspended'
 
 /** The little that is shown when a menu is not currently being served. */

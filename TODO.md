@@ -11,6 +11,15 @@ This file is the working product backlog for developers and AI agents. Keep it u
 
 ## Cash subscriptions and subscriber management
 
+### Branch requests (2026-10-14)
+
+- [x] Owners submit bilingual additional-branch requests and see pending/approved/rejected status and admin notes.
+- [x] Add a protected platform Requests tab with super-admin approve/reject decisions; support remains read-only.
+- [x] Enforce one approved owner/slug per branch creation, including menu copying, and preserve first-place onboarding and expiry rules.
+- [x] Verify isolated PostgreSQL role boundaries, approval reuse, failed inserts and unfinished-copy cleanup, plus English/Arabic desktop/mobile demo flow.
+- [x] Apply migration `033_branch_requests.sql` to production and verify preserved data, protected RPCs and enabled approval triggers (2026-10-17).
+- [ ] Deploy the tested branch-request frontend.
+
 ### Subscriber search filters (2026-10-13)
 
 - [x] Add bilingual subscription, visibility, payment-record, account/archive, shop-presence and Beirut registration-date filters with sort controls, removable applied chips and clear-all.

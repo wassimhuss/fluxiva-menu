@@ -55,6 +55,7 @@ export function SubscriberDetails({ownerId,language,refreshToken,onBack,onBillin
     'billing.cash_received':'Cash recorded','billing.receipt_voided':'Receipt corrected','billing.price':'Price updated',
     'subscription.suspended':'Menu suspended','subscription.active':'Menu activated','subscription.trial':'Trial activated',
     'billing.legacy_review':'Existing access reviewed',
+    'branch.approved':'Branch request approved','branch.rejected':'Branch request rejected',
   } as Record<string,BillingCopyKey>)[action]??'Access updated'
   return <div className="subscriber-profile" aria-busy={loading}>
     <header className="subscriber-heading">{back}<div><h2 ref={heading} tabIndex={-1}><bdi>{account.email}</bdi></h2><p>{account.archived?t('Deleted account — retained financial history'):t('Registered')+' '+date(account.created_at)}</p></div>

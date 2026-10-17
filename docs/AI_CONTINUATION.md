@@ -159,6 +159,14 @@ The cash frontend release `79fa2d6` was pushed to the sole/default branch `codex
 
 ## 4. Verification by risk
 
+### Branch approval (033)
+
+Apply `033_branch_requests.sql` after 032 before deploying branch-request UI. It adds private requests, owner submission/listing and protected operator review. Only super admins approve/reject; owners may read only their own requests. First-place onboarding remains available, but every additional owner INSERT (including the definer menu-copy RPC) consumes an approved request for that owner's exact slug. Brand locks serialize creation; a rejected/pending/consumed approval cannot create a place. Failed INSERTs roll back consumption, and deleting an unfinished photo-copy restores approval. Existing expiry restrictions still run first.
+
+Migration 033 was applied transactionally through the production SQL editor on 2026-10-17 and recorded in `supabase_migrations.schema_migrations` as `20261017130000` (`branch_requests`). The recorded SQL checksum matches the local migration. Before/after snapshots retained 2 restaurants with identical full-row checksums, 6 categories, 23 items, 159 gallery images, 15 gallery folders, 331 stored files, 2 Auth accounts, 5 audit entries and empty cash agreements/receipts. All three RPCs have security-definer execution with an empty search path and no anonymous grant; request-table RLS is enabled, direct authenticated table reads are denied, and both restaurant triggers are enabled. Read-only checks under the real admin and owner identities verified scoped listing and owner/anonymous rejection of privileged calls. No production requests, approvals or branches were created. All 47 isolated tests, lint and build passed (existing bundle-size warnings remain). The frontend source is still awaiting deployment.
+
+Check Add place → bilingual request → Pending → platform Requests → approve/reject with note → owner refresh → create approved empty/copied branch. Verify owner/support/anonymous boundaries, repeat decisions and migration application, no approval reuse, copy rollback, first onboarding, and 390/1280 px English/Arabic layouts. Requests refresh every minute or on browser focus; demo requests are session-runtime data. Approval does not create a branch or alter subscription dates by itself.
+
 ### Documentation-only
 
 ```bash

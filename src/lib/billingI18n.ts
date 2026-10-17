@@ -1,6 +1,10 @@
 import type { Language } from './types'
 
 const arabic = {
+  'Requests': 'الطلبات',
+  'Branch request approved': 'تمت الموافقة على طلب الفرع',
+  'Branch request rejected': 'تم رفض طلب الفرع',
+  'Review requests for additional branches.': 'راجع طلبات إضافة فروع جديدة.',
   'Filters': 'خيارات التصفية',
   'Apply filters': 'تطبيق التصفية',
   'Clear search and filters': 'مسح البحث والتصفية',

@@ -5,7 +5,7 @@ import { getCachedOwnerQueryClient, getOwnerQueryClient, ownerCacheGeneration } 
 import { patchMenuItem } from './menuState'
 import { ownerAccessState, subscriptionState } from './subscription'
 import type { AdminRole, BrandGroup, BrandPlaces, Category, GalleryCategory, GalleryImage, ItemExtra, MenuContactCard, MenuItem, MenuViewDay, MenuViewStats, PlatformAuditEntry, PlatformRestaurant, PlatformStorageUsage, Restaurant, RestaurantMenu, Variant } from './types'
-import type { CashCollections, CashPaymentPreview, CashPaymentRequest, ShopBilling, SubscriberDetails, SubscriberFilters, SubscriberPage } from './types'
+import type { BranchRequestInput, BranchRequestPage, CashCollections, CashPaymentPreview, CashPaymentRequest, ShopBilling, SubscriberDetails, SubscriberFilters, SubscriberPage } from './types'
 import {DEFAULT_SUBSCRIBER_FILTERS} from './subscriberFilters'
 
 type RestaurantInput = Pick<Restaurant, 'name_en' | 'name_ar' | 'slug' | 'primary_color' | 'phone' | 'whatsapp' | 'instagram' | 'maps_url' | 'address_en' | 'address_ar' | 'currency' | 'temporarily_closed' | 'default_language'>
@@ -304,9 +304,10 @@ function checkDemoNewPlace() {
   if(!supabase && demoMenus.some(menu=>!subscriptionState(menu.restaurant).serving)) throw new Error('Resolve expired or suspended shops before adding another place')
 }
 
-export async function createRestaurant(session: Session | null, input: RestaurantInput, brandId?: string) {
+export async function createRestaurant(session: Session | null, input: RestaurantInput, brandId?: string, approvalId?: string) {
   checkDemoNewPlace()
   if (!supabase) {
+    const approval = approvalId ? (await import('./branchRequestsDemo')).demoApprovedBranch(approvalId, input.slug) : null
     if (demoRestaurants.some((place) => place.slug === input.slug)) throw new Error('This menu link is already taken. Choose a different one.')
     const restaurant: Restaurant = {
       ...input,
@@ -318,6 +319,7 @@ export async function createRestaurant(session: Session | null, input: Restauran
     }
     demoRestaurants.push(restaurant)
     demoMenus.push({ restaurant, categories: [], items: [] })
+    if (approval) { approval.status = 'created'; approval.restaurant_id = restaurant.id }
     return restaurant
   }
   if (!session) throw new Error('Sign in to add a place.')
@@ -337,7 +339,7 @@ export async function createRestaurant(session: Session | null, input: Restauran
 /** Creates a hidden independent menu, then copies personal assets before it is
  * ready to edit. Shared active gallery files stay shared; source files are never
  * deleted or modified. All writes use the signed-in owner's normal permissions. */
-export async function createPlaceFromMenu(session: Session | null, input: RestaurantInput, sourceId: string): Promise<RestaurantMenu> {
+export async function createPlaceFromMenu(session: Session | null, input: RestaurantInput, sourceId: string, approvalId?: string): Promise<RestaurantMenu> {
   checkDemoNewPlace()
   if (!supabase) {
     const source = demoMenus.find((entry) => entry.restaurant.id === sourceId)
@@ -353,7 +355,7 @@ export async function createPlaceFromMenu(session: Session | null, input: Restau
         if (!response.ok) throw new Error('Could not copy this menu. Please try again.')
         assetUrls.set(url, URL.createObjectURL(await response.blob()))
       }
-      restaurant = await createRestaurant(session, input, source.restaurant.brand_id)
+      restaurant = await createRestaurant(session, input, source.restaurant.brand_id, approvalId)
     } catch (caught) {
       assetUrls.forEach((url) => URL.revokeObjectURL(url))
       throw caught
@@ -749,6 +751,25 @@ export async function deleteRestaurantAsset(restaurantId: string, publicUrl?: st
  * Demo mode has no Supabase and therefore no real data to protect, so it opens
  * the console to make the operator tooling demonstrable.
  */
+export async function requestBranch(input: BranchRequestInput): Promise<string> {
+  checkDemoNewPlace()
+  if (!supabase) return (await import('./branchRequestsDemo')).demoRequestBranch(input)
+  const { data, error } = await supabase.rpc('owner_request_branch', { input_data: input })
+  if (error) throw error
+  return data as string
+}
+export async function listBranchRequests(admin = false, page = 0, signal?: AbortSignal): Promise<BranchRequestPage> {
+  if (!supabase) return (await import('./branchRequestsDemo')).demoBranchRequests(page)
+  const { data, error } = await supabase.rpc('list_branch_requests', { admin_input: admin, page_input: page }).abortSignal(readSignal(signal))
+  if (error) throw error
+  return data as BranchRequestPage
+}
+export async function reviewBranchRequest(id: string, approve: boolean, note: string) {
+  if (!supabase) return (await import('./branchRequestsDemo')).demoReviewBranch(id, approve, note)
+  const { error } = await supabase.rpc('platform_review_branch_request', { request_input: id, approve_input: approve, note_input: note })
+  if (error) throw error
+}
+
 export async function getAdminRole(): Promise<AdminRole | null> {
   if (!supabase) return 'super_admin'
   const { data, error } = await supabase.rpc('platform_admin_role').abortSignal(readSignal())

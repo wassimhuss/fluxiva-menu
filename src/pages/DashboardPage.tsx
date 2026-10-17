@@ -12,6 +12,10 @@ import { BillingIconButton } from '../components/BillingIconButton'
 import { GalleryPicker } from '../components/GalleryPicker'
 import { ImageLightbox } from '../components/ImageLightbox'
 import { PortraitImageCropper } from '../components/PortraitImageCropper'
+import { BranchRequestsPanel } from '../components/BranchRequestsPanel'
+import { requestBranch } from '../lib/api'
+import { branchRequestText } from '../lib/branchRequestI18n'
+import type { BranchRequest } from '../lib/types'
 import { cleanExtras, cleanVariants, createCategories, createCategory, createItem, createItems, createPlaceFromMenu, createRestaurant, deleteCategory, deleteItem, deleteRestaurant, deleteRestaurantAsset, getMenuViewStats, getShopBilling, getOwnerBrand, getCachedOwnerMenu, getOwnerMenu, getOwnerRestaurants, listGalleryCategories, listGalleryImages, moveCategoryByOne, moveItemByOne, setItemHighlighted, setPlacePublished, updateCategory, updateItem, updateRestaurant, uploadRestaurantAsset, validateGallerySource } from '../lib/api'
 import { useAuth } from '../lib/auth'
 import { formatMoney, localText, slugify } from '../lib/format'
@@ -109,6 +113,11 @@ export function DashboardPage() {
   const [qrModal, setQrModal] = useState(false)
   const [placeSwitcherOpen, setPlaceSwitcherOpen] = useState(false)
   const [placeModal, setPlaceModal] = useState(false)
+  const [branchApproval, setBranchApproval] = useState<BranchRequest | null>(null)
+  const [branchRequestsRefresh, setBranchRequestsRefresh] = useState(0)
+  const [branchRequestSuccess, setBranchRequestSuccess] = useState('')
+  const placeForm = useRef<HTMLFormElement>(null)
+  useEffect(() => { if (placeModal) placeForm.current?.scrollTo({ top: 0 }) }, [placeModal, branchApproval])
   const [placeDraft, setPlaceDraft] = useState<PlaceDraft>(emptyPlace())
   const [placeCopySource, setPlaceCopySource] = useState('')
   const [placeError, setPlaceError] = useState('')
@@ -270,9 +279,17 @@ export function DashboardPage() {
   function openPlaceCreator() {
     setPlaceSwitcherOpen(false)
     setPlaceError('')
+    setBranchApproval(null)
+    setBranchRequestSuccess('')
     setPlaceDraft(emptyPlace(menu?.restaurant))
     setPlaceCopySource(menu?.restaurant.menu_copy_pending ? '' : menu?.restaurant.id ?? '')
     setPlaceModal(true)
+  }
+  function openApprovedBranch(request: BranchRequest) {
+    setBranchApproval(request)
+    const { name_en, name_ar, slug, address_en, address_ar, whatsapp } = request
+    setPlaceDraft({ ...emptyPlace(menu?.restaurant), name_en, name_ar, slug, address_en: address_en ?? '', address_ar: address_ar ?? '', whatsapp: whatsapp ?? '' })
+    setPlaceError('')
   }
 
   async function savePlace(event: React.FormEvent) {
@@ -280,8 +297,14 @@ export function DashboardPage() {
     if (saving) return
     setSaving(true); setPlaceError('')
     try {
-      const copied = placeCopySource ? await createPlaceFromMenu(session, placeDraft, placeCopySource) : null
-      const restaurant = copied?.restaurant ?? await createRestaurant(session, placeDraft, brand?.id)
+      if (!branchApproval) {
+        await requestBranch(placeDraft)
+        setPlaceDraft(emptyPlace(menu?.restaurant)); setBranchRequestsRefresh(value => value + 1)
+        setBranchRequestSuccess('Branch request sent. You can check its status here.')
+        return
+      }
+      const copied = placeCopySource ? await createPlaceFromMenu(session, placeDraft, placeCopySource, branchApproval.id) : null
+      const restaurant = copied?.restaurant ?? await createRestaurant(session, placeDraft, brand?.id, branchApproval.id)
       setRestaurants((current) => [...current, restaurant])
       setPlaceModal(false)
       if (copied) {
@@ -297,7 +320,7 @@ export function DashboardPage() {
         showSuccess(t('Place added successfully.'))
       }
     } catch (caught) {
-      setPlaceError(caught instanceof Error ? t(caught.message) : t(placeCopySource ? 'Could not copy this menu. Please try again.' : 'Could not create restaurant'))
+      setPlaceError(caught instanceof Error ? branchRequestText(dashboardLanguage, t(caught.message)) : t(placeCopySource ? 'Could not copy this menu. Please try again.' : 'Could not create restaurant'))
     } finally { setSaving(false) }
   }
 
@@ -1257,13 +1280,15 @@ export function DashboardPage() {
         </div>
       </form></div>}
 
-      {placeModal && <div className="modal-backdrop"><form className="modal-card modal-large place-create-modal" role="dialog" aria-modal="true" aria-labelledby="place-create-title" aria-busy={saving} onSubmit={savePlace}>
+      {placeModal && <div className="modal-backdrop"><form ref={placeForm} className="modal-card modal-large place-create-modal" role="dialog" aria-modal="true" aria-labelledby="place-create-title" aria-busy={saving} onSubmit={savePlace}>
         <button type="button" className="modal-close" aria-label={t('Close')} disabled={saving} onClick={() => setPlaceModal(false)}><X /></button>
-        <span className="eyebrow"><span /> {t('New place')}</span><h2 id="place-create-title">{t('Add another place')}</h2>
-        <p>{t('This place will have its own menu and public link under the same brand QR code.')}</p>
+        <span className="eyebrow"><span /> {t('New place')}</span><h2 id="place-create-title">{branchRequestText(dashboardLanguage, branchApproval ? 'Create approved branch' : 'Request a new branch')}</h2>
+        <p>{branchApproval ? t('This place will have its own menu and public link under the same brand QR code.') : branchRequestText(dashboardLanguage, 'Submit the branch details for Fluxiva to review. Once approved, return here to create its menu.')}</p>
+        {!branchApproval && <BranchRequestsPanel language={dashboardLanguage} refreshToken={branchRequestsRefresh} onCreate={openApprovedBranch} />}
+        {!branchApproval && branchRequestSuccess && <Notice tone="success">{branchRequestText(dashboardLanguage, branchRequestSuccess)}</Notice>}
         {placeError && <Notice tone="error">{placeError}</Notice>}
         <fieldset className="place-create-fields" disabled={saving}>
-          <div className="place-menu-copy">
+          {branchApproval && <div className="place-menu-copy">
             <label><span className="place-menu-copy-title"><Copy aria-hidden="true" /> {t('Copy menu from…')}</span>
               <select value={placeCopySource} onChange={(event) => setPlaceCopySource(event.target.value)} aria-describedby="place-copy-hint">
                 <option value="">{t('Start with an empty menu')}</option>
@@ -1272,17 +1297,17 @@ export function DashboardPage() {
             </label>
             <p id="place-copy-hint">{t(placeCopySource ? 'Copies all categories, items, photos, sizes, extras, prices and menu design. Future edits affect only this new branch.' : 'Create this branch without categories or items. You can add them later.')}</p>
             {placeCopySource && <small className="place-copy-review"><EyeOff aria-hidden="true" /> {t('Starts hidden. Review prices, then use Show branch in Your places.')}</small>}
-          </div>
-          <div className="form-grid">
+          </div>}
+          <fieldset className="form-grid branch-request-fields" disabled={Boolean(branchApproval)}>
             <label>{t('English name')}<input dir="ltr" required autoFocus value={placeDraft.name_en} onChange={(event) => setPlaceDraft({ ...placeDraft, name_en: event.target.value, slug: placeDraft.slug || slugify(event.target.value) })} placeholder="Hilal Oven — Beirut" /></label>
             <label>{t('Arabic name')}<input dir="rtl" required value={placeDraft.name_ar} onChange={(event) => setPlaceDraft({ ...placeDraft, name_ar: event.target.value })} placeholder="فرن الهلال — بيروت" /></label>
             <label>{t('Menu link')}<div className="slug-input" dir="ltr"><span>/m/</span><input required value={placeDraft.slug} onChange={(event) => setPlaceDraft({ ...placeDraft, slug: slugify(event.target.value) })} placeholder="hilal-beirut" /></div></label>
             <label>{t('WhatsApp number')}<input dir="ltr" value={placeDraft.whatsapp} onChange={(event) => setPlaceDraft({ ...placeDraft, whatsapp: event.target.value })} placeholder="+961 70 123 456" /></label>
             <label>{t('Address in English')}<textarea dir="ltr" required value={placeDraft.address_en} onChange={(event) => setPlaceDraft({ ...placeDraft, address_en: event.target.value })} placeholder="Hamra, Beirut" /></label>
             <label>{t('Address in Arabic')}<textarea dir="rtl" required value={placeDraft.address_ar} onChange={(event) => setPlaceDraft({ ...placeDraft, address_ar: event.target.value })} placeholder="الحمرا، بيروت" /></label>
-          </div>
+          </fieldset>
         </fieldset>
-        <button className="button button-primary full" disabled={saving}>{t(saving ? (placeCopySource ? 'Copying menu and photos…' : 'Creating…') : (placeCopySource ? 'Create place & copy menu' : 'Create place'))}</button>
+        <button className="button button-primary full" disabled={saving}>{branchApproval ? t(saving ? (placeCopySource ? 'Copying menu and photos…' : 'Creating…') : (placeCopySource ? 'Create place & copy menu' : 'Create place')) : branchRequestText(dashboardLanguage, saving ? 'Saving…' : 'Send branch request')}</button>
       </form></div>}
 
       {categoryModal && <div className="modal-backdrop"><form className="modal-card" onSubmit={saveCategory}><button type="button" className="modal-close" onClick={() => { setCategoryModal(false); setEditingCategory(null) }}><X /></button><span className="eyebrow"><span /> {editingCategory ? t('Edit section') : t('New section')}</span><h2>{editingCategory ? t('Edit category') : t('Add a category')}</h2><p>{t('Give it a name in both menu languages.')}</p><label>{t('English name')}<input required autoFocus value={categoryDraft.name_en} onChange={(e) => setCategoryDraft({ ...categoryDraft, name_en: e.target.value })} placeholder="Pizza" /></label><label>{t('Arabic name')}<input dir="rtl" required value={categoryDraft.name_ar} onChange={(e) => setCategoryDraft({ ...categoryDraft, name_ar: e.target.value })} placeholder="بيتزا" /></label><button className="button button-primary full" disabled={saving}>{saving ? t('Saving…') : editingCategory ? t('Save category') : t('Add category')}</button></form></div>}
