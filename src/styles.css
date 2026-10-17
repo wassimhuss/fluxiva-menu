@@ -566,6 +566,7 @@
 .landing-v2[dir="rtl"] :is(.lp-dashboard-note small,.lp-support-note small){font-size:11px}
 .landing-v2[dir="rtl"] :is(.lp-language-pills>*,.lp-speed-demo){font-size:12px}
 .landing-v2[dir="rtl"] :is(.lp-speed-demo i,.lp-step-list article>small,.lp-popular-badge){font-size:11px}
+.lp-price-was{display:flex;align-items:baseline;flex-wrap:wrap;gap:8px;margin-bottom:4px;color:var(--lp-muted);font-size:14px}.lp-price-was del{font-size:18px;font-weight:600;text-decoration-thickness:1.5px}
 .landing-v2[dir="rtl"] .lp-price>strong{letter-spacing:0;font-variant-numeric:tabular-nums}
 .landing-v2[dir="rtl"] .lp-price>span{font-size:13px}
 .landing-v2[dir="rtl"] .lp-price>span b{font-size:12px}

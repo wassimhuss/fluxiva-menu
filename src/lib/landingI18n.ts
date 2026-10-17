@@ -148,6 +148,7 @@ const arabic = {
   'Real setup support': 'دعم مباشر في الإعداد',
   'We are here when you need a hand.': 'نحن هنا كلما احتجت إلى المساعدة.',
   'Complete plan': 'الباقة الشاملة',
+  'Was': 'السعر السابق',
   'We set it up with you': 'نجهّزها معك',
   'Personal help in Arabic or English.': 'مساعدة شخصية بالعربية أو الإنجليزية.',
   'USD': 'دولار أميركي',

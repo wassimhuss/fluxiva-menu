@@ -239,7 +239,9 @@ Build a curated **Fluxiva Gallery** that lets every restaurant owner either sele
 - [x] Replace the generic footer chat icon with the WhatsApp brand icon across all eight menu templates, preserving theme colors, contact links, and bilingual responsive layouts (2026-10-11).
 - [x] Confirm before hiding a visible menu item while keeping restoration a one-tap action (2026-10-09).
 - [x] Add persistent English/Arabic translations and RTL layouts to login, signup, and password-recovery screens (2026-10-09).
+- [x] Require password confirmation on signup, with bilingual mismatch feedback, independent visibility toggles and validation before remote/demo submission (2026-10-17).
 - [x] Refine the landing page for mobile conversion with clearer bilingual copy, sticky navigation, readable product previews, local trust/payment details, compact sections, and RTL-safe layouts (2026-10-09).
+- [x] Show the landing-page annual offer as $100 with the previous $150 crossed out in English/Arabic, without changing shop billing prices (2026-10-17).
 - [x] Autofill empty English and Arabic item names from a selected Fluxiva Gallery photo without overwriting owner-entered names (2026-10-08).
 - [x] Add a drag-and-zoom cropper that produces exact `1200 × 1500` 4:5 portrait super-admin gallery uploads (2026-09-29).
 - [x] Reuse the `1200 × 1500` portrait cropper for owners replacing personal item photos, including an immediate cropped preview (2026-09-29).

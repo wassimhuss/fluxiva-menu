@@ -320,7 +320,8 @@ export function LandingPage() {
           </div>
           <div className="lp-price-box">
             <span className="lp-popular-badge"><Sparkles /> {t('Complete plan')}</span>
-            <div className="lp-price"><strong><bdi>{language === 'ar' ? n(60) : '$60'}</bdi></strong><span><b>{t('USD')}</b>{t('per year')}</span></div>
+            <div className="lp-price-was"><span>{t('Was')}</span><del><bdi>{language === 'ar' ? `${n(150)} ${t('USD')}` : '$150'}</bdi></del></div>
+            <div className="lp-price"><strong><bdi>{language === 'ar' ? n(100) : '$100'}</bdi></strong><span><b>{t('USD')}</b>{t('per year')}</span></div>
             <p>{t('Everything you need to launch and manage your digital menu.')}</p>
             <div className="lp-benefit-list">
               {benefits.map(([title, copy]) => (

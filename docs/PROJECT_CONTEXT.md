@@ -6,7 +6,7 @@ Last verified: 2026-10-13
 
 Fluxiva Menu is a bilingual QR-menu SaaS aimed at Lebanese restaurants. One owner account can manage multiple places, each with its own menu, settings, public link, and analytics. A shared brand QR opens a bilingual branch selector before the guest enters the selected place's menu. Owners can manage categories and items, add photos and size-based prices, mark products unavailable, import or export a structured Excel workbook, and download a print-ready QR code. Guests need no app and can switch between English and Arabic.
 
-The published plan remains **$60 USD per year** after a **14-day trial**. Each place's actual annual USD price is entered by a super admin. Cash is collected in person and recorded manually; there is no online checkout or automatic renewal. Up to three flexible payments may fund one annual agreement, with the third settling its remaining balance.
+The landing-page offer is **$100 USD per year**, with **$150** shown crossed out as the previous price, after a **14-day trial**. English and Arabic both show the offer with localized numerals/currency. This marketing display does not rewrite existing shop prices or agreements: each place's actual annual USD price is entered by a super admin. Cash is collected in person and recorded manually; there is no online checkout or automatic renewal. Up to three flexible payments may fund one annual agreement, with the third settling its remaining balance.
 
 ## Technology
 
@@ -60,6 +60,7 @@ Demo mode is a deliberate development and sales-preview feature. Do not remove i
 - Signed-in operators go directly from authentication to `/platform` after their role resolves. Normal owners go to `/dashboard` (new signups to `/onboarding`); the owner dashboard contains no operator-console link. Demo login continues to open the owner dashboard.
 - Owner route guards also redirect operators away from `/dashboard` and `/onboarding`. Signed-in landing navigation uses the account's actual workspace. Role failures show bilingual Retry/Sign out controls instead of treating an unresolved operator as an owner; password recovery returns through the role-aware sign-in destination. Demo mode retains both workspace previews.
 - Login, signup, forgot-password, and reset-password screens inherit the landing-page language preference (`fluxiva-landing-language`) and apply a complete English/Arabic RTL layout through `src/lib/authI18n.ts`.
+- Signup requires a matching Confirm password field before any Supabase request or demo navigation. Each password has its own visibility toggle; mismatch feedback is localized, announced and linked to the focused confirmation field. Password managers receive new-password autocomplete hints; the confirmation value is never sent to Supabase. Login and password-recovery behavior are unchanged.
 - `src/lib/api.ts` is the client-side data boundary for restaurant, category, item, asset, and platform operations.
 - Public menus query by slug and allow only `trial` or `active` restaurants.
 - Owner menus query by the authenticated user's ID.

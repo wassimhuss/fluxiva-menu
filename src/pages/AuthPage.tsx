@@ -1,5 +1,5 @@
 import { ArrowLeft, Eye, EyeOff } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, Navigate, useNavigate } from 'react-router-dom'
 import { Brand } from '../components/Brand'
 import { AccountAccessError } from '../components/AccountAccessError'
@@ -41,10 +41,14 @@ export function AuthPage({ mode }: { mode: Mode }) {
   const [language] = useState<Language>(() => localStorage.getItem(AUTH_LANGUAGE_KEY) === 'ar' ? 'ar' : 'en')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [confirmation, setConfirmation] = useState('')
   const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmation, setShowConfirmation] = useState(false)
+  const confirmationInput = useRef<HTMLInputElement>(null)
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
   const [busy, setBusy] = useState(false)
+  const passwordMismatch = isSignup && error === 'Both passwords need to match.'
 
   const [idleNotice, setIdleNotice] = useState(false)
   const t = (english: string) => authText(language, english)
@@ -73,6 +77,11 @@ export function AuthPage({ mode }: { mode: Mode }) {
   async function submit(event: React.FormEvent) {
     event.preventDefault()
     setError(''); setMessage('')
+    if (isSignup && password !== confirmation) {
+      setError('Both passwords need to match.')
+      confirmationInput.current?.focus()
+      return
+    }
     if (!supabase) { navigate('/dashboard'); return }
     setBusy(true)
 
@@ -118,7 +127,7 @@ export function AuthPage({ mode }: { mode: Mode }) {
           <p>{t(copy.blurb)}</p>
           {idleNotice && <Notice>{t('You were signed out after two hours without activity. Sign in again to carry on.')}</Notice>}
           {demoMode && <Notice>{t('Demo mode is active. Submit this form to preview the dashboard.')}</Notice>}
-          {error && <Notice tone="error">{authErrorText(language, error)}</Notice>}
+          {error && <div id="auth-error" role="alert"><Notice tone="error">{authErrorText(language, error)}</Notice></div>}
           {message && <Notice tone="success">{t(message)}</Notice>}
 
           <label>{t('Email address')}<input required dir="ltr" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="owner@restaurant.com" /></label>
@@ -130,11 +139,19 @@ export function AuthPage({ mode }: { mode: Mode }) {
                 {mode === 'login' && <Link className="label-link" to="/forgot-password">{t('Forgot password?')}</Link>}
               </span>
               <span className="password-field">
-                <input required aria-label={t('Password')} minLength={8} type={showPassword ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)} placeholder={t('At least 8 characters')} />
+                <input required name="password" autoComplete={isSignup ? 'new-password' : 'current-password'} aria-label={t('Password')} minLength={8} type={showPassword ? 'text' : 'password'} value={password} onChange={(e) => { setPassword(e.target.value); if (passwordMismatch) setError('') }} placeholder={t('At least 8 characters')} />
                 <button type="button" onClick={() => setShowPassword(!showPassword)} aria-label={t(showPassword ? 'Hide password' : 'Show password')}>{showPassword ? <EyeOff /> : <Eye />}</button>
               </span>
             </label>
           )}
+
+          {isSignup && <label>
+            {t('Confirm password')}
+            <span className="password-field">
+              <input ref={confirmationInput} required name="confirmPassword" autoComplete="new-password" aria-label={t('Confirm password')} aria-invalid={passwordMismatch || undefined} aria-describedby={passwordMismatch ? 'auth-error' : undefined} minLength={8} type={showConfirmation ? 'text' : 'password'} value={confirmation} onChange={(event) => { setConfirmation(event.target.value); if (passwordMismatch) setError('') }} placeholder={t('Type it once more')} />
+              <button type="button" onClick={() => setShowConfirmation(!showConfirmation)} aria-label={t(showConfirmation ? 'Hide password confirmation' : 'Show password confirmation')}>{showConfirmation ? <EyeOff /> : <Eye />}</button>
+            </span>
+          </label>}
 
           <button className="button button-primary full" disabled={busy}>{busy ? t('Please wait…') : t(copy.submit)}</button>
 

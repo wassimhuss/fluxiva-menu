@@ -55,6 +55,8 @@ Do not silently depend on a field that is absent from the demo data or existing 
 
 ### Add an owner-dashboard workflow
 
+For signup changes, check `/signup` in English/Arabic at 390/1280 px: required confirmation, mismatch → focused localized error → correction → successful demo navigation, independent show/hide controls and password-manager autocomplete. A mismatch must not call Supabase or bypass validation in demo. `/login` and `/forgot-password` must not require confirmation; use mocked auth calls rather than creating production accounts for QA.
+
 For account routing, verify an operator's direct `/dashboard` and `/onboarding` visits return to `/platform`, and an owner's `/platform` visit returns to `/dashboard`. Landing navigation, sign-in and password-recovery completion must use the account's workspace. Role loading must not flash an owner page; a failed lookup must offer Retry/Sign out. Offline demo still supports both route previews. `tests/routes.test.mjs` covers these access decisions.
 
 1. Keep persistence logic in `src/lib/api.ts`.
@@ -84,6 +86,8 @@ Verify login → dashboard in demo mode, save an item/recommendation/order chang
 7. For Reel, verify fast native touch/wheel gestures and immediate reverse/repeated scrolling, clean snap landing, matching captions/progress, category reset, keyboard navigation, and reduced motion. Do not reattach `useSnapLock` or `scroll-snap-stop: always`: those intentionally prevent the fast multi-item browsing required here. The horizontal Carousel keeps its own gesture lock.
 
 ### Change the landing page
+
+The current marketing offer is $100/year with a crossed-out previous $150 price (English/Arabic). Price-display changes do not update shop billing prices or locked agreements. Verify both amounts, the strike-through, currency/year labels and wrapping at desktop/mobile widths; no database migration is needed.
 
 1. Work inside `LandingPage.tsx` and the `/* Landing page v2 */` section of `styles.css`.
 2. Prefer `lp-` selectors to generic class names.
