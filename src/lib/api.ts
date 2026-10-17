@@ -7,6 +7,31 @@ import { ownerAccessState, subscriptionState } from './subscription'
 import type { AdminRole, BrandGroup, BrandPlaces, Category, GalleryCategory, GalleryImage, ItemExtra, MenuContactCard, MenuItem, MenuViewDay, MenuViewStats, PlatformAuditEntry, PlatformRestaurant, PlatformStorageUsage, Restaurant, RestaurantMenu, Variant } from './types'
 import type { BranchRequestInput, BranchRequestPage, CashCollections, CashPaymentPreview, CashPaymentRequest, ShopBilling, SubscriberDetails, SubscriberFilters, SubscriberPage } from './types'
 import {DEFAULT_SUBSCRIBER_FILTERS} from './subscriberFilters'
+import type { AnnouncementInput, AnnouncementPage, AnnouncementReceipt, OwnerNotificationPage } from './types'
+
+export async function getOwnerNotifications(page = 0, signal?: AbortSignal): Promise<OwnerNotificationPage> {
+  if (!supabase) return (await import('./notificationsDemo')).demoOwnerNotifications(page)
+  const { data, error } = await supabase.rpc('owner_notifications', { page_input: page }).abortSignal(readSignal(signal))
+  if (error) throw error
+  return data as OwnerNotificationPage
+}
+export async function readOwnerNotification(id: string) {
+  if (!supabase) return (await import('./notificationsDemo')).demoReadNotification(id)
+  const { error } = await supabase.rpc('owner_read_notification', { message_input: id })
+  if (error) throw error
+}
+export async function sendAnnouncement(id: string, input: AnnouncementInput): Promise<AnnouncementReceipt> {
+  if (!supabase) return (await import('./notificationsDemo')).demoSendAnnouncement(id, input)
+  const { data, error } = await supabase.rpc('platform_send_announcement', { request_input: id, input_data: input })
+  if (error) throw error
+  return data as AnnouncementReceipt
+}
+export async function listAnnouncements(page = 0, signal?: AbortSignal): Promise<AnnouncementPage> {
+  if (!supabase) return (await import('./notificationsDemo')).demoAnnouncements(page)
+  const { data, error } = await supabase.rpc('platform_list_announcements', { page_input: page }).abortSignal(readSignal(signal))
+  if (error) throw error
+  return data as AnnouncementPage
+}
 
 type RestaurantInput = Pick<Restaurant, 'name_en' | 'name_ar' | 'slug' | 'primary_color' | 'phone' | 'whatsapp' | 'instagram' | 'maps_url' | 'address_en' | 'address_ar' | 'currency' | 'temporarily_closed' | 'default_language'>
 type CategoryInput = Pick<Category, 'restaurant_id' | 'name_en' | 'name_ar' | 'sort_order'>

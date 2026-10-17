@@ -13,6 +13,10 @@ import { GalleryPicker } from '../components/GalleryPicker'
 import { ImageLightbox } from '../components/ImageLightbox'
 import { PortraitImageCropper } from '../components/PortraitImageCropper'
 import { BranchRequestsPanel } from '../components/BranchRequestsPanel'
+import { Bell } from 'lucide-react'
+import { OwnerMessages } from '../components/OwnerMessages'
+import { useOwnerNotifications } from '../lib/useOwnerNotifications'
+import { notificationText } from '../lib/notificationI18n'
 import { requestBranch } from '../lib/api'
 import { branchRequestText } from '../lib/branchRequestI18n'
 import type { BranchRequest } from '../lib/types'
@@ -29,7 +33,7 @@ import { DEFAULT_TEMPLATE, TEMPLATES, resolveTemplateId } from '../templates/reg
 import type { BrandGroup, Category, GalleryCategory, GalleryImage, ItemExtra, Language, MenuItem, MenuViewStats, Restaurant, RestaurantMenu, ShopBilling, Variant } from '../lib/types'
 import type { MenuWorkbookPreview } from '../lib/menuWorkbook'
 
-type Panel = 'overview' | 'analysis' | 'menu' | 'design' | 'settings' | 'billing'
+type Panel = 'overview' | 'analysis' | 'menu' | 'design' | 'settings' | 'billing' | 'notifications'
 type ItemDraft = { category_id: string; name_en: string; name_ar: string; description_en: string; description_ar: string; price: string; variants: Variant[]; extras: ItemExtra[]; image_file: File | null; image_url?: string | null; gallery_image_id?: string | null }
 type ImagePreview = { url: string; name: string }
 type RestaurantSettings = Pick<Restaurant, 'name_en' | 'name_ar' | 'description_en' | 'description_ar' | 'whatsapp' | 'instagram' | 'address_en' | 'address_ar' | 'currency' | 'temporarily_closed' | 'takeaway_enabled' | 'default_language'>
@@ -115,6 +119,16 @@ export function DashboardPage() {
   const [placeModal, setPlaceModal] = useState(false)
   const [branchApproval, setBranchApproval] = useState<BranchRequest | null>(null)
   const [branchRequestsRefresh, setBranchRequestsRefresh] = useState(0)
+  const notifications = useOwnerNotifications(accountKey, branchRequestsRefresh)
+  const [notificationView, setNotificationView] = useState<'messages' | 'requests'>('messages')
+  const [mobileOverview, setMobileOverview] = useState(() => window.matchMedia('(max-width:600px)').matches)
+  const exitDestination = useRef<Panel>('overview')
+  useEffect(() => {
+    const media = window.matchMedia('(max-width:600px)')
+    const change = () => setMobileOverview(media.matches)
+    media.addEventListener('change', change)
+    return () => media.removeEventListener('change', change)
+  }, [])
   const [branchRequestSuccess, setBranchRequestSuccess] = useState('')
   const placeForm = useRef<HTMLFormElement>(null)
   useEffect(() => { if (placeModal) placeForm.current?.scrollTo({ top: 0 }) }, [placeModal, branchApproval])
@@ -230,6 +244,8 @@ export function DashboardPage() {
   }
 
   const t = (english: string) => dashboardText(dashboardLanguage, english)
+  const nt = (english: string) => notificationText(dashboardLanguage, english)
+  const notificationCount = (notifications.data?.unread_count ?? 0) + (notifications.data?.pending_requests ?? 0) + (notifications.data?.approved_requests ?? 0)
 
   function showSuccess(message: string) {
     window.clearTimeout(successTimer.current)
@@ -860,11 +876,21 @@ export function DashboardPage() {
     setImageVisibilityDraft(null)
     setImageVisibilityConfirmation(null)
     setDesignExitConfirmationOpen(false)
-    setPanel('overview')
+    setPanel(exitDestination.current)
   }
 
   function requestBackToOverview() {
+    requestPanel('overview')
+  }
+
+  function openNotifications() {
+    setNotificationView(notifications.data?.unread_count ? 'messages' : notifications.data?.pending_requests || notifications.data?.approved_requests ? 'requests' : 'messages')
+    requestPanel('notifications')
+  }
+
+  function requestPanel(destination: Panel) {
     if (saving) return
+    exitDestination.current = destination
     if (panel === 'design' && designDirty) {
       setDesignExitConfirmationOpen(true)
       return
@@ -873,28 +899,28 @@ export function DashboardPage() {
       setSettingsExitConfirmationOpen(true)
       return
     }
-    setPanel('overview')
+    setPanel(destination)
   }
 
   async function saveAndLeaveDesign() {
     const saved = await saveDesign(previewTemplate, previewColor, previewShowItemImages)
     if (!saved) return
     setDesignExitConfirmationOpen(false)
-    setPanel('overview')
+    setPanel(exitDestination.current)
   }
 
   function leaveSettingsWithoutSaving() {
     if (!menu) return
     if (savedSettings) setMenu({ ...menu, restaurant: { ...menu.restaurant, ...savedSettings } })
     setSettingsExitConfirmationOpen(false)
-    setPanel('overview')
+    setPanel(exitDestination.current)
   }
 
   async function saveAndLeaveSettings() {
     const saved = await saveRestaurantDetails()
     if (!saved) return
     setSettingsExitConfirmationOpen(false)
-    setPanel('overview')
+    setPanel(exitDestination.current)
   }
 
   function openSettings() {
@@ -964,22 +990,23 @@ export function DashboardPage() {
           <button className={panel === 'design' ? 'selected' : ''} onClick={() => { setPanel('design'); setDesignStep(1) }}><Palette /> {t('Menu design')}</button>
           <button className={panel === 'settings' ? 'selected' : ''} onClick={openSettings}><Settings /> {t('Restaurant settings')}</button>
           <button className={panel === 'billing' ? 'selected' : ''} onClick={() => setPanel('billing')}><Clock3 /> {t('Subscription & payments')}</button>
+          <button className={panel === 'notifications' ? 'selected' : ''} onClick={openNotifications}><Bell /> {nt('Notifications')}{notificationCount > 0 && <b className="notification-badge">{notificationCount.toLocaleString(dashboardLanguage)}</b>}</button>
         </nav>
         <div className="sidebar-bottom"><Link to={`/m/${menu.restaurant.slug}`} target="_blank"><ExternalLink /> {t('Open public menu')}</Link><button onClick={handleSignOut}><LogOut /> {t('Sign out')}</button></div>
       </aside>
       <section className="dashboard-main">
-        <header className="dashboard-header">{panel !== 'overview' && <button className="mobile-menu" aria-label={t('Back to overview')} onClick={requestBackToOverview}><BackChevron /></button>}<button type="button" className="dashboard-current-place" onClick={() => setPlaceSwitcherOpen(true)}><span>{t('Restaurant dashboard')}</span><b>{menu.restaurant.name_en}</b></button><div className="header-actions"><button type="button" className="language-switch" onClick={() => changeDashboardLanguage(dashboardLanguage === 'ar' ? 'en' : 'ar')} aria-label={dashboardLanguage === 'ar' ? 'Switch to English' : 'التبديل إلى العربية'}>{dashboardLanguage === 'ar' ? 'EN' : 'عربي'}</button>{panel === 'overview' && <button type="button" className="dashboard-header-signout" onClick={handleSignOut}><LogOut /> <span>{t('Sign out')}</span></button>}<Link className="button button-small button-outline" to={`/m/${menu.restaurant.slug}`} target="_blank">{t('View menu')} <ExternalLink /></Link></div></header>
+<header className="dashboard-header">{panel !== 'overview' && <button className="mobile-menu" aria-label={t('Back to overview')} onClick={requestBackToOverview}><BackChevron /></button>}<button type="button" className="dashboard-current-place" onClick={() => setPlaceSwitcherOpen(true)}><span>{t('Restaurant dashboard')}</span><b>{menu.restaurant.name_en}</b></button><div className="header-actions"><button type="button" className="dashboard-notification-bell" aria-label={nt('Notifications and branch requests') + (notificationCount ? ' · ' + notificationCount.toLocaleString(dashboardLanguage) : '')} aria-pressed={panel === 'notifications'} onClick={openNotifications}><Bell size={19} />{notificationCount > 0 && <b className="notification-badge" aria-hidden="true">{notificationCount > 99 ? '99+' : notificationCount.toLocaleString(dashboardLanguage)}</b>}</button><button type="button" className="language-switch" onClick={() => changeDashboardLanguage(dashboardLanguage === 'ar' ? 'en' : 'ar')} aria-label={dashboardLanguage === 'ar' ? 'Switch to English' : 'التبديل إلى العربية'}>{dashboardLanguage === 'ar' ? 'EN' : 'عربي'}</button>{panel === 'overview' && <button type="button" className="dashboard-header-signout" onClick={handleSignOut}><LogOut /> <span>{t('Sign out')}</span></button>}<Link className="button button-small button-outline" to={`/m/${menu.restaurant.slug}`} target="_blank">{t('View menu')} <ExternalLink /></Link></div></header>
         <div className="dashboard-content">
           {error && <Notice tone="error">{error}</Notice>}
           {success && <div className="dashboard-toast" role="status"><Notice tone="success">{success}</Notice></div>}
           {demoMode && <Notice>{t('This preview uses sample data. Connect Supabase to save changes and create owner accounts.')}</Notice>}
-          <OwnerSubscriptionGate shop={menu.restaurant} places={restaurants} language={dashboardLanguage} open={editingLocked && panel!=='billing'} onBilling={()=>setPanel('billing')} onSwitch={switchPlace} onRefresh={refreshAccess} onSignOut={handleSignOut} onLanguage={()=>changeDashboardLanguage(dashboardLanguage==='ar'?'en':'ar')} />
+          <OwnerSubscriptionGate shop={menu.restaurant} places={restaurants} language={dashboardLanguage} open={editingLocked && panel!=='billing' && panel!=='notifications'} onBilling={()=>setPanel('billing')} onNotifications={openNotifications} onSwitch={switchPlace} onRefresh={refreshAccess} onSignOut={handleSignOut} onLanguage={()=>changeDashboardLanguage(dashboardLanguage==='ar'?'en':'ar')} />
           <SubscriptionBanner restaurant={menu.restaurant} language={dashboardLanguage} />
           {menu.restaurant.is_published === false && <Notice>{t('This branch is hidden from customers. Its menu is still saved.')} <BillingIconButton icon={Store} label={t('Manage branches')} onClick={() => setPlaceSwitcherOpen(true)} /></Notice>}
 
           {panel === 'overview' && <>
             <div className="page-heading overview-page-heading"><div><span className="eyebrow"><span /> {t('Good to see you')}</span><h1>{t('Your menu at a glance.')}</h1></div><button className="button button-primary overview-add-item" onClick={() => { setPanel('menu'); openItem() }}><Plus /> {t('Add menu item')}</button></div>
-            {!placeModal && <BranchRequestsPanel key={accountKey} language={dashboardLanguage} overview refreshToken={branchRequestsRefresh} canCreate={!editingLocked && restaurants.every(place => subscriptionState(place, subscriptionNow).serving)} onView={openPlaceCreator} onCreate={openApprovedBranch} />}
+            {!mobileOverview && !placeModal && <BranchRequestsPanel key={accountKey} language={dashboardLanguage} overview refreshToken={branchRequestsRefresh} canCreate={!editingLocked && restaurants.every(place => subscriptionState(place, subscriptionNow).serving)} onView={openPlaceCreator} onCreate={openApprovedBranch} />}
             <section className="mobile-section-hub" aria-labelledby="mobile-section-hub-title">
               <div className="mobile-places-bar">
                 <button type="button" className="mobile-places-switcher" onClick={() => setPlaceSwitcherOpen(true)}>
@@ -991,6 +1018,7 @@ export function DashboardPage() {
               </div>
               <div className="mobile-section-hub-heading"><div><span className="eyebrow"><span /> {t('Workspace')}</span><h2 id="mobile-section-hub-title">{t('What would you like to manage?')}</h2><p>{t('Choose an area to continue.')}</p></div></div>
               <div className="mobile-section-grid">
+                <button className="mobile-section-card" onClick={openNotifications}><span className="mobile-section-icon"><Bell /></span><span><b>{nt('Notifications')}{notificationCount > 0 && <b className="notification-badge">{notificationCount.toLocaleString(dashboardLanguage)}</b>}</b><small>{nt('Notifications and branch requests')}</small></span><DirectionalChevron /></button>
                 <button className="mobile-section-card mobile-section-card-primary" onClick={() => setPanel('menu')}><span className="mobile-section-icon"><Menu /></span><span><b>{t('Menu editor')}</b><small>{menu.items.length} {t('items')} · {menu.categories.length} {t('Categories').toLowerCase()}</small></span><DirectionalChevron /></button>
                 <button className="mobile-section-card" onClick={() => { setPanel('design'); setDesignStep(1) }}><span className="mobile-section-icon"><Palette /></span><span><b>{t('Menu design')}</b><small>{t('Layout, photos and brand')}</small></span><DirectionalChevron /></button>
                 <button className="mobile-section-card" onClick={openSettings}><span className="mobile-section-icon"><Settings /></span><span><b>{t('Restaurant settings')}</b><small>{t('Details, status and contact')}</small></span><DirectionalChevron /></button>
@@ -1006,6 +1034,11 @@ export function DashboardPage() {
             </div>
           </>}
 
+          {panel === 'notifications' && <section className="owner-notifications" aria-label={nt('Notifications')}>
+            <div className="page-heading"><div><span className="eyebrow"><Bell size={18} /> Fluxiva</span><h1>{nt('Notifications')}</h1></div></div>
+            <nav className="notification-tabs" aria-label={nt('Notifications')}><button type="button" aria-pressed={notificationView === 'messages'} onClick={() => setNotificationView('messages')}>{nt('Messages')} <b>{(notifications.data?.unread_count ?? 0).toLocaleString(dashboardLanguage)}</b></button><button type="button" aria-pressed={notificationView === 'requests'} onClick={() => setNotificationView('requests')}>{nt('Branch requests')} <b>{((notifications.data?.pending_requests ?? 0) + (notifications.data?.approved_requests ?? 0)).toLocaleString(dashboardLanguage)}</b></button></nav>
+            {notificationView === 'messages' ? <OwnerMessages language={dashboardLanguage} data={notifications.data} loading={notifications.loading} error={notifications.error} reading={notifications.reading} onRead={id => void notifications.markRead(id)} onRefresh={notifications.refresh} onPage={notifications.setPage} /> : !placeModal && <BranchRequestsPanel key={accountKey} language={dashboardLanguage} overview refreshToken={branchRequestsRefresh} canCreate={!editingLocked && restaurants.every(place => subscriptionState(place, subscriptionNow).serving)} onView={openPlaceCreator} onCreate={openApprovedBranch} />}
+          </section>}
           {panel === 'billing' && editingLocked && <p className="notice">{dashboardLanguage==='ar'?'التعديل موقوف لهذا المطعم. يمكنك مراجعة دفعاتك أو الانتقال إلى مطعم آخر من أعلى الصفحة.':'Editing is paused for this shop. You can review payments or switch shops using the header.'}</p>}
           {panel === 'billing' && <ShopBillingPanel key={accountKey + ':' + menu.restaurant.id} shopId={menu.restaurant.id} language={dashboardLanguage} onChanged={billing => {
             accessRequest.current++

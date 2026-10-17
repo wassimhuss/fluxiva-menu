@@ -57,6 +57,8 @@ Do not silently depend on a field that is absent from the demo data or existing 
 
 For signup changes, check `/signup` in English/Arabic at 390/1280 px: required confirmation, mismatch → focused localized error → correction → successful demo navigation, independent show/hide controls and password-manager autocomplete. A mismatch must not call Supabase or bypass validation in demo. `/login` and `/forgot-password` must not require confirmation; use mocked auth calls rather than creating production accounts for QA.
 
+Production Auth → Sign In / Providers → Confirm email was switched off and saved on 2026-10-17; a reload verified it remained off, with signups still enabled and anonymous sign-ins/manual linking still disabled. This deliberately allows immediate signup sessions for personally onboarded owners. Do not re-enable mandatory verification without a product decision or treat auto-confirmation dates as mailbox-ownership evidence. Keep the signup no-session fallback for environments where confirmations are enabled. Tests cover both session/no-session signup responses without creating real accounts; no database migration or app deployment is required for this setting.
+
 For account routing, verify an operator's direct `/dashboard` and `/onboarding` visits return to `/platform`, and an owner's `/platform` visit returns to `/dashboard`. Landing navigation, sign-in and password-recovery completion must use the account's workspace. Role loading must not flash an owner page; a failed lookup must offer Retry/Sign out. Offline demo still supports both route previews. `tests/routes.test.mjs` covers these access decisions.
 
 1. Keep persistence logic in `src/lib/api.ts`.
@@ -238,6 +240,16 @@ Verified:
 Remaining:
 - Known gaps, warnings, migration/deployment steps, or user decisions.
 ```
+
+### Owner notifications and broadcasts (035)
+
+`035_owner_notifications.sql` is prepared locally, not applied to production. Apply it after 034 before deploying the Notifications/Messages UI. Applying it sends nothing. Do not send a real broadcast for QA; use demo mode or isolated PostgreSQL. Compare existing restaurant, Auth, gallery/Storage, request and billing records before/after production application; verify owner/anonymous/support/super-admin boundaries and empty-search-path function grants. Private tables must remain inaccessible directly.
+
+`npm run test` covers API arguments/cancellation, bilingual UI escaping and support read-only forms, demo retries/read receipts, owner-only data, recipient snapshots (including no-shop accounts, excluding operators), new-account exclusion, pagination/global unread counts, stable send-ID retry/payload rejection, transaction rollback on audit failure and repeat migration application. Notifications remain readable for suspended/expired owners without permitting edits or new branches. The lock dialog must provide an escape to Notifications as well as billing.
+
+Check `/login` → `/dashboard` and `/platform` in demo at 390/1280 px, plus 320 px Arabic: bell/mobile shortcut, pending/approved request tab and creation, Messages unread badge/explicit read action, preview/cancel/confirm send, sent history/read counts, long text wrapping, language switching, console, and design/settings dirty-state dialogs when opening the bell. Header counts include unread messages plus pending/approved-not-created branches, not all historical requests. Focus/minute refresh is intentional, not realtime push. Broadcasts target only current accounts; owners created later do not receive past messages. Draft/send IDs survive retries within the mounted composer, not navigation/reload; after an uncertain send check history before starting a fresh message. Temporary QA wrappers and proof screenshots must not be committed.
+
+Local verification on 2026-10-17 passed all 65 tests, lint/build and the demo workflow above: cancel left history empty; send reached the owner inbox; marking read updated badge/history; approving then creating an empty branch consumed its request and cleared the badge. English/Arabic 320/390/1280 px checks found no horizontal overflow; clean login → dashboard → notifications logged no runtime errors. Design and settings save/discard dialogs retained their Notifications destination. Existing main/Excel chunk-size warnings remain. No production broadcast was sent; migration 035 and frontend deployment remain pending.
 
 ## 7. Sensible next improvements
 

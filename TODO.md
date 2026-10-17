@@ -11,6 +11,14 @@ This file is the working product backlog for developers and AI agents. Keep it u
 
 ## Cash subscriptions and subscriber management
 
+### Owner notifications and admin messages (2026-10-17)
+
+- [x] Move the mobile pending-request Overview card into Notifications with Messages / Branch requests, header badge and mobile shortcut; retain desktop request overview and unsaved-change protections.
+- [x] Add a bilingual super-admin broadcast composer with preview/confirmation, sent history and explicit owner read receipts; support stays read-only and delivery is in-app only.
+- [x] Add migration `035_owner_notifications.sql` with private owner-scoped recipients, guarded RPCs, snapshot fan-out, idempotent retries and transactional audit writes; preserve demo mode and editing locks.
+- [x] Verify 65 tests, lint/build, demo login, English/Arabic owner/admin desktop and 320/390 px layouts, preview/cancel/send/read, approved creation/badge clearing and unsaved-change warnings without sending production messages.
+- [ ] Apply migration 035 to production, then deploy the tested frontend. Applying the migration must not send any messages.
+
 ### Branch requests (2026-10-14)
 
 - [x] Owners submit bilingual additional-branch requests and see pending/approved/rejected status and admin notes.
@@ -20,7 +28,7 @@ This file is the working product backlog for developers and AI agents. Keep it u
 - [x] Apply migration `033_branch_requests.sql` to production and verify preserved data, protected RPCs and enabled approval triggers (2026-10-17).
 - [x] Let super admins edit pending branch menu links before approval, with bilingual UI, conflict/stale checks, audit history and owner creation using the corrected link.
 - [x] Apply migration `034_branch_request_links.sql` to production and verify preserved requests/restaurant data and protected functions (2026-10-17).
-- [x] Show branch-request status and pending count on the mobile/desktop owner Overview, with direct Create now for approved branches, corrected links, admin notes, pagination and preserved access restrictions.
+- [x] Show branch-request status and pending count in owner Notifications (and desktop Overview), with direct Create now for approved branches, corrected links, admin notes, pagination and preserved access restrictions.
 - [ ] Deploy the tested branch-request frontend.
 
 ### Subscriber search filters (2026-10-13)
@@ -240,6 +248,7 @@ Build a curated **Fluxiva Gallery** that lets every restaurant owner either sele
 - [x] Confirm before hiding a visible menu item while keeping restoration a one-tap action (2026-10-09).
 - [x] Add persistent English/Arabic translations and RTL layouts to login, signup, and password-recovery screens (2026-10-09).
 - [x] Require password confirmation on signup, with bilingual mismatch feedback, independent visibility toggles and validation before remote/demo submission (2026-10-17).
+- [x] Disable mandatory production email confirmation for personally onboarded owners; verify persisted Auth settings and test immediate-session signup without creating production accounts (2026-10-17).
 - [x] Refine the landing page for mobile conversion with clearer bilingual copy, sticky navigation, readable product previews, local trust/payment details, compact sections, and RTL-safe layouts (2026-10-09).
 - [x] Show the landing-page annual offer as $100 with the previous $150 crossed out in English/Arabic, without changing shop billing prices (2026-10-17).
 - [x] Autofill empty English and Arabic item names from a selected Fluxiva Gallery photo without overwriting owner-entered names (2026-10-08).

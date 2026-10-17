@@ -2,6 +2,7 @@ import type { BranchRequest, BranchRequestInput, BranchRequestPage } from './typ
 import { demoMenus } from './demo'
 
 const requests: BranchRequest[] = []
+export function demoBranchRequestCounts() { return { pending_requests: requests.filter(row => row.status === 'pending').length, approved_requests: requests.filter(row => row.status === 'approved').length } }
 export function demoRequestBranch(input: BranchRequestInput) {
   if (requests.some(row => row.slug === input.slug && ['pending', 'approved'].includes(row.status))) throw new Error('A request for this menu link is already pending or approved')
   if (demoMenus.some(menu => menu.restaurant.slug === input.slug)) throw new Error('This menu link is already taken. Choose a different one.')

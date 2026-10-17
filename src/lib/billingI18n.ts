@@ -1,6 +1,10 @@
 import type { Language } from './types'
 
 const arabic = {
+  'Messages': 'الرسائل',
+  'Message sent to owners': 'تم إرسال رسالة إلى أصحاب المطاعم',
+  'Send in-app updates to your owners.': 'أرسل تحديثات لأصحاب المطاعم داخل المنصة.',
+  'Owner accounts notified': 'حسابات أصحاب المطاعم التي تم إشعارها',
   'Requests': 'الطلبات',
   'Branch request approved': 'تمت الموافقة على طلب الفرع',
   'Branch request rejected': 'تم رفض طلب الفرع',

@@ -1,11 +1,11 @@
-import {Clock3, Languages, LockKeyhole, LogOut, RefreshCw} from 'lucide-react'
+import {Bell, Clock3, Languages, LockKeyhole, LogOut, RefreshCw} from 'lucide-react'
 import {useEffect,useRef,useState} from 'react'
 import type {Language, Restaurant} from '../lib/types'
 import {cashDate} from '../lib/billing'
 
-export function OwnerSubscriptionGate({shop,places,language,open,onBilling,onSwitch,onRefresh,onSignOut,onLanguage}: {
+export function OwnerSubscriptionGate({shop,places,language,open,onBilling,onNotifications,onSwitch,onRefresh,onSignOut,onLanguage}: {
   shop:Restaurant; places:Restaurant[]; language:Language; open:boolean;
-  onBilling:()=>void; onSwitch:(id:string)=>Promise<void>; onRefresh:()=>Promise<void>; onSignOut:()=>Promise<void>; onLanguage:()=>void
+  onBilling:()=>void; onNotifications?:()=>void; onSwitch:(id:string)=>Promise<void>; onRefresh:()=>Promise<void>; onSignOut:()=>Promise<void>; onLanguage:()=>void
 }) {
   const dialog=useRef<HTMLDialogElement>(null)
   const [busy,setBusy]=useState(false), [failed,setFailed]=useState(false)
@@ -32,6 +32,7 @@ export function OwnerSubscriptionGate({shop,places,language,open,onBilling,onSwi
     {(shop.subscription_ends_at||shop.trial_ends_at) && <p className="subscription-gate-date">{text('Access ended:','انتهت مدة الوصول في:')} {cashDate(shop.subscription_status==='trial'?shop.trial_ends_at:shop.subscription_ends_at,language,true)}</p>}
     {failed && <p role="alert" className="notice notice-error">{text('Could not refresh access. Check your connection and try again.','تعذّر تحديث حالة الوصول. تحقق من الاتصال وحاول مجدداً.')}</p>}
     <button type="button" className="button button-primary full" onClick={onBilling}><Clock3 aria-hidden="true" />{text('Subscription & payments','الاشتراك والدفعات')}</button>
+    {onNotifications && <button type="button" className="button button-outline full" onClick={onNotifications}><Bell aria-hidden="true" />{text('Notifications','الإشعارات')}</button>}
     {support && <a className="button button-outline full" target="_blank" rel="noreferrer" href={'https://wa.me/'+support.replace(/\D/g,'')}>{text('Arrange cash collection','تنسيق التحصيل النقدي')}</a>}
     {places.length>1 && <label className="subscription-gate-switch">{text('Switch to another shop','الانتقال إلى مطعم آخر')}<select value={shop.id} disabled={busy} onChange={e=>void act(()=>onSwitch(e.target.value))}>{places.map(place=><option value={place.id} key={place.id}>{ar?place.name_ar:place.name_en}</option>)}</select></label>}
     <div className="subscription-gate-actions"><button className="button button-outline" disabled={busy} onClick={()=>void act(onRefresh)}><RefreshCw aria-hidden="true" />{text(busy?'Checking…':'Check access',busy?'جارٍ التحقق…':'التحقق من الوصول')}</button><button className="button button-ghost" disabled={busy} onClick={()=>void act(onSignOut)}><LogOut aria-hidden="true" />{text('Sign out','تسجيل الخروج')}</button></div>

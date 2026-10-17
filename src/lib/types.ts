@@ -1,4 +1,10 @@
 export type Language = 'en' | 'ar'
+export interface AnnouncementInput { title_en: string; title_ar: string; body_en: string; body_ar: string }
+export interface OwnerNotification extends AnnouncementInput { id: string; created_at: string; read_at: string | null }
+export interface OwnerNotificationPage { messages: OwnerNotification[]; total: number; unread_count: number; pending_requests: number; approved_requests: number; page: number; page_size: number }
+export interface AnnouncementReceipt { id: string; recipient_count: number }
+export interface PlatformAnnouncement extends AnnouncementInput, AnnouncementReceipt { created_at: string; actor_email: string; read_count: number }
+export interface AnnouncementPage { messages: PlatformAnnouncement[]; total: number; page: number; page_size: number }
 export type BranchRequestStatus = 'pending' | 'approved' | 'rejected' | 'created'
 export type BranchRequestInput = Pick<Restaurant, 'name_en' | 'name_ar' | 'slug' | 'address_en' | 'address_ar' | 'whatsapp'>
 export interface BranchRequest extends BranchRequestInput {
@@ -228,7 +234,7 @@ export interface PlatformAuditEntry {
   actor_email?: string
   action: string
   restaurant_slug?: string
-  details: { previous_ends_at?: string | null; ends_at?: string | null; annual_cents?: number; amount_cents?: number; reference?: string; receipt_id?: string; reason?: string; owner_id?: string; owner_email?: string; slug?: string; previous_slug?: string }
+  details: { previous_ends_at?: string | null; ends_at?: string | null; annual_cents?: number; amount_cents?: number; reference?: string; receipt_id?: string; reason?: string; owner_id?: string; owner_email?: string; slug?: string; previous_slug?: string; announcement_id?: string; recipient_count?: number }
   created_at: string
 }
 

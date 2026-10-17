@@ -35,6 +35,31 @@ async function loadApi(t) {
   return { api, ...client, ...cache, queryClient }
 }
 const session = (id = 'owner') => ({ user: { id } })
+test('notification APIs use owner-scoped and protected admin RPCs with cancellation and stable send IDs',async(t)=>{
+  const {api,setClient}=await loadApi(t),calls=[],controller=new AbortController()
+  let error=null
+  setClient({rpc:(name,params)=>{
+    const result=Promise.resolve({data:{messages:[],recipient_count:2},error})
+    result.abortSignal=signal=>{calls.push({name,params,signal});return result}
+    if(!['owner_notifications','platform_list_announcements'].includes(name)) calls.push({name,params})
+    return result
+  }})
+  await api.getOwnerNotifications(2,controller.signal)
+  await api.listAnnouncements(1,controller.signal)
+  await api.readOwnerNotification('message')
+  const input={title_en:'News',title_ar:'أخبار',body_en:'Details',body_ar:'تفاصيل'}
+  await api.sendAnnouncement('stable-id',input);await api.sendAnnouncement('stable-id',input)
+  assert.deepEqual(calls.map(call=>({name:call.name,params:call.params})),[
+    {name:'owner_notifications',params:{page_input:2}},
+    {name:'platform_list_announcements',params:{page_input:1}},
+    {name:'owner_read_notification',params:{message_input:'message'}},
+    {name:'platform_send_announcement',params:{request_input:'stable-id',input_data:input}},
+    {name:'platform_send_announcement',params:{request_input:'stable-id',input_data:input}},
+  ])
+  controller.abort();assert.equal(calls[0].signal.aborted,true);assert.equal(calls[1].signal.aborted,true)
+  error=new Error('Denied');await assert.rejects(api.sendAnnouncement('stable-id',input),/Denied/)
+  await assert.rejects(api.readOwnerNotification('message'),/Denied/)
+})
 test('branch link edits and decisions forward the reviewed slug to protected RPCs and propagate failures',async(t)=>{
   const {api,setClient}=await loadApi(t),calls=[]
   let error=null

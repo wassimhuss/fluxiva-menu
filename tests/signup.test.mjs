@@ -55,6 +55,19 @@ test('matching signup retains demo access and sends only email/password to Supab
   assert.match(form.messages.at(-1), /Check your email/)
 })
 
+test('auto-confirmed signup continues through the auth session without asking the owner to verify email', async () => {
+  const session = { user: { id: 'new-owner' } }
+  let calls = 0
+  const form = harness({ supabase: { auth: { signUp: async () => { calls++; return { error: null, data: { session } } } } } })
+  await form.run()
+  assert.equal(calls, 1)
+  assert.deepEqual(form.errors, [''])
+  assert.deepEqual(form.messages, [''])
+  assert.deepEqual(form.busy, [true, false])
+  // AuthProvider handles the returned session and role-aware onboarding redirect.
+  assert.deepEqual(form.destinations, [])
+})
+
 test('login does not require confirmation, and confirmation labels/errors are bilingual', async () => {
   let called = false
   const login = harness({ isSignup: false, confirmation: '', supabase: { auth: { signInWithPassword: async () => { called = true; return { error: null, data: { session: {} } } } } } })
