@@ -20,6 +20,7 @@ This file is the working product backlog for developers and AI agents. Keep it u
 - [x] Apply migration `033_branch_requests.sql` to production and verify preserved data, protected RPCs and enabled approval triggers (2026-10-17).
 - [x] Let super admins edit pending branch menu links before approval, with bilingual UI, conflict/stale checks, audit history and owner creation using the corrected link.
 - [x] Apply migration `034_branch_request_links.sql` to production and verify preserved requests/restaurant data and protected functions (2026-10-17).
+- [x] Show branch-request status and pending count on the mobile/desktop owner Overview, with direct Create now for approved branches, corrected links, admin notes, pagination and preserved access restrictions.
 - [ ] Deploy the tested branch-request frontend.
 
 ### Subscriber search filters (2026-10-13)

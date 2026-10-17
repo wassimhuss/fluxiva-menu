@@ -6,9 +6,11 @@ import { cashDate } from '../lib/billing'
 import { useAuth } from '../lib/auth'
 import type { BranchRequest, BranchRequestPage, Language } from '../lib/types'
 import { Loading, Notice } from './Status'
+import { BranchRequestOverview } from './BranchRequestOverview'
 
-export function BranchRequestsPanel({ language, admin = false, canManage = false, refreshToken = 0, onCreate }: {
+export function BranchRequestsPanel({ language, admin = false, canManage = false, refreshToken = 0, onCreate, overview = false, canCreate = true, onView }: {
   language: Language; admin?: boolean; canManage?: boolean; refreshToken?: number; onCreate?: (request: BranchRequest) => void
+  overview?: boolean; canCreate?: boolean; onView?: () => void
 }) {
   const { session } = useAuth()
   const t = (text: string) => branchRequestText(language, text)
@@ -57,6 +59,7 @@ export function BranchRequestsPanel({ language, admin = false, canManage = false
     } catch (cause) { setError(branchRequestError(cause, 'Could not update the menu link.')) }
     finally { setBusy(false) }
   }
+  if (overview && !admin && onCreate && onView) return <BranchRequestOverview language={language} data={data} loading={loading} error={error} page={page} canCreate={canCreate} onRefresh={() => setAttempt(value => value + 1)} onPage={setPage} onView={onView} onCreate={onCreate} />
   return <section className="branch-requests" dir={language === 'ar' ? 'rtl' : 'ltr'}>
     <div className="branch-request-heading"><h3>{t(admin ? 'Branch requests' : 'Your branch requests')}</h3><button type="button" className="button button-outline button-small" disabled={loading || busy} onClick={() => setAttempt(value => value + 1)}><RefreshCw size={16} />{t('Refresh')}</button></div>
     {error && <Notice tone="error">{t(error)}</Notice>}{success && <Notice tone="success">{t(success)}</Notice>}
@@ -71,7 +74,7 @@ export function BranchRequestsPanel({ language, admin = false, canManage = false
         <time dateTime={request.created_at}>{cashDate(request.created_at, language, true)}</time>
         {request.decision_note && <p className="branch-request-note">{request.decision_note}</p>}
         {admin && canManage && request.status === 'pending' && <div className="cash-actions"><button type="button" className="button button-outline button-small" disabled={busy} onClick={() => { setSlug(request.slug); setError(''); setSuccess(''); setEditing(request) }}><Pencil size={16} />{t('Edit menu link')}</button><button type="button" className="button button-primary button-small" disabled={busy} onClick={() => { setNote(''); setError(''); setDecision({ request, approve: true }) }}><Check size={16} />{t('Approve')}</button><button type="button" className="button button-outline button-small" disabled={busy} onClick={() => { setNote(''); setError(''); setDecision({ request, approve: false }) }}><X size={16} />{t('Reject')}</button></div>}
-        {!admin && request.status === 'approved' && onCreate && <button type="button" className="button button-primary button-small" onClick={() => onCreate(request)}>{t('Create approved branch')}</button>}
+        {!admin && request.status === 'approved' && onCreate && <><button type="button" className="button button-primary button-small" disabled={!canCreate} onClick={() => onCreate(request)}>{t('Create approved branch')}</button>{!canCreate && <p>{t('Resolve expired or suspended shops before adding another place')}</p>}</>}
       </article>)}</div> : <p>{t('No branch requests yet.')}</p>}
       {data.total > 25 && <div className="cash-pagination"><button type="button" className="button button-outline button-small" disabled={page === 0} onClick={() => setPage(value => value - 1)}>{t('Previous')}</button><span>{t('Page')} {page + 1} / {Math.ceil(data.total / 25)}</span><button type="button" className="button button-outline button-small" disabled={(page + 1) * 25 >= data.total} onClick={() => setPage(value => value + 1)}>{t('Next')}</button></div>}
     </>}

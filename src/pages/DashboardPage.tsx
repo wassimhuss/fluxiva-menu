@@ -286,6 +286,9 @@ export function DashboardPage() {
     setPlaceModal(true)
   }
   function openApprovedBranch(request: BranchRequest) {
+    setPlaceSwitcherOpen(false)
+    setPlaceCopySource(menu?.restaurant.menu_copy_pending ? '' : menu?.restaurant.id ?? '')
+    setPlaceModal(true)
     setBranchApproval(request)
     const { name_en, name_ar, slug, address_en, address_ar, whatsapp } = request
     setPlaceDraft({ ...emptyPlace(menu?.restaurant), name_en, name_ar, slug, address_en: address_en ?? '', address_ar: address_ar ?? '', whatsapp: whatsapp ?? '' })
@@ -305,6 +308,7 @@ export function DashboardPage() {
       }
       const copied = placeCopySource ? await createPlaceFromMenu(session, placeDraft, placeCopySource, branchApproval.id) : null
       const restaurant = copied?.restaurant ?? await createRestaurant(session, placeDraft, brand?.id, branchApproval.id)
+      setBranchRequestsRefresh(value => value + 1)
       setRestaurants((current) => [...current, restaurant])
       setPlaceModal(false)
       if (copied) {
@@ -975,6 +979,7 @@ export function DashboardPage() {
 
           {panel === 'overview' && <>
             <div className="page-heading overview-page-heading"><div><span className="eyebrow"><span /> {t('Good to see you')}</span><h1>{t('Your menu at a glance.')}</h1></div><button className="button button-primary overview-add-item" onClick={() => { setPanel('menu'); openItem() }}><Plus /> {t('Add menu item')}</button></div>
+            {!placeModal && <BranchRequestsPanel key={accountKey} language={dashboardLanguage} overview refreshToken={branchRequestsRefresh} canCreate={!editingLocked && restaurants.every(place => subscriptionState(place, subscriptionNow).serving)} onView={openPlaceCreator} onCreate={openApprovedBranch} />}
             <section className="mobile-section-hub" aria-labelledby="mobile-section-hub-title">
               <div className="mobile-places-bar">
                 <button type="button" className="mobile-places-switcher" onClick={() => setPlaceSwitcherOpen(true)}>
@@ -1284,7 +1289,7 @@ export function DashboardPage() {
         <button type="button" className="modal-close" aria-label={t('Close')} disabled={saving} onClick={() => setPlaceModal(false)}><X /></button>
         <span className="eyebrow"><span /> {t('New place')}</span><h2 id="place-create-title">{branchRequestText(dashboardLanguage, branchApproval ? 'Create approved branch' : 'Request a new branch')}</h2>
         <p>{branchApproval ? t('This place will have its own menu and public link under the same brand QR code.') : branchRequestText(dashboardLanguage, 'Submit the branch details for Fluxiva to review. Once approved, return here to create its menu.')}</p>
-        {!branchApproval && <BranchRequestsPanel language={dashboardLanguage} refreshToken={branchRequestsRefresh} onCreate={openApprovedBranch} />}
+        {!branchApproval && <BranchRequestsPanel language={dashboardLanguage} refreshToken={branchRequestsRefresh} canCreate={!editingLocked && restaurants.every(place => subscriptionState(place, subscriptionNow).serving)} onCreate={openApprovedBranch} />}
         {!branchApproval && branchRequestSuccess && <Notice tone="success">{branchRequestText(dashboardLanguage, branchRequestSuccess)}</Notice>}
         {placeError && <Notice tone="error">{placeError}</Notice>}
         <fieldset className="place-create-fields" disabled={saving}>

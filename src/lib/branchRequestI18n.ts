@@ -1,6 +1,9 @@
 import type { Language } from './types'
 const arabic: Record<string, string> = {
   'Requests': 'الطلبات', 'Branch requests': 'طلبات الفروع',
+  'Track requests and create approved branches here.': 'تابع طلباتك وأنشئ الفروع المقبولة من هنا.',
+  'Your request is being reviewed. No need to send it again.': 'طلبك قيد المراجعة. لا داعي لإرساله مجدداً.',
+  'Branch approved': 'تمت الموافقة على الفرع', 'Create now': 'أنشئ الآن', 'View requests': 'عرض الطلبات',
   'Request a new branch': 'طلب فرع جديد', 'Send branch request': 'إرسال طلب الفرع',
   'Submit the branch details for Fluxiva to review. Once approved, return here to create its menu.': 'أرسل تفاصيل الفرع لمراجعتها من فلوكسيفا. بعد الموافقة، عد إلى هنا لإنشاء قائمته.',
   'Branch request sent. You can check its status here.': 'تم إرسال طلب الفرع. يمكنك متابعة حالته هنا.',
