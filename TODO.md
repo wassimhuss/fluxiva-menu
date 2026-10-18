@@ -31,7 +31,7 @@ This file is the working product backlog for developers and AI agents. Keep it u
 - [x] Review existing Arabic interface text across landing/auth, owner/admin, gallery, billing, notifications, shared dialogs and all eight public templates; use natural Lebanese phrases and familiar terms.
 - [x] Use the owner's chosen «دليفري» for the Arabic WhatsApp-order flow, preserving English, behavior and restaurant-confirmation warnings; leave owner-authored names/descriptions untouched.
 - [x] Pass 85 tests, lint/build, Arabic mobile/desktop browser checks and static-text-only AST comparison; preserve billing/security semantics and production data/photos.
-- [ ] Deploy the tested frontend; no copy-related database migration is needed. Observe the separate pending 035 requirement if releasing notifications together.
+- [ ] Deploy the tested frontend; no copy-related database migration is needed. Migration 035 is now applied to production.
 
 ## Cash subscriptions and subscriber management
 
@@ -52,19 +52,20 @@ This file is the working product backlog for developers and AI agents. Keep it u
 - [x] Apply migration `036_dual_menu_prices.sql` to production (2026-10-17, `20261017155000`), verifying unchanged existing prices/content/files, access policies and protected functions.
 - [x] Keep missing legacy alternate prices unset and hide incomplete alternate basket totals; require complete manually entered pairs before changing primary currency.
 - [x] Apply `037_manual_menu_prices.sql` (2026-10-18, `20261018110256`), removing the database conversion fallback with unchanged existing data, permissions and RLS.
-- [ ] Deploy the tested dual-pricing frontend; apply the still-pending 035 first if releasing the notifications UI together.
+- [ ] Deploy the tested dual-pricing frontend; notification migration 035 is now applied to production.
 >>>>>>> Stashed changes
 
 ### Owner notifications and admin messages (2026-10-17)
 
 - [x] Remove the duplicate mobile notification Overview card; keep the header bell and desktop navigation. Verify English/Arabic bell → Messages / Branch requests and 100 tests/lint/build (2026-10-18).
-- [x] Diagnose live notification failures read-only: both inbox and broadcast-list RPCs return 404/PGRST202. The pending 035 rollout below is still required; no migration/messages were executed during diagnosis.
+- [x] Diagnose live notification failures read-only: both inbox and broadcast-list RPCs return 404/PGRST202. No migration/messages were executed during diagnosis; the owner subsequently approved the successful 035 rollout below.
 
 - [x] Move the mobile pending-request Overview card into Notifications with Messages / Branch requests, header badge and mobile shortcut; retain desktop request overview and unsaved-change protections.
 - [x] Add a bilingual super-admin broadcast composer with preview/confirmation, sent history and explicit owner read receipts; support stays read-only and delivery is in-app only.
 - [x] Add migration `035_owner_notifications.sql` with private owner-scoped recipients, guarded RPCs, snapshot fan-out, idempotent retries and transactional audit writes; preserve demo mode and editing locks.
 - [x] Verify 65 tests, lint/build, demo login, English/Arabic owner/admin desktop and 320/390 px layouts, preview/cancel/send/read, approved creation/badge clearing and unsaved-change warnings without sending production messages.
-- [ ] Apply migration 035 to production, then deploy the tested frontend. Applying the migration must not send any messages.
+- [x] Apply migration 035 to production (2026-10-18, `20261018140326`) with exact source, data/file preservation and owner/admin/anonymous checks. No messages sent.
+- [ ] Verify the hosted duplicate-card-removal release separately; the existing hosted Messages screen already loads against the new backend.
 
 ### Branch requests (2026-10-14)
 
