@@ -21,11 +21,13 @@ This file is the working product backlog for developers and AI agents. Keep it u
 =======
 ### Dual menu prices (2026-10-17)
 
-- [x] Add paired LBP/USD inputs for item, size and extra prices; LBP entry calculates USD at 89,500 LBP per dollar (rounded to cents), followed by an optional manual USD override and Recalculate USD action.
+- [x] Add independent manual LBP/USD inputs for item, size and extra prices. Automatic conversion, exchange-rate hints and Recalculate USD were removed by the latest product decision (including first creation).
 - [x] Display both prices across all eight menu templates, owner item summaries, customization, basket and WhatsApp drafts; total each saved currency independently.
 - [x] Preserve alternate prices through caching, branch copies, demo mode and Excel (optional backwards-compatible `price_secondary` column); preserve both prices when explicitly switching the primary currency.
-- [x] Verify all 74 tests, lint/build, mobile/desktop English/Arabic editor and eight-template layouts, save/reopen overrides, and independent basket/WhatsApp draft totals without sending messages or changing production prices.
+- [x] Verify all 80 tests, lint/build, mobile/desktop English/Arabic manual fields, eight-template legacy-price rendering, save/reopen pairs and complete-only alternate basket/WhatsApp totals without sending messages or changing production prices.
 - [x] Apply migration `036_dual_menu_prices.sql` to production (2026-10-17, `20261017155000`), verifying unchanged existing prices/content/files, access policies and protected functions.
+- [x] Keep missing legacy alternate prices unset and hide incomplete alternate basket totals; require complete manually entered pairs before changing primary currency.
+- [ ] Apply `037_manual_menu_prices.sql` to remove the database currency-switch conversion fallback without rewriting existing data.
 - [ ] Deploy the tested dual-pricing frontend; apply the still-pending 035 first if releasing the notifications UI together.
 >>>>>>> Stashed changes
 

@@ -346,7 +346,7 @@ export interface Variant {
   /** Legacy rows may still contain this until migration 018 is applied. */
   name_ar?: string
   price: number
-  /** Manual price in the other menu currency; absent/null uses 89,500 LBP/USD. */
+  /** Manual price in the other menu currency; absent/null means not entered. */
   price_secondary?: number | null
 }
 
@@ -372,7 +372,7 @@ export interface MenuItem {
    *  across the menu, the dashboard, the basket and every template. */
   price: number
   /** Opposite of Restaurant.currency (USD for LBP menus, LBP for USD menus).
-   * Null means automatic conversion; an explicit value preserves the override. */
+   * Null means not entered. Prices are never automatically converted. */
   price_secondary?: number | null
   image_url?: string | null
   /** Set only when image_url points at the shared Fluxiva Gallery. */

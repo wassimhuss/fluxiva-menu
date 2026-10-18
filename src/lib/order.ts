@@ -1,5 +1,5 @@
-import type { Currency, ItemExtra, Language, MenuItem } from './types'
-import { secondaryPrice, roundUsd } from './pricing'
+import type { ItemExtra, Language, MenuItem } from './types'
+import { sumSecondaryPrices, roundUsd } from './pricing'
 
 /**
  * A takeaway order, held only in the diner's browser.
@@ -25,8 +25,8 @@ export interface ResolvedLine extends OrderLine {
   extras: ItemExtra[]
   unitPrice: number
   lineTotal: number
-  unitPriceSecondary: number
-  lineTotalSecondary: number
+  unitPriceSecondary: number | null
+  lineTotalSecondary: number | null
 }
 
 export const MAX_QUANTITY = 99
@@ -44,7 +44,7 @@ export function lineKey(itemId: string, variantIndex: number, extraIds: string[]
  * exists. A menu can change between the diner adding a dish and sending the
  * order — an item deleted or marked unavailable must not travel with it.
  */
-export function resolveLines(lines: OrderLine[], items: MenuItem[], currency: Currency = 'LBP'): ResolvedLine[] {
+export function resolveLines(lines: OrderLine[], items: MenuItem[]): ResolvedLine[] {
   const byId = new Map(items.map((item) => [item.id, item]))
   const resolved: ResolvedLine[] = []
   for (const line of lines) {
@@ -56,7 +56,7 @@ export function resolveLines(lines: OrderLine[], items: MenuItem[], currency: Cu
     const selectedIds = new Set(normalizeExtraIds(line.extraIds))
     const extras = (item.extras ?? []).filter((extra) => extra.id && selectedIds.has(extra.id))
     const unitPrice = roundUsd((variant?.price ?? item.price) + extras.reduce((sum, extra) => sum + extra.price, 0))
-    const unitPriceSecondary = roundUsd(secondaryPrice(variant ?? item, currency) + extras.reduce((sum, extra) => sum + secondaryPrice(extra, currency), 0))
+    const unitPriceSecondary = sumSecondaryPrices([variant ?? item, ...extras])
     resolved.push({
       ...line,
       // Keep the stored key stable even if the owner removes an extra while a
@@ -69,7 +69,7 @@ export function resolveLines(lines: OrderLine[], items: MenuItem[], currency: Cu
       unitPrice,
       lineTotal: roundUsd(unitPrice * line.quantity),
       unitPriceSecondary,
-      lineTotalSecondary: roundUsd(unitPriceSecondary * line.quantity),
+      lineTotalSecondary: unitPriceSecondary === null ? null : roundUsd(unitPriceSecondary * line.quantity),
     })
   }
   return resolved
@@ -80,7 +80,8 @@ export function orderTotal(lines: ResolvedLine[]) {
 }
 
 export function orderTotalSecondary(lines: ResolvedLine[]) {
-  return roundUsd(lines.reduce((sum, line) => sum + line.lineTotalSecondary, 0))
+  if (lines.some(line => line.lineTotalSecondary === null)) return null
+  return roundUsd(lines.reduce((sum, line) => sum + line.lineTotalSecondary!, 0))
 }
 
 export function orderCount(lines: OrderLine[]) {

@@ -49,6 +49,11 @@ test('alternate prices survive item saves, cleaning and cached/demo primary curr
   assert.equal(item.extras[0].price_secondary,0)
   await api.updateItem(item.id,{price_secondary:11.5})
   assert.equal((await api.getOwnerMenu(null)).items.find(row=>row.id===item.id).price_secondary,11.5)
+  // Existing offline fixtures intentionally lack alternate prices. A switch
+  // must fail atomically until the owner manually supplies every pair.
+  await assert.rejects(api.updateRestaurant(original.restaurant.id,{currency:'USD'}),/Enter both LBP and USD/)
+  assert.equal((await api.getOwnerMenu(null)).restaurant.currency,'LBP')
+  for(const row of original.items) await api.updateItem(row.id,{price_secondary:5,variants:row.variants.map(v=>({...v,price_secondary:6})),extras:row.extras.map(e=>({...e,price_secondary:0}))})
   await api.updateRestaurant(original.restaurant.id,{currency:'USD'})
   const usd=(await api.getOwnerMenu(null)).items.find(row=>row.id===item.id)
   assert.equal(usd.price,11.5);assert.equal(usd.price_secondary,895000)

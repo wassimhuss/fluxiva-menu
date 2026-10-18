@@ -118,12 +118,28 @@ test('dual prices validate overrides, preserve owner isolation, copy all prices 
     await scalar('update public.menu_items set price_secondary=0 where id=$1 returning id as value',[item])
     assert.equal((await get()).price_secondary,0)
     await scalar('update public.menu_items set price_secondary=null where id=$1 returning id as value',[item])
-    await scalar("update public.restaurants set currency='USD' where id=$1 returning id as value",[id])
-    assert.equal((await get()).price,10) // Legacy/null values convert at the fixed rate.
+    const missingBefore=await get()
+    await db.exec('savepoint missing_currency')
+    await assert.rejects(scalar("update public.restaurants set currency='USD' where id=$1 returning id as value",[id]),/Enter both LBP and USD/)
+    await db.exec('rollback to missing_currency')
+    assert.deepEqual(await get(),missingBefore)
+    assert.equal(await scalar('select currency as value from public.restaurants where id=$1',[id]),'LBP')
+    await scalar('update public.menu_items set price_secondary=12.5 where id=$1 returning id as value',[item])
+    for(const [field,entries] of [['variants',[{name_en:'L',price:895000}]],['extras',[{name_en:'Cheese',name_ar:'جبنة',price:89500}]]]) {
+      await db.query(`update public.menu_items set ${field}=$1 where id=$2`,[JSON.stringify(entries),item])
+      const incomplete=await get()
+      await db.exec('savepoint missing_component')
+      await assert.rejects(scalar("update public.restaurants set currency='USD' where id=$1 returning id as value",[id]),/Enter both LBP and USD/)
+      await db.exec('rollback to missing_component')
+      assert.deepEqual(await get(),incomplete)
+      await db.query(`update public.menu_items set ${field}=$1 where id=$2`,[JSON.stringify(field==='variants'?variants:extras),item])
+    }
     await db.exec('reset role')
     const before=await get()
-    await db.exec(readFileSync(new URL('../supabase/migrations/036_dual_menu_prices.sql',import.meta.url),'utf8'))
+    await db.exec(readFileSync(new URL('../supabase/migrations/037_manual_menu_prices.sql',import.meta.url),'utf8'))
     assert.deepEqual(await get(),before)
+    assert.equal(Number(await scalar("select public.menu_price_other(895000,12.5,'LBP') as value")),12.5)
+    assert.equal(Number(await scalar("select public.menu_price_other(895000,0,'LBP') as value")),0)
   } finally {await db.exec('rollback');await db.exec('reset role')}
 })
 

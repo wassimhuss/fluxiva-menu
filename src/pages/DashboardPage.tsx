@@ -541,16 +541,20 @@ export function DashboardPage() {
       // and saving it from here too would persist a colour the owner is still
       // only previewing over there.
       const { name_en, name_ar, description_en, description_ar, whatsapp, instagram, address_en, address_ar, currency: currencyValue, temporarily_closed, takeaway_enabled, default_language } = menu.restaurant
+      // Validate all pairs before saving settings; do not reinterpret or
+      // calculate a missing price, or throw inside a React state updater.
+      const repricedItems = (savedSettings?.currency ?? 'LBP') !== (currencyValue ?? 'LBP')
+        ? menu.items.map(item => swapMenuCurrency(item)) : null
       await updateRestaurant(menu.restaurant.id, { name_en, name_ar, description_en, description_ar, whatsapp, instagram, address_en, address_ar, currency: currencyValue, temporarily_closed, takeaway_enabled, default_language })
-      if ((savedSettings?.currency ?? 'LBP') !== (currencyValue ?? 'LBP')) {
-        setMenu(current => current?.restaurant.id === menu.restaurant.id ? { ...current, items: current.items.map(item => swapMenuCurrency(item, savedSettings?.currency ?? 'LBP')) } : current)
+      if (repricedItems) {
+        setMenu(current => current?.restaurant.id === menu.restaurant.id ? { ...current, items: repricedItems } : current)
       }
       setSavedSettings(restaurantSettingsSnapshot(menu.restaurant))
       syncRestaurantSummary(menu.restaurant)
       showSuccess(dashboardText(dashboardLanguage, 'Restaurant details saved.'))
       return true
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : dashboardText(dashboardLanguage, 'Could not save restaurant'))
+      setError(caught instanceof Error ? dashboardText(dashboardLanguage, caught.message) : dashboardText(dashboardLanguage, 'Could not save restaurant'))
       return false
     } finally { setSaving(false) }
   }

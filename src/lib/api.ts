@@ -285,7 +285,7 @@ function patchOwnerMenus(matches: (menu: RestaurantMenu) => boolean, change: (me
 
 function patchRestaurant(restaurant: Restaurant) {
   patchOwnerMenus((menu) => menu.restaurant.id === restaurant.id, (menu) => ({ ...menu, restaurant,
-    items: (menu.restaurant.currency ?? 'LBP') !== (restaurant.currency ?? 'LBP') ? menu.items.map(item => swapMenuCurrency(item, menu.restaurant.currency ?? 'LBP')) : menu.items }))
+    items: (menu.restaurant.currency ?? 'LBP') !== (restaurant.currency ?? 'LBP') ? menu.items.map(item => swapMenuCurrency(item)) : menu.items }))
 }
 function patchCategories(categories: Category[]) {
   if (!categories.length) return
@@ -462,7 +462,7 @@ export async function updateRestaurant(id: string, values: Partial<Restaurant>) 
     if (!restaurant) throw new Error('Restaurant not found.')
     if (values.currency && values.currency !== (restaurant.currency ?? 'LBP')) {
       const menu = demoMenus.find(entry => entry.restaurant.id === id)
-      if (menu) menu.items = menu.items.map(item => swapMenuCurrency(item, restaurant.currency ?? 'LBP'))
+      if (menu) menu.items = menu.items.map(item => swapMenuCurrency(item))
     }
     Object.assign(restaurant, values)
     patchRestaurant(structuredClone(restaurant))

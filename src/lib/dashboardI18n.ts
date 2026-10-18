@@ -7,8 +7,8 @@ import type { Language } from './types'
 const arabic: Record<string, string> = {
   'Price in LBP': 'السعر بالليرة اللبنانية',
   'Price in USD': 'السعر بالدولار',
-  '1 USD = 89,500 LBP. Enter LBP to calculate USD, then edit USD if needed.': '١ دولار = ٨٩٬٥٠٠ ليرة. أدخل السعر بالليرة لحساب الدولار، ثم عدّل الدولار إذا أردت.',
-  'Recalculate USD': 'إعادة حساب الدولار',
+  'Enter both prices manually. Changing one will not change the other.': 'أدخل السعرين يدوياً. تعديل أحدهما لا يغيّر الآخر.',
+  'Enter both LBP and USD prices for every item, size and extra before changing currency.': 'أدخل السعر بالليرة وبالدولار لكل صنف وحجم وإضافة قبل تغيير العملة.',
   'Remove size': 'إزالة الحجم',
   'Switches the primary currency for editing and Excel. Both displayed prices are preserved.': 'يغيّر العملة الأساسية للتعديل وإكسل مع الحفاظ على السعرين المعروضين.',
   'Shop editing is locked; arrange cash collection with Fluxiva': 'التعديل موقوف لهذا المطعم. نسّق تحصيل دفعة نقدية مع فلوكسيفا.',

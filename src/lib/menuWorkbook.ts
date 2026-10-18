@@ -186,6 +186,8 @@ function addInstructions(workbook: import('exceljs').Workbook, currency: string)
   const rows = [
     ['Fluxiva Menu Excel import', 'Use the three sheets exactly as provided. Do not rename sheets or column headers.'],
     ['1. Items', `One row per menu item. Prices use ${currency}. item_key must be unique inside this workbook.`],
+    ['Alternate prices', `Enter price_secondary manually in ${currency === 'LBP' ? 'USD' : 'LBP'}. Blank means not entered; no currency conversion is performed. Older workbooks without this column remain supported.`],
+    ['السعر بالعملة الأخرى', 'أدخل price_secondary يدوياً بالعملة الأخرى. الخانة الفارغة تعني أن السعر غير مُدخل؛ لا يتم تحويل العملات تلقائياً.'],
     ['2. Variants', 'Optional sizes or choices. Connect each row to an item using item_key. Variant names are entered once and shown in both menu languages.'],
     ['3. Extras', 'Optional add-ons. Connect each row using item_key and provide English and Arabic names.'],
     ['Availability', 'Use TRUE to show an item or FALSE to hide it.'],
@@ -225,7 +227,6 @@ async function buildWorkbook(menu?: RestaurantMenu, currencyOverride?: Currency)
   workbook.created = new Date()
   const currency = currencyOverride ?? menu?.restaurant.currency ?? 'LBP'
   addInstructions(workbook, currency)
-  workbook.getWorksheet('Instructions')?.addRow(['Alternate prices', `price_secondary is optional: ${currency === 'LBP' ? 'USD' : 'LBP'}. Blank = automatic conversion at 1 USD = 89,500 LBP. An entered value overrides conversion.`])
 
   const items = workbook.addWorksheet('Items', { properties: { tabColor: { argb: 'FF173F35' } } })
   items.addRow([...ITEM_HEADERS, 'price_secondary'])

@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
 import type { MenuItem } from '../lib/types'
 import type { MenuOrdering } from '../templates/types'
-import { roundUsd, secondaryPrice } from '../lib/pricing'
+import { roundUsd, sumSecondaryPrices } from '../lib/pricing'
 import styles from './AddToOrder.module.css'
 
 interface Props {
@@ -58,7 +58,7 @@ export function AddToOrder({ item, variantIndex, ordering, t, formatPrice, rtl, 
   // The formatter owns the restaurant currency; parse neither its display text
   // nor a total's converted value. Add each explicitly priced component.
   const priceParts = [item.variants?.[variantIndex] ?? item, ...selectedExtras]
-  const customizedSecondary = roundUsd(priceParts.reduce((sum, part) => sum + secondaryPrice(part, ordering.currency ?? 'LBP'), 0))
+  const customizedSecondary = sumSecondaryPrices(priceParts)
 
   const customizationSheet = customizing && createPortal(
     <div className={styles.customizer} dir={rtl ? 'rtl' : 'ltr'}>
