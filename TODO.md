@@ -9,14 +9,24 @@ This file is the working product backlog for developers and AI agents. Keep it u
 - `[x]` Complete
 - `[!]` Blocked or waiting for a prerequisite
 
+## Compact mobile owner billing (2026-10-18)
+
+- [x] Keep status/expiry and three compact totals visible; collapse receipt history and payment/contact help on mobile, with desktop-expanded native disclosures.
+- [x] Preserve exact dates, unknown historical amounts, warnings, receipt/contact access, read-only owners and unchanged admin/server billing behavior.
+- [x] Pass 99 tests, lint/build and English/Arabic 320/390/1280 px browser checks, expansion, branch switching, refresh and console checks. Standard mobile panel reduced from about 1,121 px to 385 px.
+- [ ] Deploy the tested frontend. No database migration is needed.
+
 ## Per-item order notes (2026-10-18)
 
 - [x] Open the shared bilingual first-add sheet for every dish, with sizes, priced extras and optional preparation instructions.
 - [x] Keep quick exact repeats, distinct note configurations, basket note editing/clearing/merging and per-restaurant session persistence; preserve general notes, prices and WhatsApp confirmation rules.
 - [x] Preserve all dishes/instructions in long orders with full-copy/paste fallback instead of silent message truncation; keep modal focus and mobile scrolling contained.
-- [ ] Complete final tests/lint/build and browser verification, then deploy the frontend. No database migration is needed.
+- [x] Verify 97 tests, lint/build, all eight mobile template sheets, English/Arabic 320/390/1280 px checks, note editing/merging, reload, correct size/extra totals, keyboard dismissal/focus and full-copy fallback without sending messages.
+- [ ] Deploy the tested frontend. No database migration is needed.
 
 ## Lebanese Arabic interface copy (2026-10-18)
+
+- [x] Refine loading/preparation messages to short, neutral Arabic (such as «جاري تحميل المنيو…» and «الرجاء الانتظار…»), retaining familiar Lebanese product terms and conversational copy elsewhere.
 
 - [x] Review existing Arabic interface text across landing/auth, owner/admin, gallery, billing, notifications, shared dialogs and all eight public templates; use natural Lebanese phrases and familiar terms.
 - [x] Use the owner's chosen «دليفري» for the Arabic WhatsApp-order flow, preserving English, behavior and restaurant-confirmation warnings; leave owner-authored names/descriptions untouched.

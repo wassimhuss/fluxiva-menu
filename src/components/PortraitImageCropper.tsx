@@ -32,7 +32,7 @@ export function PortraitImageCropper({ file, onCancel, onConfirm, language = 'en
     description: 'اسحب الصورة وقرّبها لحتى يبين الطبق كلّو بوضوح جوّا الإطار الطولي.',
     area: 'مساحة القص. اسحب الصورة أو استعمل الأسهم لتحرّكها.',
     move: 'اسحب لتحرّك الصورة', zoom: 'تكبير', reset: 'رجّع متل ما كان', source: 'المصدر', output: 'الصورة الجاهزة',
-    cancel: 'إلغاء', preparing: 'عم نجهّز…', use: 'استعمل صورة', image: '',
+    cancel: 'إلغاء', preparing: 'جاري التجهيز…', use: 'استعمل صورة', image: '',
   } : {
     close: 'Close image cropper', eyebrow: 'Image crop', title: 'Frame the food photo',
     description: 'Drag the photo and zoom until the complete dish sits comfortably inside the portrait frame.',

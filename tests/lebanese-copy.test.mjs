@@ -2,6 +2,8 @@ import assert from 'node:assert/strict'
 import {test} from 'node:test'
 import {readFileSync,readdirSync} from 'node:fs'
 import ts from 'typescript'
+import {createElement} from 'react'
+import {renderToStaticMarkup} from 'react-dom/server'
 
 const read=path=>readFileSync(new URL('../src/'+path,import.meta.url),'utf8')
 const uri=code=>'data:text/javascript;base64,'+Buffer.from(code).toString('base64')
@@ -77,4 +79,26 @@ test('public designs retain restaurant-provided Arabic names and use the same Le
     assert.match(code,/item\.name_ar|restaurant\.name_ar/,template)
     assert.doesNotMatch(code,/لا توجد أصناف|نحضّره طازجاً من أجلك|نفد|القائمة/,template)
   }
+})
+
+test('loading copy stays brief and neutral while retaining familiar Lebanese product terms',async()=>{
+  for(const [name,module] of Object.entries(dictionaries))for(const [key,value] of Object.entries(module.copy)) {
+    if(key.startsWith('Loading '))assert.match(value,/^جاري تحميل /,`${name}: ${key}`)
+  }
+  const publicMenu=read('pages/PublicMenuPage.tsx')
+  assert.match(publicMenu,/جاري تحميل المنيو…/)
+  assert.match(publicMenu,/الرجاء الانتظار…/)
+  assert.doesNotMatch(publicMenu,/عم نفتح المنيو|عم نجهّز المنيو/)
+  assert.equal(dictionaries.dashboard.dashboardText('ar','Takeaway orders'),'طلبات الدليفري')
+  const ast=ts.createSourceFile('PublicMenuPage.tsx',publicMenu,ts.ScriptTarget.Latest,true,ts.ScriptKind.TSX)
+  const loader=ast.statements.find(node=>ts.isFunctionDeclaration(node)&&node.name?.text==='MenuLoadingState')
+  const compiled=ts.transpileModule(loader.getText(ast)+'\nexport {MenuLoadingState};',{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022,jsx:ts.JsxEmit.ReactJSX}}).outputText
+    .replace(/(['"])react\/jsx-runtime\1/g,JSON.stringify(import.meta.resolve('react/jsx-runtime')))
+  const {MenuLoadingState}=await import(uri('const Utensils=()=>null;\n'+compiled))
+  const html=renderToStaticMarkup(createElement(MenuLoadingState,{language:'ar'}))
+  assert.match(html,/dir="rtl"/)
+  assert.match(html,/lang="ar"/)
+  assert.match(html,/جاري تحميل المنيو…/)
+  assert.match(html,/الرجاء الانتظار…/)
+  assert.match(renderToStaticMarkup(createElement(MenuLoadingState,{language:'en'})),/Preparing your menu/)
 })

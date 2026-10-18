@@ -59,3 +59,40 @@ test('Arabic owner content is RTL and contact actions require a usable configure
   assert.ok(!render({}, {supportContact:'---'}).includes('wa.me'))
   assert.ok(render().includes('Contact your Fluxiva representative'))
 })
+
+test('mobile starts with closed history/help disclosures while retaining receipts, contact and exact access details',()=>{
+  const html=render({}, {supportContact:'+96170123456'})
+  assert.match(html,/<details class="owner-billing-section owner-billing-history"[^>]*><summary>/)
+  assert.match(html,/<details class="owner-payment-info owner-billing-help"><summary>/)
+  assert.doesNotMatch(html,/<details[^>]*class="owner-billing-section owner-billing-history"[^>]*open/)
+  assert.match(html,/class="owner-date-full"/)
+  assert.match(html,/class="owner-date-compact"/)
+  assert.ok(html.includes('FV-123'))
+  assert.ok(html.includes('https://wa.me/96170123456'))
+  const paused=render({subscription_status:'suspended',is_published:false,paid_until:null})
+  const status=paused.slice(paused.indexOf('<section class="owner-access'),paused.indexOf('<section class="owner-billing-section'))
+  for(const warning of ['Customers cannot open your menu','End date not recorded','Your menu is hidden'])assert.ok(status.includes(warning),warning)
+  const archived=render({archived:true})
+  assert.match(archived,/Subscription archived/)
+  assert.doesNotMatch(archived,/Need to arrange a payment/)
+})
+
+test('native disclosures adapt at the desktop breakpoint and unsubscribe without overriding user toggles on rerender',async()=>{
+  const code=readFileSync('src/components/OwnerBillingSummary.tsx','utf8')
+  const ast=ts.createSourceFile('OwnerBillingSummary.tsx',code,ts.ScriptTarget.Latest,true,ts.ScriptKind.TSX)
+  let effect
+  function visit(node){if(ts.isCallExpression(node)&&node.expression.getText(ast)==='useEffect')effect=node.arguments[0].getText(ast);ts.forEachChild(node,visit)}
+  visit(ast)
+  assert.ok(effect)
+  const fixture=`export function harness(initial) {const history={current:{open:false}},help={current:{open:false}};let listener,removed=false;const media={matches:initial,addEventListener:(name,fn)=>{listener=fn},removeEventListener:(name,fn)=>{removed=listener===fn}};const window={matchMedia:query=>{if(query!=='(min-width: 681px)')throw Error(query);return media}};const cleanup=(${effect})();return {history,help,resize(matches){media.matches=matches;listener()},cleanup,get removed(){return removed}};}`
+  const compiled=ts.transpileModule(fixture,{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText
+  const {harness}=await import('data:text/javascript;base64,'+Buffer.from(compiled).toString('base64'))
+  const mobile=harness(false)
+  assert.equal(mobile.history.current.open,false);assert.equal(mobile.help.current.open,false)
+  mobile.history.current.open=true // a user's native toggle remains until a breakpoint transition
+  assert.equal(mobile.help.current.open,false)
+  mobile.resize(true);assert.equal(mobile.history.current.open,true);assert.equal(mobile.help.current.open,true)
+  mobile.resize(false);assert.equal(mobile.history.current.open,false);assert.equal(mobile.help.current.open,false)
+  mobile.cleanup();assert.equal(mobile.removed,true)
+  assert.equal(harness(true).history.current.open,true)
+})

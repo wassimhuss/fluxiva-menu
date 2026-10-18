@@ -35,7 +35,7 @@ function MenuLoadingState({ language }: { language?: Language }) {
           <div className="public-menu-loading-monogram"><Utensils size={25} /></div>
         </div>
         <span className="public-menu-loading-kicker">FLUXIVA MENU</span>
-        {language && <><h1>{arabic ? 'عم نجهّز المنيو' : 'Preparing your menu'}</h1><p>{arabic ? 'عم نفتح المنيو' : 'Opening menu'}</p></>}
+        {language && <><h1>{arabic ? 'جاري تحميل المنيو…' : 'Preparing your menu'}</h1><p>{arabic ? 'الرجاء الانتظار…' : 'Opening menu'}</p></>}
         <div className="public-menu-loading-progress" aria-hidden="true"><span /></div>
       </div>
     </main>
@@ -43,7 +43,7 @@ function MenuLoadingState({ language }: { language?: Language }) {
 }
 
 function TemplateSwitchLoading({ language }: { language: Language }) {
-  const message = language === 'ar' ? 'عم نغيّر التصميم' : 'Switching template'
+  const message = language === 'ar' ? 'جاري تغيير التصميم…' : 'Switching template'
 
   return (
     <div className="template-switch-loading" role="status" aria-live="polite" aria-busy="true">

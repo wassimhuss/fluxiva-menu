@@ -23,7 +23,7 @@ const arabic: Record<string, string> = {
   'Use lowercase letters, numbers and single hyphens for the menu link': 'استعمل أحرف إنكليزية صغيرة وأرقام وشرطة وحدة بين الكلمات بلينك المنيو',
   'This menu link is already taken. Choose a different one.': 'هاللينك مستعمل من قبل. اختار لينك غيرو.',
   'Could not update the menu link.': 'ما قدرنا نحدّث رابط المنيو.',
-  'Loading requests…': 'عم نحمّل الطلبات…', 'Refresh': 'حدّث', 'Cancel': 'إلغاء', 'Saving…': 'عم نحفظ…',
+  'Loading requests…': 'جاري تحميل الطلبات…', 'Refresh': 'حدّث', 'Cancel': 'إلغاء', 'Saving…': 'عم نحفظ…',
   'Previous': 'اللي قبل', 'Next': 'اللي بعد', 'Page': 'الصفحة', 'pending': 'ناطر الموافقة',
   'Could not load branch requests.': 'ما قدرنا نحمّل طلبات الفروع.', 'Could not review this request.': 'ما قدرنا نراجع هالطلب.',
   'Request approval before creating another branch': 'اطلب الموافقة قبل ما تعمل فرع تاني',

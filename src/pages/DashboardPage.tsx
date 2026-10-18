@@ -1372,7 +1372,7 @@ export function DashboardPage() {
           </div>)}
         </div>
       </div><button className="button button-primary full" disabled={saving || !menu.categories.length}>{saving ? t('Saving…') : editingItem ? t('Save menu item') : t('Add menu item')}</button></form></div>}
-      {imagePreview && <ImageLightbox url={imagePreview.url} name={imagePreview.name} closeLabel={t('Close image preview')} loadingLabel={dashboardLanguage === 'ar' ? 'عم نحمّل الصورة بالحجم الكامل' : 'Loading full-size image'} onClose={() => setImagePreview(null)} />}
+      {imagePreview && <ImageLightbox url={imagePreview.url} name={imagePreview.name} closeLabel={t('Close image preview')} loadingLabel={dashboardLanguage === 'ar' ? 'جاري تحميل الصورة بالحجم الكامل' : 'Loading full-size image'} onClose={() => setImagePreview(null)} />}
       {galleryOpen && <GalleryPicker images={galleryImages} categories={galleryCategories} language={dashboardLanguage} loading={galleryLoading} selectedId={itemDraft.gallery_image_id} onSelect={selectGalleryImage} onRemove={() => { setItemDraft({ ...itemDraft, image_url: null, gallery_image_id: null, image_file: null }); setGalleryOpen(false) }} onClose={() => setGalleryOpen(false)} />}
       {pendingItemCrop && <PortraitImageCropper file={pendingItemCrop} language={dashboardLanguage} onCancel={() => setPendingItemCrop(null)} onConfirm={acceptItemCrop} />}
 

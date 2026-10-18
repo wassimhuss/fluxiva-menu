@@ -49,7 +49,7 @@ export function GalleryPicker({ images, categories, language, loading, selectedI
           <label className="gallery-search"><Search /><input autoFocus value={search} onChange={(event) => setSearch(event.target.value)} placeholder={arabic ? 'دوّر بكل الفولدرات…' : 'Search every folder…'} /></label>
           {folderId && !search && <button type="button" className="gallery-folder-back" onClick={() => setFolderId(null)}>{arabic ? <ArrowRight /> : <ArrowLeft />} {arabic ? 'كل الفولدرات' : 'All folders'}</button>}
         </div>
-        {loading ? <p className="gallery-empty">{arabic ? 'عم نحمّل الصور…' : 'Loading gallery…'}</p> : !folderId && !search ? (
+        {loading ? <p className="gallery-empty">{arabic ? 'جاري تحميل الصور…' : 'Loading gallery…'}</p> : !folderId && !search ? (
           categories.length ? <div className="gallery-folder-grid">{categories.map((category) => {
             const cover = images.find((image) => image.category_id === category.id)
             return <button type="button" onClick={() => setFolderId(category.id)} key={category.id}>
@@ -75,7 +75,7 @@ export function GalleryPicker({ images, categories, language, loading, selectedI
           <button type="button" className="button button-outline button-small" onClick={onClose}>{arabic ? 'سكّر' : 'Close'}</button>
         </footer>
       </section>
-      {previewImage && <ImageLightbox url={previewImage.image_url} name={arabic ? previewImage.name_ar : previewImage.name_en} closeLabel={arabic ? 'تسكير معاينة الصورة' : 'Close image preview'} loadingLabel={arabic ? 'عم نحمّل الصورة بالحجم الكامل' : 'Loading full-size image'} actionLabel={arabic ? 'استعمل هالصورة' : 'Use this photo'} onAction={() => onSelect(previewImage)} onClose={() => setPreviewImage(null)} />}
+      {previewImage && <ImageLightbox url={previewImage.image_url} name={arabic ? previewImage.name_ar : previewImage.name_en} closeLabel={arabic ? 'تسكير معاينة الصورة' : 'Close image preview'} loadingLabel={arabic ? 'جاري تحميل الصورة بالحجم الكامل' : 'Loading full-size image'} actionLabel={arabic ? 'استعمل هالصورة' : 'Use this photo'} onAction={() => onSelect(previewImage)} onClose={() => setPreviewImage(null)} />}
     </div>
   )
 }
