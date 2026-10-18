@@ -23,6 +23,8 @@
   background: var(--add-active-bg, #1d2b24);
   color: var(--add-active-fg, #ffffff);
 }
+.controls { display: inline-flex; align-items: center; gap: 5px; }
+.customizeAnother { border: 1px solid var(--add-border, #aab6b0); color: var(--add-fg, currentColor); background: var(--add-bg, transparent); }
 
 .button {
   inline-size: 30px;
@@ -54,14 +56,14 @@
 /* Sold-out dishes keep the space so rows do not jump, but cannot be ordered. */
 .placeholder { inline-size: 32px; block-size: 32px; display: inline-block; }
 
-.customizer { position: fixed; inset: 0; z-index: 90; color: #1d2823; font-family: inherit; }
+.customizer { position: fixed; inset: 0; z-index: 90; margin: 0; padding: 0; border: 0; inline-size: 100%; block-size: 100%; max-inline-size: none; max-block-size: none; background: transparent; color: #1d2823; font-family: inherit; }
+.customizer::backdrop { background: rgba(7, 14, 11, .58); backdrop-filter: blur(3px); }
 
 .backdrop {
   position: absolute;
   inset: 0;
   border: 0;
-  background: rgba(7, 14, 11, .58);
-  backdrop-filter: blur(3px);
+  background: transparent;
 }
 
 .sheet {
@@ -70,6 +72,7 @@
   inset-block-end: 0;
   max-block-size: min(82dvh, 620px);
   overflow-y: auto;
+  overscroll-behavior: contain;
   padding: 20px 18px calc(18px + env(safe-area-inset-bottom, 0px));
   border-start-start-radius: 22px;
   border-start-end-radius: 22px;
@@ -128,6 +131,16 @@
 .extraOptionSelected .check { border-color: #315e49; background: #315e49; }
 .check svg { inline-size: 14px; }
 
+.sizes { display: grid; gap: 8px; margin: 0 0 20px; padding: 0; border: 0; min-inline-size: 0; }
+.sizes legend { margin-block-end: 10px; font-size: 13px; font-weight: 600; }
+.sizes label { display: flex; align-items: center; gap: 10px; min-block-size: 44px; padding: 10px 12px; border: 1px solid #dfe5e1; border-radius: 12px; background: #fff; font-size: 13px; }
+.sizes input { accent-color: #315e49; }
+.sizes b { margin-inline-start: auto; font-size: 12px; }
+.note { display: grid; gap: 8px; margin-block-start: 20px; font-size: 13px; font-weight: 600; }
+.note textarea { inline-size: 100%; box-sizing: border-box; min-block-size: 80px; padding: 12px; border: 1px solid #aab6b0; border-radius: 12px; background: #fff; color: #25322c; font: inherit; font-size: 16px; resize: vertical; }
+.note small { color: #52615a; font-size: 12px; font-weight: 400; line-height: 1.6; }
+.customizer :focus-visible, .controls :focus-visible { outline: 3px solid #54836a; outline-offset: 3px; }
+
 .addCustomized {
   inline-size: 100%;
   min-block-size: 50px;
@@ -146,6 +159,7 @@
   font-weight: 700;
 }
 .addCustomized b { font-variant-numeric: tabular-nums; }
+.addCustomized:disabled { opacity: .5; cursor: not-allowed; }
 
 @media (min-width: 720px) {
   .sheet {
@@ -155,7 +169,6 @@
     border-radius: 22px;
     animation-name: extrasFade;
   }
-  .customizer[dir='rtl'] .sheet { transform: translate(50%, -50%); }
 }
 
 @keyframes extrasRise { from { transform: translateY(16px); opacity: 0; } to { transform: none; opacity: 1; } }

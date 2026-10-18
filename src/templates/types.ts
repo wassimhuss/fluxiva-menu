@@ -1,5 +1,6 @@
 import type { ComponentType } from 'react'
 import type { ThemeTokens } from '../lib/theme'
+import type { OrderLine } from '../lib/order'
 import type { Category, Currency, Language, MenuItem, Restaurant } from '../lib/types'
 
 /**
@@ -42,11 +43,12 @@ export interface MenuTemplateProps {
  * feel native to its own design.
  */
 export interface MenuOrdering {
+  lines: OrderLine[]
   currency?: Currency
   /** Units of this dish and size already in the order. */
-  quantityOf: (itemId: string, variantIndex: number, extraIds?: string[]) => number
-  add: (itemId: string, variantIndex: number, extraIds?: string[]) => void
-  setQuantity: (itemId: string, variantIndex: number, quantity: number, extraIds?: string[]) => void
+  quantityOf: (itemId: string, variantIndex: number, extraIds?: string[], note?: string) => number
+  add: (itemId: string, variantIndex: number, extraIds?: string[], note?: string) => void
+  setQuantity: (itemId: string, variantIndex: number, quantity: number, extraIds?: string[], note?: string) => void
 }
 
 export type MenuTemplate = ComponentType<MenuTemplateProps>

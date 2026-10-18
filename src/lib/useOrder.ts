@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { lineKey, MAX_QUANTITY, normalizeExtraIds, orderCount, type OrderLine } from './order'
+import { addOrderLine, lineKey, orderCount, parseOrderLines, setOrderLineQuantity, updateOrderLineNote, type OrderLine } from './order'
 
 const storageKey = (slug: string) => `fluxiva-order:${slug}`
 
@@ -14,20 +14,7 @@ const storageKey = (slug: string) => `fluxiva-order:${slug}`
  */
 function readStored(slug: string): OrderLine[] {
   try {
-    const raw = window.sessionStorage.getItem(storageKey(slug))
-    if (!raw) return []
-    const parsed = JSON.parse(raw)
-    if (!Array.isArray(parsed)) return []
-    return parsed.flatMap((line): OrderLine[] => {
-      if (typeof line?.itemId !== 'string'
-        || !Number.isInteger(line?.variantIndex)
-        || !Number.isInteger(line?.quantity)
-        || line.quantity <= 0) return []
-      const extraIds = Array.isArray(line.extraIds)
-        ? line.extraIds.filter((id: unknown): id is string => typeof id === 'string')
-        : []
-      return [{ itemId: line.itemId, variantIndex: line.variantIndex, extraIds: normalizeExtraIds(extraIds), quantity: line.quantity }]
-    })
+    return parseOrderLines(window.sessionStorage.getItem(storageKey(slug)))
   } catch { return [] }
 }
 
@@ -35,9 +22,10 @@ export interface OrderApi {
   lines: OrderLine[]
   count: number
   /** Without extraIds, returns the total across every customization. */
-  quantityOf: (itemId: string, variantIndex: number, extraIds?: string[]) => number
-  add: (itemId: string, variantIndex: number, extraIds?: string[]) => void
-  setQuantity: (itemId: string, variantIndex: number, quantity: number, extraIds?: string[]) => void
+  quantityOf: (itemId: string, variantIndex: number, extraIds?: string[], note?: string) => number
+  add: (itemId: string, variantIndex: number, extraIds?: string[], note?: string) => void
+  setQuantity: (itemId: string, variantIndex: number, quantity: number, extraIds?: string[], note?: string) => void
+  updateNote: (line: OrderLine, note: string) => void
   clear: () => void
 }
 
@@ -64,42 +52,31 @@ export function useOrder(slug: string, enabled: boolean): OrderApi {
     } catch { /* storage unavailable; the order simply does not survive a reload */ }
   }, [lines, slug, enabled, hydratedFor])
 
-  const setQuantity = useCallback((itemId: string, variantIndex: number, quantity: number, extraIds: string[] = []) => {
-    const next = Math.min(Math.max(Math.trunc(quantity), 0), MAX_QUANTITY)
-    const normalizedIds = normalizeExtraIds(extraIds)
-    const key = lineKey(itemId, variantIndex, normalizedIds)
-    setLines((current) => {
-      const existing = current.findIndex((line) => lineKey(line.itemId, line.variantIndex, line.extraIds) === key)
-      if (next <= 0) return existing < 0 ? current : current.filter((_, index) => index !== existing)
-      if (existing < 0) return [...current, { itemId, variantIndex, extraIds: normalizedIds, quantity: next }]
-      return current.map((line, index) => (index === existing ? { ...line, quantity: next } : line))
-    })
+  const setQuantity = useCallback((itemId: string, variantIndex: number, quantity: number, extraIds: string[] = [], note = '') => {
+    setLines(current => setOrderLineQuantity(current, {itemId, variantIndex, extraIds, note, quantity}, quantity))
   }, [])
 
-  const quantityOf = useCallback((itemId: string, variantIndex: number, extraIds?: string[]) => {
+  const quantityOf = useCallback((itemId: string, variantIndex: number, extraIds?: string[], note = '') => {
     if (extraIds === undefined) {
       return lines.filter((line) => line.itemId === itemId && line.variantIndex === variantIndex)
         .reduce((sum, line) => sum + line.quantity, 0)
     }
-    const key = lineKey(itemId, variantIndex, extraIds)
-    return lines.find((line) => lineKey(line.itemId, line.variantIndex, line.extraIds) === key)?.quantity ?? 0
+    const key = lineKey(itemId, variantIndex, extraIds, note)
+    return lines.find((line) => lineKey(line.itemId, line.variantIndex, line.extraIds, line.note) === key)?.quantity ?? 0
   }, [lines])
 
-  const add = useCallback((itemId: string, variantIndex: number, extraIds: string[] = []) => {
-    const normalizedIds = normalizeExtraIds(extraIds)
-    const key = lineKey(itemId, variantIndex, normalizedIds)
-    setLines((current) => {
-      const existing = current.findIndex((line) => lineKey(line.itemId, line.variantIndex, line.extraIds) === key)
-      if (existing < 0) return [...current, { itemId, variantIndex, extraIds: normalizedIds, quantity: 1 }]
-      return current.map((line, index) =>
-        (index === existing ? { ...line, quantity: Math.min(line.quantity + 1, MAX_QUANTITY) } : line))
-    })
+  const add = useCallback((itemId: string, variantIndex: number, extraIds: string[] = [], note = '') => {
+    setLines(current => addOrderLine(current, {itemId, variantIndex, extraIds, note, quantity: 1}))
+  }, [])
+
+  const updateNote = useCallback((line: OrderLine, note: string) => {
+    setLines(current => updateOrderLineNote(current, line, note))
   }, [])
 
   const clear = useCallback(() => setLines([]), [])
 
   return useMemo(
-    () => ({ lines, count: orderCount(lines), quantityOf, add, setQuantity, clear }),
-    [lines, quantityOf, add, setQuantity, clear],
+    () => ({ lines, count: orderCount(lines), quantityOf, add, setQuantity, updateNote, clear }),
+    [lines, quantityOf, add, setQuantity, updateNote, clear],
   )
 }

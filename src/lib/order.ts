@@ -15,6 +15,8 @@ export interface OrderLine {
   variantIndex: number
   /** Stable ids of the optional add-ons selected for this line. */
   extraIds: string[]
+  /** Preparation instructions for this exact size/extra combination. */
+  note?: string
   quantity: number
 }
 
@@ -30,13 +32,68 @@ export interface ResolvedLine extends OrderLine {
 }
 
 export const MAX_QUANTITY = 99
+export const MAX_ITEM_NOTE_LENGTH = 200
+
+export function normalizeItemNote(note: unknown = '') {
+  return typeof note === 'string' ? note.replace(/\r\n?/g, '\n').replace(/\p{Cc}/gu, character => character === '\n' || character === '\t' ? character : '').slice(0, MAX_ITEM_NOTE_LENGTH).replace(/\p{Surrogate}/gu, '\uFFFD').trim() : ''
+}
 
 export function normalizeExtraIds(extraIds: string[] = []) {
   return [...new Set(extraIds.filter(Boolean))].sort()
 }
 
-export function lineKey(itemId: string, variantIndex: number, extraIds: string[] = []) {
-  return `${itemId}::${variantIndex}::${normalizeExtraIds(extraIds).join(',')}`
+export function lineKey(itemId: string, variantIndex: number, extraIds: string[] = [], note = '') {
+  return JSON.stringify([itemId, variantIndex, normalizeExtraIds(extraIds), normalizeItemNote(note)])
+}
+
+const keyOf = (line: OrderLine) => lineKey(line.itemId, line.variantIndex, line.extraIds, line.note)
+
+/** Backwards-compatible session hydration: old baskets simply have no item notes. */
+export function parseOrderLines(raw: string | null): OrderLine[] {
+  if (!raw) return []
+  try {
+    const parsed: unknown = JSON.parse(raw)
+    if (!Array.isArray(parsed)) return []
+    return parsed.flatMap((line): OrderLine[] => {
+      if (typeof line?.itemId !== 'string' || !Number.isInteger(line?.variantIndex) || line.variantIndex < 0
+        || !Number.isInteger(line?.quantity) || line.quantity <= 0) return []
+      const extraIds = Array.isArray(line.extraIds) ? line.extraIds.filter((id: unknown): id is string => typeof id === 'string') : []
+      return [{itemId: line.itemId, variantIndex: line.variantIndex, extraIds: normalizeExtraIds(extraIds), quantity: Math.min(line.quantity, MAX_QUANTITY), note: normalizeItemNote(line.note)}]
+    })
+  } catch { return [] }
+}
+
+export function setOrderLineQuantity(lines: OrderLine[], target: OrderLine, quantity: number): OrderLine[] {
+  if (!Number.isFinite(quantity)) return lines
+  const next = Math.min(Math.max(Math.trunc(quantity), 0), MAX_QUANTITY)
+  const key = keyOf(target)
+  const existing = lines.findIndex(line => keyOf(line) === key)
+  if (next <= 0) return existing < 0 ? lines : lines.filter((_, index) => index !== existing)
+  if (existing < 0) return [...lines, {...target, extraIds: normalizeExtraIds(target.extraIds), note: normalizeItemNote(target.note), quantity: next}]
+  return lines.map((line, index) => index === existing ? {...line, quantity: next} : line)
+}
+
+export function addOrderLine(lines: OrderLine[], target: OrderLine): OrderLine[] {
+  const existing = lines.find(line => keyOf(line) === keyOf(target))
+  return setOrderLineQuantity(lines, target, (existing?.quantity ?? 0) + 1)
+}
+
+export function canUpdateOrderLineNote(lines: OrderLine[], target: OrderLine, note: string) {
+  const source = lines.find(line => keyOf(line) === keyOf(target))
+  const other = lines.find(line => keyOf(line) !== keyOf(target) && keyOf(line) === keyOf({...target, note}))
+  return !source || !other || source.quantity + other.quantity <= MAX_QUANTITY
+}
+
+/** Merge matching instructions after an edit, without dropping quantity at the cap. */
+export function updateOrderLineNote(lines: OrderLine[], target: OrderLine, note: string): OrderLine[] {
+  if (!canUpdateOrderLineNote(lines, target, note)) return lines
+  const source = lines.find(line => keyOf(line) === keyOf(target))
+  if (!source) return lines
+  const updated = {...source, note: normalizeItemNote(note)}
+  if (keyOf(updated) === keyOf(source)) return lines
+  const other = lines.find(line => keyOf(line) === keyOf(updated))
+  if (other) return lines.filter(line => keyOf(line) !== keyOf(source)).map(line => line === other ? {...line, quantity: line.quantity + source.quantity} : line)
+  return lines.map(line => line === source ? updated : line)
 }
 
 /**
@@ -63,6 +120,7 @@ export function resolveLines(lines: OrderLine[], items: MenuItem[]): ResolvedLin
       // diner has the menu open. Removed extras stop affecting price/text, but
       // the remaining line can still be increased or removed correctly.
       extraIds: normalizeExtraIds(line.extraIds),
+      note: normalizeItemNote(line.note),
       item,
       variantName: variant?.name_en ?? '',
       extras,
@@ -92,7 +150,11 @@ export function orderCount(lines: OrderLine[]) {
    platform. Staying well under the smallest one people report is worth more
    than squeezing in two extra lines. Measured against the encoded text, which
    is what actually travels. */
-const MAX_ENCODED_TEXT = 1400
+export const MAX_ENCODED_TEXT = 1400
+
+export function orderMessageTooLong(message: string) {
+  return encodeURIComponent(message).length > MAX_ENCODED_TEXT
+}
 
 interface MessageInput {
   restaurantName: string
@@ -111,7 +173,6 @@ export function buildOrderMessage({ restaurantName, lines, language, formatPrice
   const head = ar ? `طلب دليفري من ${restaurantName}` : `Takeaway order from ${restaurantName}`
   const totalLabel = ar ? 'المجموع' : 'Total'
   const noteLabel = ar ? 'ملاحظة' : 'Note'
-  const moreLabel = (count: number) => (ar ? `…و${count} صنف إضافي` : `…and ${count} more item(s)`)
 
   const rendered = lines.map((line) => {
     const name = ar ? line.item.name_ar : line.item.name_en
@@ -119,7 +180,8 @@ export function buildOrderMessage({ restaurantName, lines, language, formatPrice
     const extras = line.extras.length
       ? ` + ${line.extras.map((extra) => ar ? extra.name_ar : extra.name_en).join(', ')}`
       : ''
-    return `${line.quantity} × ${name}${size}${extras} — ${formatPrice(line.lineTotal, line.lineTotalSecondary)}`
+    const itemNote = normalizeItemNote(line.note)
+    return `${line.quantity} × ${name}${size}${extras} — ${formatPrice(line.lineTotal, line.lineTotalSecondary)}${itemNote ? `\n  ${noteLabel}: ${itemNote.replace(/\n/g, '\n  ')}` : ''}`
   })
 
   const tail = () => {
@@ -128,24 +190,16 @@ export function buildOrderMessage({ restaurantName, lines, language, formatPrice
     return parts
   }
 
-  const assemble = (body: string[], dropped: number) => [
+  // Never silently omit a dish or its preparation instructions to fit a URL.
+  // The basket blocks oversized links and asks the diner to shorten the order.
+  return [
     head,
     '',
-    ...body,
-    ...(dropped > 0 ? [moreLabel(dropped)] : []),
+    ...rendered,
     '',
     ...tail(),
   ].join('\n')
 
-  let message = assemble(rendered, 0)
-  // Trim from the end until the encoded message fits, so the total and any
-  // note always survive — those are the parts the restaurant needs most.
-  let kept = rendered.length
-  while (kept > 0 && encodeURIComponent(message).length > MAX_ENCODED_TEXT) {
-    kept -= 1
-    message = assemble(rendered.slice(0, kept), rendered.length - kept)
-  }
-  return message
 }
 
 export function whatsappOrderLink(whatsapp: string, message: string) {

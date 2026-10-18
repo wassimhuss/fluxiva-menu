@@ -288,10 +288,10 @@ export function PublicMenuPage() {
   const askService = canOrder && !isPreview
   const [serviceMode, setServiceMode] = useState<ServiceMode | null>(null)
   const orderingAllowed = canOrder && (!askService || serviceMode === 'takeaway')
-  const { quantityOf, add, setQuantity } = order
+  const { lines, quantityOf, add, setQuantity } = order
   const templateOrdering = useMemo(
-    () => ({ quantityOf, add, setQuantity, currency }),
-    [quantityOf, add, setQuantity, currency],
+    () => ({ lines, quantityOf, add, setQuantity, currency }),
+    [lines, quantityOf, add, setQuantity, currency],
   )
 
 
