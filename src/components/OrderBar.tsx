@@ -69,21 +69,21 @@ export function OrderBar({ restaurant, items, order, language, rtl, t, formatPri
           <ShoppingBag />
           {order.count > 0
             ? <>{t('Your order', 'طلبك')}<span className={styles.count}>{order.count}</span></>
-            : t('Order takeaway', 'اطلب سفري')}
+            : t('Order takeaway', 'اطلب دليفري')}
         </button>
       )}
 
       {open && (
         <>
-          <button className={styles.backdrop} aria-label={t('Close order', 'إغلاق الطلب')} onClick={() => setOpen(false)} />
-          <section className={styles.sheet} role="dialog" aria-modal="true" aria-label={t('Takeaway order', 'طلب سفري')}>
+          <button className={styles.backdrop} aria-label={t('Close order', 'تسكير الطلب')} onClick={() => setOpen(false)} />
+          <section className={styles.sheet} role="dialog" aria-modal="true" aria-label={t('Takeaway order', 'طلب دليفري')}>
             <header className={styles.head}>
               <div>
-                <h2>{t('Takeaway order', 'طلب سفري')}</h2>
+                <h2>{t('Takeaway order', 'طلب دليفري')}</h2>
                 <p>{t('Sent to the restaurant on WhatsApp. They confirm the order and the price.',
-                  'يُرسل إلى المطعم عبر واتساب. المطعم يؤكد الطلب والسعر.')}</p>
+                  'الطلب بينبعت للمطعم عالواتساب، والمطعم بيأكّدلك الطلب والسعر.')}</p>
               </div>
-              <button className={styles.close} onClick={() => setOpen(false)} aria-label={t('Close', 'إغلاق')}><X /></button>
+              <button className={styles.close} onClick={() => setOpen(false)} aria-label={t('Close', 'سكّر')}><X /></button>
             </header>
 
             {lines.length ? (
@@ -101,7 +101,7 @@ export function OrderBar({ restaurant, items, order, language, rtl, t, formatPri
                         <button
                           onClick={() => order.setQuantity(line.itemId, line.variantIndex, line.quantity - 1, line.extraIds)}
                           aria-label={line.quantity === 1
-                            ? t('Remove from order', 'إزالة من الطلب')
+                            ? t('Remove from order', 'شيل من الطلب')
                             : t('Reduce quantity', 'تقليل الكمية')}
                         >
                           {line.quantity === 1 ? <Trash2 /> : <Minus />}
@@ -141,16 +141,16 @@ export function OrderBar({ restaurant, items, order, language, rtl, t, formatPri
                     rel="noreferrer"
                     onClick={() => setOpen(false)}
                   >
-                    <ShoppingBag /> {t('Send order on WhatsApp', 'أرسل الطلب عبر واتساب')}
+                    <ShoppingBag /> {t('Send order on WhatsApp', 'ابعث الطلب عالواتساب')}
                   </a>
                   <p className={styles.disclaimer}>
                     {t('This opens WhatsApp with your order written out. Nothing is ordered until the restaurant replies.',
-                      'سيفتح واتساب مع طلبك مكتوباً. لا يتم تأكيد الطلب حتى يرد المطعم.')}
+                      'رح يفتح واتساب وطلبك مكتوب وجاهز. الطلب ما بيتأكّد قبل ما يردّ المطعم.')}
                   </p>
                 </footer>
               </>
             ) : (
-              <p className={styles.empty}>{t('Your order is empty. Add dishes from the menu.', 'طلبك فارغ. أضف أصنافاً من القائمة.')}</p>
+              <p className={styles.empty}>{t('Your order is empty. Add dishes from the menu.', 'بعد ما ضفت شي عطلبك. اختار أصناف من المنيو.')}</p>
             )}
           </section>
         </>

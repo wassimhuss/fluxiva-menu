@@ -77,5 +77,5 @@ test('login does not require confirmation, and confirmation labels/errors are bi
     assert.notEqual(i18n.authText('ar', key), key)
     assert.equal(i18n.authText('en', key), key)
   }
-  assert.equal(i18n.authErrorText('ar', 'Both passwords need to match.'), 'يجب أن تتطابق كلمتا المرور.')
+  assert.equal(i18n.authErrorText('ar', 'Both passwords need to match.'), 'لازم الباسوورد يكون نفسو بالخانتين.')
 })

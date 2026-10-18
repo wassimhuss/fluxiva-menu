@@ -42,14 +42,14 @@ export function GalleryPicker({ images, categories, language, loading, selectedI
     <div className="gallery-picker-backdrop" role="presentation">
       <section className="gallery-picker" role="dialog" aria-modal="true" aria-labelledby="gallery-picker-title" dir={arabic ? 'rtl' : 'ltr'}>
         <header>
-          <div><span>{arabic ? 'مكتبة Fluxiva' : 'Fluxiva Gallery'}</span><h2 id="gallery-picker-title">{selectedFolder ? (arabic ? selectedFolder.name_ar : selectedFolder.name_en) : arabic ? 'اختر مجلداً' : 'Choose a folder'}</h2></div>
-          <button type="button" className="modal-close" onClick={onClose} aria-label={arabic ? 'إغلاق' : 'Close'}><X /></button>
+          <div><span>{arabic ? 'مكتبة Fluxiva' : 'Fluxiva Gallery'}</span><h2 id="gallery-picker-title">{selectedFolder ? (arabic ? selectedFolder.name_ar : selectedFolder.name_en) : arabic ? 'اختار فولدر' : 'Choose a folder'}</h2></div>
+          <button type="button" className="modal-close" onClick={onClose} aria-label={arabic ? 'سكّر' : 'Close'}><X /></button>
         </header>
         <div className="gallery-picker-tools">
-          <label className="gallery-search"><Search /><input autoFocus value={search} onChange={(event) => setSearch(event.target.value)} placeholder={arabic ? 'ابحث في كل المجلدات…' : 'Search every folder…'} /></label>
-          {folderId && !search && <button type="button" className="gallery-folder-back" onClick={() => setFolderId(null)}>{arabic ? <ArrowRight /> : <ArrowLeft />} {arabic ? 'كل المجلدات' : 'All folders'}</button>}
+          <label className="gallery-search"><Search /><input autoFocus value={search} onChange={(event) => setSearch(event.target.value)} placeholder={arabic ? 'دوّر بكل الفولدرات…' : 'Search every folder…'} /></label>
+          {folderId && !search && <button type="button" className="gallery-folder-back" onClick={() => setFolderId(null)}>{arabic ? <ArrowRight /> : <ArrowLeft />} {arabic ? 'كل الفولدرات' : 'All folders'}</button>}
         </div>
-        {loading ? <p className="gallery-empty">{arabic ? 'جارٍ تحميل الصور…' : 'Loading gallery…'}</p> : !folderId && !search ? (
+        {loading ? <p className="gallery-empty">{arabic ? 'عم نحمّل الصور…' : 'Loading gallery…'}</p> : !folderId && !search ? (
           categories.length ? <div className="gallery-folder-grid">{categories.map((category) => {
             const cover = images.find((image) => image.category_id === category.id)
             return <button type="button" onClick={() => setFolderId(category.id)} key={category.id}>
@@ -57,7 +57,7 @@ export function GalleryPicker({ images, categories, language, loading, selectedI
               <b>{arabic ? category.name_ar : category.name_en}</b>
               <small>{category.image_count ?? images.filter((image) => image.category_id === category.id).length} {arabic ? 'صور' : 'images'}</small>
             </button>
-          })}</div> : <p className="gallery-empty">{arabic ? 'لا توجد مجلدات متاحة.' : 'No gallery folders are available.'}</p>
+          })}</div> : <p className="gallery-empty">{arabic ? 'بعد ما في فولدرات متاحة.' : 'No gallery folders are available.'}</p>
         ) : filtered.length ? (
           <div className="gallery-grid">
             {filtered.map((image) => {
@@ -69,13 +69,13 @@ export function GalleryPicker({ images, categories, language, loading, selectedI
               </article>
             })}
           </div>
-        ) : <p className="gallery-empty">{arabic ? 'لا توجد صور مطابقة.' : 'No images match your search.'}</p>}
+        ) : <p className="gallery-empty">{arabic ? 'ما في صور بتطابق بحثك.' : 'No images match your search.'}</p>}
         <footer>
-          {selectedId && <button type="button" className="gallery-remove" onClick={onRemove}><ImageOff /> {arabic ? 'إزالة الصورة' : 'Remove photo'}</button>}
-          <button type="button" className="button button-outline button-small" onClick={onClose}>{arabic ? 'إغلاق' : 'Close'}</button>
+          {selectedId && <button type="button" className="gallery-remove" onClick={onRemove}><ImageOff /> {arabic ? 'شيل الصورة' : 'Remove photo'}</button>}
+          <button type="button" className="button button-outline button-small" onClick={onClose}>{arabic ? 'سكّر' : 'Close'}</button>
         </footer>
       </section>
-      {previewImage && <ImageLightbox url={previewImage.image_url} name={arabic ? previewImage.name_ar : previewImage.name_en} closeLabel={arabic ? 'إغلاق معاينة الصورة' : 'Close image preview'} loadingLabel={arabic ? 'جارٍ تحميل الصورة بالحجم الكامل' : 'Loading full-size image'} actionLabel={arabic ? 'استخدم هذه الصورة' : 'Use this photo'} onAction={() => onSelect(previewImage)} onClose={() => setPreviewImage(null)} />}
+      {previewImage && <ImageLightbox url={previewImage.image_url} name={arabic ? previewImage.name_ar : previewImage.name_en} closeLabel={arabic ? 'تسكير معاينة الصورة' : 'Close image preview'} loadingLabel={arabic ? 'عم نحمّل الصورة بالحجم الكامل' : 'Loading full-size image'} actionLabel={arabic ? 'استعمل هالصورة' : 'Use this photo'} onAction={() => onSelect(previewImage)} onClose={() => setPreviewImage(null)} />}
     </div>
   )
 }

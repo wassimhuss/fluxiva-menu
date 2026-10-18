@@ -57,7 +57,7 @@ export function BranchSelectorPage() {
 
   if(!error && (!data || !livePlaces.length)) return <MenuUnavailable contact={null} onRetry={()=>setLoadAttempt(value=>value+1)} />
   if (!data || error) {
-    return <main className="branch-selector-empty"><Store /><h1>{error ? 'Connection interrupted' : 'Branches unavailable'}</h1><p>{error || 'No branches are available right now.'}</p><p dir="rtl" lang="ar">{error ? 'تعذّر الاتصال. حاول مجددًا.' : 'لا توجد فروع متاحة حاليًا.'}</p>{error && <button className="button button-primary" onClick={() => setLoadAttempt((attempt) => attempt + 1)}>Try again / حاول مجددًا</button>}</main>
+    return <main className="branch-selector-empty"><Store /><h1>{error ? 'Connection interrupted' : 'Branches unavailable'}</h1><p>{error || 'No branches are available right now.'}</p><p dir="rtl" lang="ar">{error ? 'ما قدرنا نتّصل. جرّب كمان مرّة.' : 'ما في فروع متاحة هلّق.'}</p>{error && <button className="button button-primary" onClick={() => setLoadAttempt((attempt) => attempt + 1)}>Try again / جرّب كمان مرّة</button>}</main>
   }
 
   const { brand } = data
@@ -71,9 +71,9 @@ export function BranchSelectorPage() {
         <button type="button" className="branch-selector-language" onClick={() => setLanguage(arabic ? 'en' : 'ar')}><Languages /> {arabic ? 'EN' : 'عربي'}</button>
       </header>
       <section className="branch-selector-intro">
-        <span className="eyebrow"><span /> {t('CHOOSE YOUR BRANCH', 'اختر الفرع')}</span>
+        <span className="eyebrow"><span /> {t('CHOOSE YOUR BRANCH', 'اختار الفرع')}</span>
         <h1>{localText(language, brand.name_en, brand.name_ar)}</h1>
-        <p>{t('Select the location you are visiting to open its menu.', 'اختر المكان الذي تزوره لفتح قائمته.')}</p>
+        <p>{t('Select the location you are visiting to open its menu.', 'اختار الفرع اللي رايح عليه لتفتح المنيو تبعو.')}</p>
       </section>
       <section className="branch-selector-list" aria-label={t('Restaurant branches', 'فروع المطعم')}>
         {restaurants.map((restaurant) => (
@@ -81,13 +81,13 @@ export function BranchSelectorPage() {
             <span className="branch-selector-pin"><MapPin /></span>
             <span className="branch-selector-copy">
               <b>{localText(language, restaurant.name_en, restaurant.name_ar)}</b>
-              <small>{localText(language, restaurant.address_en || 'Address available in the menu', restaurant.address_ar || 'العنوان متاح في القائمة')}</small>
+              <small>{localText(language, restaurant.address_en || 'Address available in the menu', restaurant.address_ar || 'العنوان موجود بالمنيو')}</small>
               {restaurant.temporarily_closed && <em>{t('Temporarily closed', 'مغلق مؤقتًا')}</em>}
             </span>
-            <span className="branch-selector-action">{t('Open menu', 'فتح القائمة')} <ArrowRight /></span>
+            <span className="branch-selector-action">{t('Open menu', 'فتح المنيو')} <ArrowRight /></span>
           </Link>
         ))}
-        {!restaurants.length && <div className="branch-selector-no-places"><Store /><b>{t('No branches are available right now.', 'لا توجد فروع متاحة حاليًا.')}</b></div>}
+        {!restaurants.length && <div className="branch-selector-no-places"><Store /><b>{t('No branches are available right now.', 'ما في فروع متاحة هلّق.')}</b></div>}
       </section>
       <footer>FLUXIVA MENU</footer>
     </main>

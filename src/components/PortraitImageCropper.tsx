@@ -28,11 +28,11 @@ export function PortraitImageCropper({ file, onCancel, onConfirm, language = 'en
   const arabic = language === 'ar'
   const outputDimensions = `${ITEM_IMAGE_WIDTH} × ${ITEM_IMAGE_HEIGHT}`
   const copy = arabic ? {
-    close: 'إغلاق أداة قص الصورة', eyebrow: 'قص الصورة', title: 'حدّد إطار صورة الطبق',
-    description: 'اسحب الصورة وقرّبها حتى يظهر الطبق كاملًا ومرتاحًا داخل الإطار الطولي.',
-    area: 'منطقة القص. اسحب الصورة أو استخدم مفاتيح الأسهم لتغيير موضعها.',
-    move: 'اسحب لتغيير الموضع', zoom: 'تكبير', reset: 'إعادة ضبط', source: 'المصدر', output: 'الناتج',
-    cancel: 'إلغاء', preparing: 'جارٍ التحضير…', use: 'استخدم صورة', image: '',
+    close: 'تسكير أداة قص الصورة', eyebrow: 'قص الصورة', title: 'ظبّط إطار صورة الأكل',
+    description: 'اسحب الصورة وقرّبها لحتى يبين الطبق كلّو بوضوح جوّا الإطار الطولي.',
+    area: 'مساحة القص. اسحب الصورة أو استعمل الأسهم لتحرّكها.',
+    move: 'اسحب لتحرّك الصورة', zoom: 'تكبير', reset: 'رجّع متل ما كان', source: 'المصدر', output: 'الصورة الجاهزة',
+    cancel: 'إلغاء', preparing: 'عم نجهّز…', use: 'استعمل صورة', image: '',
   } : {
     close: 'Close image cropper', eyebrow: 'Image crop', title: 'Frame the food photo',
     description: 'Drag the photo and zoom until the complete dish sits comfortably inside the portrait frame.',

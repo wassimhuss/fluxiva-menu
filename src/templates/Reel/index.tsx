@@ -75,7 +75,7 @@ function ReelSlide({ item, index, total, category, active, nearby, t, formatPric
         <div className={styles.priceRow}>
           {item.available
             ? <span className={`${styles.price} menu-dual-price`} dir="ltr"><PriceLabel text={formatPrice(price, (variant ?? item).price_secondary)} /></span>
-            : <span className={styles.soldOut}>{t('Sold out', 'نفد')}</span>}
+            : <span className={styles.soldOut}>{t('Sold out', 'خلص هلّق')}</span>}
           {ordering && <AddToOrder item={item} variantIndex={variantIndex} ordering={ordering} t={t} formatPrice={formatPrice} rtl={rtl} className={styles.addToOrder} />}
         </div>
       </div>
@@ -133,11 +133,11 @@ export default function ReelTemplate(props: MenuTemplateProps) {
       </div>
 
       {restaurant.temporarily_closed && (
-        <div className={styles.closed}>{t('The restaurant is temporarily closed', 'المطعم مغلق مؤقتاً')}</div>
+        <div className={styles.closed}>{t('The restaurant is temporarily closed', 'المطعم مسكّر مؤقّتاً')}</div>
       )}
 
       {/* Remounting on category change resets the scroller to the first dish. */}
-      <div className={styles.reel} ref={setReel} key={activeCategory} tabIndex={0} role="region" aria-label={t('Menu items', 'أصناف القائمة')}>
+      <div className={styles.reel} ref={setReel} key={activeCategory} tabIndex={0} role="region" aria-label={t('Menu items', 'أصناف المنيو')}>
         {visibleItems.map((item, index) => (
           <ReelSlide
             key={item.id}
@@ -154,20 +154,20 @@ export default function ReelTemplate(props: MenuTemplateProps) {
           />
         ))}
 
-        {!visibleItems.length && <div className={styles.empty}>{t('No items found here.', 'لا توجد أصناف هنا.')}</div>}
+        {!visibleItems.length && <div className={styles.empty}>{t('No items found here.', 'بعد ما في أصناف هون.')}</div>}
 
         <section className={styles.endSlide} data-slide={visibleItems.length}>
           <div className={styles.endInner}>
             {restaurant.logo_url && <img className={styles.endLogo} src={restaurant.logo_url} alt="" />}
             <h2 className={styles.endTitle}>{t(restaurant.name_en, restaurant.name_ar)}</h2>
             <p className={styles.endText}>
-              {t(restaurant.description_en ?? 'Freshly made for you.', restaurant.description_ar ?? 'نحضّره طازجاً من أجلك.')}
+              {t(restaurant.description_en ?? 'Freshly made for you.', restaurant.description_ar ?? 'منحضّرو طازة كرمالك.')}
             </p>
             <div className={styles.endContacts}>
               {restaurant.whatsapp && (
                 <a className={styles.endContact} href={`https://wa.me/${restaurant.whatsapp.replace(/\D/g, '')}`} target="_blank" rel="noreferrer">
                   <WhatsAppIcon />
-                  <span className={styles.endContactLabel}>{t('Message us', 'راسلنا')}</span>
+                  <span className={styles.endContactLabel}>{t('Message us', 'احكي معنا')}</span>
                 </a>
               )}
               {address && (
@@ -195,7 +195,7 @@ export default function ReelTemplate(props: MenuTemplateProps) {
 
       <div className={`${styles.hint} ${active > 0 ? styles.hintHidden : ''}`}>
         <ChevronUp />
-        {t('Swipe', 'مرّر')}
+        {t('Swipe', 'اسحب')}
       </div>
     </main>
   )

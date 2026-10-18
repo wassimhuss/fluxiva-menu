@@ -49,7 +49,7 @@ function Chapter({ item, index, active, t, formatPrice, rtl, ordering }: {
         <div className={styles.priceRow}>
           {item.available
             ? <span className={`${styles.price} menu-dual-price`} dir="ltr"><PriceLabel text={formatPrice(price, (variant ?? item).price_secondary)} /></span>
-            : <span className={styles.soldOut}>{t('Unavailable', 'غير متوفر')}</span>}
+            : <span className={styles.soldOut}>{t('Unavailable', 'مش متوفّر')}</span>}
           {ordering && <AddToOrder item={item} variantIndex={variantIndex} ordering={ordering} t={t} formatPrice={formatPrice} rtl={rtl} className={styles.addToOrder} />}
         </div>
       </div>
@@ -89,16 +89,16 @@ export default function StoryTemplate(props: MenuTemplateProps) {
 
         <div className={styles.introInner}>
           {restaurant.logo_url && <img className={styles.logo} src={restaurant.logo_url} alt="" />}
-          <div className={styles.eyebrow}>{t('The menu', 'القائمة')}</div>
+          <div className={styles.eyebrow}>{t('The menu', 'المنيو')}</div>
           <h1 className={styles.venue}>{t(restaurant.name_en, restaurant.name_ar)}</h1>
           <p className={styles.tagline}>
-            {t(restaurant.description_en ?? 'Freshly made for you.', restaurant.description_ar ?? 'نحضّره طازجاً من أجلك.')}
+            {t(restaurant.description_en ?? 'Freshly made for you.', restaurant.description_ar ?? 'منحضّرو طازة كرمالك.')}
           </p>
         </div>
 
         <div className={styles.scrollCue}>
           <ChevronDown />
-          {t('Scroll', 'مرّر')}
+          {t('Scroll', 'اسحب')}
         </div>
       </header>
 
@@ -117,7 +117,7 @@ export default function StoryTemplate(props: MenuTemplateProps) {
       </nav>
 
       {restaurant.temporarily_closed && (
-        <div className={styles.closed}>{t('The restaurant is temporarily closed', 'المطعم مغلق مؤقتاً')}</div>
+        <div className={styles.closed}>{t('The restaurant is temporarily closed', 'المطعم مسكّر مؤقّتاً')}</div>
       )}
 
       {visibleItems.length
@@ -150,13 +150,13 @@ export default function StoryTemplate(props: MenuTemplateProps) {
             </div>
           </div>
         )
-        : <p className={styles.empty}>{t('No items found here.', 'لا توجد أصناف هنا.')}</p>}
+        : <p className={styles.empty}>{t('No items found here.', 'بعد ما في أصناف هون.')}</p>}
 
       <footer className={styles.footer}>
         <div className={styles.contacts}>
           {restaurant.whatsapp && (
             <a className={styles.contact} href={`https://wa.me/${restaurant.whatsapp.replace(/\D/g, '')}`} target="_blank" rel="noreferrer">
-              <WhatsAppIcon /> {t('Message us', 'راسلنا')}
+              <WhatsAppIcon /> {t('Message us', 'احكي معنا')}
             </a>
           )}
           {address && (

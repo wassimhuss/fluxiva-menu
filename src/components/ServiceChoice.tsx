@@ -50,20 +50,20 @@ export function ServiceChoice({ restaurant, coverUrl, language, setLanguage, rtl
           ? <img className={styles.logo} src={restaurant.logo_url} alt="" />
           : <div className={styles.monogram}>{restaurant.name_en.slice(0, 2).toUpperCase()}</div>}
         <h1 className={styles.venue}>{t(restaurant.name_en, restaurant.name_ar)}</h1>
-        <p className={styles.prompt}>{t('How would you like your order?', 'كيف تحب أن تتناول طلبك؟')}</p>
+        <p className={styles.prompt}>{t('How would you like your order?', 'كيف بدّك تطلب؟')}</p>
       </div>
 
       <div className={styles.cards}>
         <button type="button" className={styles.card} onClick={() => onChoose('dine-in')}>
           <span className={styles.icon}><Utensils /></span>
-          <span className={styles.cardTitle}>{t('Dine in', 'تناول هنا')}</span>
-          <span className={styles.cardNote}>{t('Browse the menu and order with your waiter.', 'تصفّح القائمة واطلب من النادل.')}</span>
+          <span className={styles.cardTitle}>{t('Dine in', 'بالمطعم')}</span>
+          <span className={styles.cardNote}>{t('Browse the menu and order with your waiter.', 'شوف المنيو واطلب من الويتر.')}</span>
         </button>
 
         <button type="button" className={styles.card} onClick={() => onChoose('takeaway')}>
           <span className={styles.icon}><ShoppingBag /></span>
-          <span className={styles.cardTitle}>{t('Takeaway', 'سفري')}</span>
-          <span className={styles.cardNote}>{t('Build your order and send it on WhatsApp.', 'اختر أصنافك وأرسل الطلب عبر واتساب.')}</span>
+          <span className={styles.cardTitle}>{t('Takeaway', 'دليفري')}</span>
+          <span className={styles.cardNote}>{t('Build your order and send it on WhatsApp.', 'اختار شو بدّك وابعت الطلب عالواتساب.')}</span>
         </button>
       </div>
 

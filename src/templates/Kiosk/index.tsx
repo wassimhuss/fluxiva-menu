@@ -38,7 +38,7 @@ function KioskCard({ item, index, t, formatPrice, rtl, ordering }: {
           : <span className={styles.mediaEmptyMark}>{name.slice(0, 2).toUpperCase()}</span>}
         {item.image_url && <div className={styles.scrim} />}
         <span className={`${styles.price} menu-dual-price`} dir="ltr"><PriceLabel text={formatPrice(price, (variant ?? item).price_secondary)} /></span>
-        {!item.available && <span className={styles.soldOutTag}>{t('Sold out', 'نفد')}</span>}
+        {!item.available && <span className={styles.soldOutTag}>{t('Sold out', 'خلص هلّق')}</span>}
         {ordering && (
           <div className={styles.cardOrder}>
             <AddToOrder item={item} variantIndex={variantIndex} ordering={ordering} t={t} formatPrice={formatPrice} rtl={rtl} />
@@ -112,7 +112,7 @@ export default function KioskTemplate(props: MenuTemplateProps) {
           <div>
             <h1 className={styles.name}>{t(restaurant.name_en, restaurant.name_ar)}</h1>
             <p className={styles.tagline}>
-              {t(restaurant.description_en ?? 'Freshly made for you.', restaurant.description_ar ?? 'نحضّره طازجاً من أجلك.')}
+              {t(restaurant.description_en ?? 'Freshly made for you.', restaurant.description_ar ?? 'منحضّرو طازة كرمالك.')}
             </p>
           </div>
         </div>
@@ -134,12 +134,12 @@ export default function KioskTemplate(props: MenuTemplateProps) {
 
       <div className={styles.body}>
         {restaurant.temporarily_closed && (
-          <div className={styles.closed}>{t('The restaurant is temporarily closed', 'المطعم مغلق مؤقتاً')}</div>
+          <div className={styles.closed}>{t('The restaurant is temporarily closed', 'المطعم مسكّر مؤقّتاً')}</div>
         )}
 
         <div className={styles.sectionHead}>
           <h2 className={styles.sectionTitle}>
-            {t(activeCategoryEntry?.name_en ?? 'Menu', activeCategoryEntry?.name_ar ?? 'القائمة')}
+            {t(activeCategoryEntry?.name_en ?? 'Menu', activeCategoryEntry?.name_ar ?? 'المنيو')}
           </h2>
           <span className={styles.sectionCount}>
             {visibleItems.length} {t(visibleItems.length === 1 ? 'item' : 'items', 'صنف')}
@@ -151,7 +151,7 @@ export default function KioskTemplate(props: MenuTemplateProps) {
             <KioskCard key={item.id} item={item} index={index} t={t} formatPrice={formatPrice} rtl={rtl} ordering={ordering} />
           ))}
         </div>
-        {!visibleItems.length && <p className={styles.empty}>{t('No items found here.', 'لا توجد أصناف هنا.')}</p>}
+        {!visibleItems.length && <p className={styles.empty}>{t('No items found here.', 'بعد ما في أصناف هون.')}</p>}
       </div>
 
       <footer
@@ -170,7 +170,7 @@ export default function KioskTemplate(props: MenuTemplateProps) {
               {restaurant.whatsapp && (
                 <a className="footer-contact-item footer-contact-item-accent" href={`https://wa.me/${restaurant.whatsapp.replace(/\D/g, '')}`} target="_blank" rel="noreferrer">
                   <span className="footer-contact-icon"><WhatsAppIcon /></span>
-                  <span className="footer-contact-copy"><small>WhatsApp</small><strong>{t('Message us', 'راسلنا الآن')}</strong></span>
+                  <span className="footer-contact-copy"><small>WhatsApp</small><strong>{t('Message us', 'احكي معنا')}</strong></span>
                 </a>
               )}
               {(restaurant.address_en || restaurant.address_ar) && (

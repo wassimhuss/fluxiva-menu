@@ -95,13 +95,13 @@ export default function ClassicTemplate(props: MenuTemplateProps) {
             ? <img src={restaurant.logo_url} alt="" />
             : <div className="restaurant-monogram">{restaurant.name_en.slice(0, 2).toUpperCase()}</div>}
           <h1>{t(restaurant.name_en, restaurant.name_ar)}</h1>
-          <p>{t(restaurant.description_en ?? 'Freshly made for you.', restaurant.description_ar ?? 'نحضّره طازجاً من أجلك.')}</p>
+          <p>{t(restaurant.description_en ?? 'Freshly made for you.', restaurant.description_ar ?? 'منحضّرو طازة كرمالك.')}</p>
         </div>
       </header>
 
       <div className="menu-body">
         {restaurant.temporarily_closed && (
-          <div className="closed-banner">{t('The restaurant is temporarily closed', 'المطعم مغلق مؤقتاً')}</div>
+          <div className="closed-banner">{t('The restaurant is temporarily closed', 'المطعم مسكّر مؤقّتاً')}</div>
         )}
         <nav className="category-tabs" data-menu-bar>
           {categories.map((category) => (
@@ -117,7 +117,7 @@ export default function ClassicTemplate(props: MenuTemplateProps) {
         <section className="items-section">
           <div className="section-title">
             <span />
-            <h2>{t(activeCategoryEntry?.name_en ?? 'Menu', activeCategoryEntry?.name_ar ?? 'القائمة')}</h2>
+            <h2>{t(activeCategoryEntry?.name_en ?? 'Menu', activeCategoryEntry?.name_ar ?? 'المنيو')}</h2>
             <span />
           </div>
           {/* The one design that animated nothing as you scrolled; the others
@@ -132,12 +132,12 @@ export default function ClassicTemplate(props: MenuTemplateProps) {
                 formatPrice={formatPrice}
                 rtl={rtl}
                 color={restaurant.primary_color}
-                unavailableLabel={t('Currently unavailable', 'غير متوفر حالياً')}
+                unavailableLabel={t('Currently unavailable', 'مش متوفّر هلّق')}
                 ordering={ordering}
               />
             ))}
           </div>
-          {!visibleItems.length && <p className="empty-items">{t('No items found here.', 'لا توجد أصناف هنا.')}</p>}
+          {!visibleItems.length && <p className="empty-items">{t('No items found here.', 'بعد ما في أصناف هون.')}</p>}
         </section>
       </div>
 
@@ -156,7 +156,7 @@ export default function ClassicTemplate(props: MenuTemplateProps) {
               {restaurant.whatsapp && (
                 <a className="footer-contact-item footer-contact-item-accent" href={`https://wa.me/${restaurant.whatsapp.replace(/\D/g, '')}`} target="_blank" rel="noreferrer">
                   <span className="footer-contact-icon"><WhatsAppIcon /></span>
-                  <span className="footer-contact-copy"><small>WhatsApp</small><strong>{t('Message us', 'راسلنا الآن')}</strong></span>
+                  <span className="footer-contact-copy"><small>WhatsApp</small><strong>{t('Message us', 'احكي معنا')}</strong></span>
                 </a>
               )}
               {(restaurant.address_en || restaurant.address_ar) && (

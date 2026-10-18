@@ -3,57 +3,57 @@ import type { Language } from './types'
 export const AUTH_LANGUAGE_KEY = 'fluxiva-landing-language'
 
 const arabic: Record<string, string> = {
-  'Could not confirm account access. Please try again.': 'تعذّر التحقق من صلاحيات الحساب. حاول مجدداً.',
-  'Try again': 'حاول مجدداً',
-  'Sign out': 'تسجيل الخروج',
-  'Welcome back': 'أهلاً بعودتك',
-  'Sign in to your menu': 'سجّل الدخول إلى قائمتك',
-  'Manage your restaurant details and menu.': 'أدِر تفاصيل مطعمك وقائمتك بسهولة.',
-  'Sign in': 'تسجيل الدخول',
-  'Start free': 'ابدأ مجاناً',
-  'Create your account': 'أنشئ حسابك',
-  'Your 14-day trial starts when you create your restaurant.': 'تبدأ تجربتك المجانية لمدة 14 يوماً عند إنشاء مطعمك.',
-  'Create account': 'إنشاء حساب',
-  'Password help': 'مساعدة كلمة المرور',
-  'Reset your password': 'أعِد تعيين كلمة المرور',
-  'Enter the email you signed up with and we’ll send you a link to set a new password.': 'أدخل البريد الإلكتروني الذي سجّلت به وسنرسل لك رابطاً لاختيار كلمة مرور جديدة.',
-  'Send reset link': 'إرسال رابط الاستعادة',
-  'A better first look at your restaurant.': 'انطباع أول أجمل عن مطعمك.',
-  'One menu, two languages, always up to date.': 'قائمة واحدة، لغتان، ومعلومات محدّثة دائماً.',
-  'Designed for restaurants in Lebanon.': 'مصمّمة للمطاعم في لبنان.',
-  'Back to sign in': 'العودة إلى تسجيل الدخول',
-  'Back home': 'العودة إلى الرئيسية',
-  'You were signed out after two hours without activity. Sign in again to carry on.': 'تم تسجيل خروجك بعد ساعتين من عدم النشاط. سجّل الدخول مجدداً للمتابعة.',
-  'Demo mode is active. Submit this form to preview the dashboard.': 'الوضع التجريبي مفعّل. أرسل النموذج لمعاينة لوحة التحكم.',
-  'Email address': 'البريد الإلكتروني',
-  'Password': 'كلمة المرور',
-  'Confirm password': 'تأكيد كلمة المرور',
-  'Show password confirmation': 'إظهار كلمة مرور التأكيد',
-  'Hide password confirmation': 'إخفاء كلمة مرور التأكيد',
-  'Forgot password?': 'نسيت كلمة المرور؟',
-  'At least 8 characters': '8 أحرف على الأقل',
-  'Hide password': 'إخفاء كلمة المرور',
-  'Show password': 'إظهار كلمة المرور',
-  'Please wait…': 'يرجى الانتظار…',
-  'Remembered it?': 'تذكّرت كلمة المرور؟',
-  'Already have an account?': 'لديك حساب بالفعل؟',
-  'New to Fluxiva Menu?': 'جديد على Fluxiva Menu؟',
-  'Supabase credentials are not connected yet.': 'بيانات اتصال Supabase غير مضافة بعد.',
-  'If an account exists for that email, a reset link is on its way. Check your inbox and spam folder.': 'إذا كان هناك حساب بهذا البريد، فسيصلك رابط الاستعادة. تحقّق من صندوق الوارد والبريد غير المرغوب فيه.',
-  'Check your email to confirm your account, then sign in.': 'تحقّق من بريدك لتأكيد الحساب، ثم سجّل الدخول.',
-  'Choose a new password': 'اختر كلمة مرور جديدة',
-  'Pick something you’ll remember. You’ll be signed in straight after.': 'اختر كلمة يسهل عليك تذكّرها. سيتم تسجيل دخولك مباشرة بعدها.',
-  'This link can’t be used to reset a password.': 'لا يمكن استخدام هذا الرابط لإعادة تعيين كلمة المرور.',
-  'This reset link is no longer valid.': 'رابط الاستعادة هذا لم يعد صالحاً.',
-  'This reset link has expired or has already been used.': 'انتهت صلاحية رابط الاستعادة أو سبق استخدامه.',
-  'Both passwords need to match.': 'يجب أن تتطابق كلمتا المرور.',
-  'New password': 'كلمة المرور الجديدة',
-  'Confirm new password': 'تأكيد كلمة المرور الجديدة',
-  'Type it once more': 'اكتبها مرة أخرى',
-  'Saving…': 'جارٍ الحفظ…',
-  'Save new password': 'حفظ كلمة المرور الجديدة',
-  'Request a new link': 'طلب رابط جديد',
-  'Checking your link…': 'جارٍ التحقق من الرابط…',
+  'Could not confirm account access. Please try again.': 'ما قدرنا نتأكّد من صلاحيات حسابك. جرّب كمان مرّة.',
+  'Try again': 'جرّب كمان مرّة',
+  'Sign out': 'خروج',
+  'Welcome back': 'أهلا فيك من جديد',
+  'Sign in to your menu': 'فوت عالمنيو تبعك',
+  'Manage your restaurant details and menu.': 'عدّل معلومات مطعمك والمنيو بكل سهولة.',
+  'Sign in': 'دخول',
+  'Start free': 'بلّش مجاناً',
+  'Create your account': 'اعمل حسابك',
+  'Your 14-day trial starts when you create your restaurant.': 'تجربتك المجانية لـ١٤ يوم بتبلّش بس تعمل صفحة مطعمك.',
+  'Create account': 'اعمل حساب',
+  'Password help': 'مساعدة بالباسوورد',
+  'Reset your password': 'غيّر الباسوورد',
+  'Enter the email you signed up with and we’ll send you a link to set a new password.': 'حط الإيميل اللي سجّلت فيه، ومنبعتلك لينك لتختار باسوورد جديد.',
+  'Send reset link': 'ابعث لينك تغيير الباسوورد',
+  'A better first look at your restaurant.': 'أحلى انطباع أول عن مطعمك.',
+  'One menu, two languages, always up to date.': 'منيو واحد، بلغتين، ودايماً محدّث.',
+  'Designed for restaurants in Lebanon.': 'معمول للمطاعم بلبنان.',
+  'Back to sign in': 'ارجع للدخول',
+  'Back home': 'ارجع عالرئيسية',
+  'You were signed out after two hours without activity. Sign in again to carry on.': 'طلّعناك من الحساب بعد ساعتين بلا استخدام. فوت من جديد لتكمّل.',
+  'Demo mode is active. Submit this form to preview the dashboard.': 'هيدي نسخة تجريبية. عبّي المعلومات واضغط دخول لتشوف لوحة التحكّم.',
+  'Email address': 'الإيميل',
+  'Password': 'الباسوورد',
+  'Confirm password': 'أكّد الباسوورد',
+  'Show password confirmation': 'فرجي تأكيد الباسوورد',
+  'Hide password confirmation': 'خبّي تأكيد الباسوورد',
+  'Forgot password?': 'نسيت الباسوورد؟',
+  'At least 8 characters': '٨ أحرف عالقليلة',
+  'Hide password': 'خبّي الباسوورد',
+  'Show password': 'فرجي الباسوورد',
+  'Please wait…': 'لحظة بس…',
+  'Remembered it?': 'تذكّرت الباسوورد؟',
+  'Already have an account?': 'عندك حساب من قبل؟',
+  'New to Fluxiva Menu?': 'أول مرّة عـFluxiva Menu؟',
+  'Supabase credentials are not connected yet.': 'بعد ما ربطنا بيانات Supabase.',
+  'If an account exists for that email, a reset link is on its way. Check your inbox and spam folder.': 'إذا في حساب بهالإيميل، رح يوصلك لينك لتغيير الباسوورد. شوف الإيميل وملف السبام كمان.',
+  'Check your email to confirm your account, then sign in.': 'افتح الإيميل وأكّد حسابك، وبعدين فوت.',
+  'Choose a new password': 'اختار باسوورد جديد',
+  'Pick something you’ll remember. You’ll be signed in straight after.': 'اختار باسوورد بتتذكّرو. بعدها بتفوت عحسابك دغري.',
+  'This link can’t be used to reset a password.': 'هاللينك ما بينفع لتغيير الباسوورد.',
+  'This reset link is no longer valid.': 'هاللينك ما بقى شغّال.',
+  'This reset link has expired or has already been used.': 'هاللينك خلصت صلاحيّتو أو استعملتو من قبل.',
+  'Both passwords need to match.': 'لازم الباسوورد يكون نفسو بالخانتين.',
+  'New password': 'الباسوورد الجديد',
+  'Confirm new password': 'أكّد الباسوورد الجديد',
+  'Type it once more': 'اكتبو كمان مرّة',
+  'Saving…': 'عم نحفظ…',
+  'Save new password': 'احفظ الباسوورد الجديد',
+  'Request a new link': 'اطلب لينك جديد',
+  'Checking your link…': 'عم نتأكّد من اللينك…',
 }
 
 export function authText(language: Language, english: string) {
@@ -63,13 +63,13 @@ export function authText(language: Language, english: string) {
 export function authErrorText(language: Language, message: string) {
   if (language === 'en') return message
   const normalized = message.toLowerCase()
-  if (normalized.includes('invalid login credentials')) return 'البريد الإلكتروني أو كلمة المرور غير صحيحة.'
-  if (normalized.includes('email not confirmed')) return 'يرجى تأكيد بريدك الإلكتروني أولاً.'
-  if (normalized.includes('user already registered')) return 'يوجد حساب بهذا البريد الإلكتروني بالفعل.'
-  if (normalized.includes('rate limit')) return 'تم إجراء محاولات كثيرة. انتظر قليلاً ثم حاول مجدداً.'
-  if (normalized.includes('password') && normalized.includes('characters')) return 'يجب أن تتكوّن كلمة المرور من 8 أحرف على الأقل.'
-  if (normalized.includes('email') && normalized.includes('invalid')) return 'أدخل بريداً إلكترونياً صالحاً.'
-  if (normalized.includes('reset link') || normalized.includes('expired') || normalized.includes('invalid link')) return 'رابط الاستعادة غير صالح أو انتهت صلاحيته.'
-  if (normalized.includes('both passwords need to match')) return 'يجب أن تتطابق كلمتا المرور.'
-  return 'تعذّر إكمال الطلب. حاول مجدداً.'
+  if (normalized.includes('invalid login credentials')) return 'الإيميل أو الباسوورد مش صحيح.'
+  if (normalized.includes('email not confirmed')) return 'أكّد الإيميل تبعك بالأول.'
+  if (normalized.includes('user already registered')) return 'في حساب بهالإيميل من قبل.'
+  if (normalized.includes('rate limit')) return 'جرّبت مرّات كتيرة. انطر شوي وجرّب من جديد.'
+  if (normalized.includes('password') && normalized.includes('characters')) return 'الباسوورد لازم يكون ٨ أحرف عالقليلة.'
+  if (normalized.includes('email') && normalized.includes('invalid')) return 'حط إيميل صحيح.'
+  if (normalized.includes('reset link') || normalized.includes('expired') || normalized.includes('invalid link')) return 'لينك تغيير الباسوورد مش صحيح أو خلصت صلاحيّتو.'
+  if (normalized.includes('both passwords need to match')) return 'لازم الباسوورد يكون نفسو بالخانتين.'
+  return 'ما قدرنا نكمّل الطلب. جرّب كمان مرّة.'
 }

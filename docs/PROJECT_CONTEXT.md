@@ -8,6 +8,12 @@ Fluxiva Menu is a bilingual QR-menu SaaS aimed at Lebanese restaurants. One owne
 
 The landing-page offer is **$100 USD per year**, with **$150** shown crossed out as the previous price, after a **14-day trial**. English and Arabic both show the offer with localized numerals/currency. This marketing display does not rewrite existing shop prices or agreements: each place's actual annual USD price is entered by a super admin. Cash is collected in person and recorded manually; there is no online checkout or automatic renewal. Up to three flexible payments may fund one annual agreement, with the third settling its remaining balance.
 
+### Arabic voice and terminology
+
+Existing Arabic interface copy uses natural Lebanese Arabic, not formal Modern Standard Arabic. Prefer whole conversational sentences and familiar terms such as «منيو», «دليفري», «لوغو», «فولدر», «الإيميل» and «الباسوورد». This applies to landing/authentication, dashboard, platform, gallery, billing, notifications, shared dialogs and all eight public designs. Keep English copy and translation keys unchanged; do not transform owner-authored restaurant/category/item descriptions, gallery names, or imported content at runtime. Existing English-only onboarding steps are not made bilingual by this copy audit.
+
+The owner explicitly chose «دليفري» for Arabic labels of the existing Takeaway/WhatsApp flow. English labels, internal `takeaway` flags and behavior remain unchanged. This prepares a WhatsApp draft, not a confirmed order or a delivery-dispatch feature; preserve restaurant-confirmation disclaimers. Informal billing/destructive copy must still state irreversible deletion, retained payment history, no automatic cash refund, manual access dates and the three-payment annual limit precisely. The 2026-10-18 copy audit is local frontend work and needs deployment, not a database migration.
+
 ## Technology
 
 | Area | Choice |

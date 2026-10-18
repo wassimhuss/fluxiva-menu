@@ -35,7 +35,7 @@ function MenuLoadingState({ language }: { language?: Language }) {
           <div className="public-menu-loading-monogram"><Utensils size={25} /></div>
         </div>
         <span className="public-menu-loading-kicker">FLUXIVA MENU</span>
-        {language && <><h1>{arabic ? 'جارٍ تحضير قائمتك' : 'Preparing your menu'}</h1><p>{arabic ? 'جارٍ فتح القائمة' : 'Opening menu'}</p></>}
+        {language && <><h1>{arabic ? 'عم نجهّز المنيو' : 'Preparing your menu'}</h1><p>{arabic ? 'عم نفتح المنيو' : 'Opening menu'}</p></>}
         <div className="public-menu-loading-progress" aria-hidden="true"><span /></div>
       </div>
     </main>
@@ -43,7 +43,7 @@ function MenuLoadingState({ language }: { language?: Language }) {
 }
 
 function TemplateSwitchLoading({ language }: { language: Language }) {
-  const message = language === 'ar' ? 'جارٍ تغيير التصميم' : 'Switching template'
+  const message = language === 'ar' ? 'عم نغيّر التصميم' : 'Switching template'
 
   return (
     <div className="template-switch-loading" role="status" aria-live="polite" aria-busy="true">
@@ -326,8 +326,8 @@ export function PublicMenuPage() {
   // network-loading frame language-neutral so Arabic menus never flash English.
   if (loading || settledSlug !== slug) return <MenuLoadingState />
   if (error) return <main className="public-menu-loading"><div className="public-menu-loading-card">
-    <h1>Connection interrupted</h1><p dir="rtl" lang="ar">تعذّر الاتصال. حاول مجددًا.</p>
-    <button className="button button-primary" onClick={() => setLoadAttempt((attempt) => attempt + 1)}>Try again / حاول مجددًا</button>
+    <h1>Connection interrupted</h1><p dir="rtl" lang="ar">ما قدرنا نتّصل. جرّب كمان مرّة.</p>
+    <button className="button button-primary" onClick={() => setLoadAttempt((attempt) => attempt + 1)}>Try again / جرّب كمان مرّة</button>
   </div></main>
   if (!menu || !publicServing) return <MenuUnavailable contact={contact} onRetry={()=>setLoadAttempt(value=>value+1)} />
   // Hold the branded loader until the first screen can render complete.

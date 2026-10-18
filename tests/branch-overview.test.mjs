@@ -64,6 +64,6 @@ test('Arabic dashboard keeps RTL copy, LTR menu links, and safely escaped reject
   assert.match(html, /&lt;script&gt;private note&lt;\/script&gt;/)
   assert.doesNotMatch(html, /<script>/)
   const approved = render({ language: 'ar', data: page([row('approved')]) })
-  assert.match(approved, /تمت الموافقة على الفرع/)
-  assert.match(approved, /أنشئ الآن/)
+  assert.match(approved, /وافقنا عالفرع/)
+  assert.match(approved, /اعمل الفرع هلّق/)
 })

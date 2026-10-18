@@ -42,6 +42,14 @@ If the baseline already fails, record the failure before making changes so it is
 
 ## 3. Common change recipes
 
+### Maintain Lebanese Arabic interface copy
+
+Use natural Lebanese Arabic for existing Arabic UI strings, with «دليفري» (explicit owner choice), «منيو», «لوغو», «فولدر», «الإيميل» and «الباسوورد». Rewrite complete sentences; avoid a runtime word-replacement layer or changes to owner-authored content. Keep English keys/copy, application logic, prices and data unchanged. Arabic delivery labels still refer to the existing WhatsApp draft: do not imply order confirmation, dispatch, delivery fees or address handling. Preserve precise irreversible-action, payment/refund and access-date warnings.
+
+The 2026-10-18 audit passed 85 tests, lint/build and diff checks. Five new copy tests cover seven bilingual dictionaries, Lebanese terms, safety/payment boundaries, WhatsApp draft labeling and eight-template copy. A TypeScript AST comparison also confirmed that the 28 changed source files differ only in Arabic static text, not English or executable logic. Existing main/Excel bundle-size warnings remain. No production data, photos, prices or messages changed; deployment remains pending.
+
+Chrome offline QA covered Arabic landing at 390/1280 px; mobile demo login → dashboard/menu item form/settings/notifications/owner billing; signup password mismatch; admin subscribers, billing, broadcast composer and gallery; and public Arabic service choice → add item → basket/unsent WhatsApp URL at 390 px plus public menu at 1280 px. Tested pages had no horizontal overflow where checked. Onboarding redirected the already-configured demo owner to the dashboard; this does not establish a new full-Arabic onboarding flow. Keep proof screenshots outside Git. Migration 035 is still independently pending: do not apply it or send broadcasts merely to test wording.
+
 ### Add or change restaurant/menu data
 
 1. Update the shared interface in `src/lib/types.ts`.

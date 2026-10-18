@@ -44,7 +44,7 @@ function MaisonItem({ item, index, t, formatPrice, rtl, ordering }: {
         </div>
         <RecommendedBadge item={item} t={t} />
         {description && <p>{description}</p>}
-        {!item.available && <span className={styles.soldOut}>{t('Currently unavailable', 'غير متوفر حالياً')}</span>}
+        {!item.available && <span className={styles.soldOut}>{t('Currently unavailable', 'مش متوفّر هلّق')}</span>}
         {ordering && (
           <div className={styles.itemOrder}>
             <AddToOrder item={item} variantIndex={variantIndex} ordering={ordering} t={t} formatPrice={formatPrice} rtl={rtl} />
@@ -111,12 +111,12 @@ export default function MaisonTemplate(props: MenuTemplateProps) {
               : <span>{restaurant.name_en.slice(0, 2).toUpperCase()}</span>}
           </div>
           <div className={styles.identityCopy}>
-            <span className={styles.kicker}>{t('The house menu', 'قائمة المطعم')}</span>
+            <span className={styles.kicker}>{t('The house menu', 'منيو المطعم')}</span>
             <h1>{t(restaurant.name_en, restaurant.name_ar)}</h1>
-            <p>{t(restaurant.description_en ?? 'Freshly made for you.', restaurant.description_ar ?? 'نحضّره طازجاً من أجلك.')}</p>
+            <p>{t(restaurant.description_en ?? 'Freshly made for you.', restaurant.description_ar ?? 'منحضّرو طازة كرمالك.')}</p>
           </div>
           <div className={styles.menuStamp}>
-            <small>{t('Menu', 'القائمة')}</small>
+            <small>{t('Menu', 'المنيو')}</small>
             <strong>{categories.length}</strong>
             <span>{t('sections', 'أقسام')}</span>
           </div>
@@ -141,14 +141,14 @@ export default function MaisonTemplate(props: MenuTemplateProps) {
 
       <div className={styles.body}>
         {restaurant.temporarily_closed && (
-          <div className={styles.closed}>{t('The restaurant is temporarily closed', 'المطعم مغلق مؤقتاً')}</div>
+          <div className={styles.closed}>{t('The restaurant is temporarily closed', 'المطعم مسكّر مؤقّتاً')}</div>
         )}
 
         <section className={styles.sectionIntro}>
           <span className={styles.categoryNumber}>{String(activeCategoryIndex + 1).padStart(2, '0')}</span>
           <div>
-            <span className={styles.sectionEyebrow}>{t('Explore the menu', 'استكشف القائمة')}</span>
-            <h2>{t(activeCategoryEntry?.name_en ?? 'Menu', activeCategoryEntry?.name_ar ?? 'القائمة')}</h2>
+            <span className={styles.sectionEyebrow}>{t('Explore the menu', 'شوف المنيو')}</span>
+            <h2>{t(activeCategoryEntry?.name_en ?? 'Menu', activeCategoryEntry?.name_ar ?? 'المنيو')}</h2>
           </div>
           <p>{visibleItems.length} {t(visibleItems.length === 1 ? 'selection' : 'selections', 'خيارات')}</p>
         </section>
@@ -158,7 +158,7 @@ export default function MaisonTemplate(props: MenuTemplateProps) {
             <MaisonItem key={item.id} item={item} index={index} t={t} formatPrice={formatPrice} rtl={rtl} ordering={ordering} />
           ))}
         </div>
-        {!visibleItems.length && <p className={styles.empty}>{t('No items found here.', 'لا توجد أصناف هنا.')}</p>}
+        {!visibleItems.length && <p className={styles.empty}>{t('No items found here.', 'بعد ما في أصناف هون.')}</p>}
       </div>
 
       <footer className={styles.footer}>
@@ -175,7 +175,7 @@ export default function MaisonTemplate(props: MenuTemplateProps) {
           <div className={styles.contacts}>
             {restaurant.whatsapp && (
               <a className={styles.contact} href={`https://wa.me/${restaurant.whatsapp.replace(/\D/g, '')}`} target="_blank" rel="noreferrer">
-                <WhatsAppIcon /> {t('Message us', 'راسلنا')}
+                <WhatsAppIcon /> {t('Message us', 'احكي معنا')}
               </a>
             )}
             {(restaurant.address_en || restaurant.address_ar) && (

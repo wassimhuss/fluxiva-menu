@@ -108,7 +108,7 @@ interface MessageInput {
  */
 export function buildOrderMessage({ restaurantName, lines, language, formatPrice, note }: MessageInput) {
   const ar = language === 'ar'
-  const head = ar ? `طلب سفري من ${restaurantName}` : `Takeaway order from ${restaurantName}`
+  const head = ar ? `طلب دليفري من ${restaurantName}` : `Takeaway order from ${restaurantName}`
   const totalLabel = ar ? 'المجموع' : 'Total'
   const noteLabel = ar ? 'ملاحظة' : 'Note'
   const moreLabel = (count: number) => (ar ? `…و${count} صنف إضافي` : `…and ${count} more item(s)`)

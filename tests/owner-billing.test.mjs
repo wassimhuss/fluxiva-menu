@@ -53,7 +53,7 @@ test('settlement, cancelled receipts and previous agreements retain clear separa
 test('Arabic owner content is RTL and contact actions require a usable configured support phone',()=>{
   const html=render({}, {language:'ar',supportContact:'+961 70 123 456',loading:true})
   assert.ok(html.includes('dir="rtl"'));assert.ok(html.includes('lang="ar"'))
-  for(const phrase of ['اشتراكك ساري','المدفوع حتى الآن','المتبقي للدفع','سجل الدفعات','تواصل مع فلوكسيفا']) assert.ok(html.includes(phrase),phrase)
+  for(const phrase of ['اشتراكك شغّال','اللي دفعتو لهلّق','اللي بعد عليك','سجل الدفعات','احكي مع فلوكسيفا']) assert.ok(html.includes(phrase),phrase)
   assert.ok(html.includes('https://wa.me/96170123456'))
   assert.match(html,/<button[^>]*disabled=""[^>]*aria-label="تحديث بيانات الاشتراك"/)
   assert.ok(!render({}, {supportContact:'---'}).includes('wa.me'))

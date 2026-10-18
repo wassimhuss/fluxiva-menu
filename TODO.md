@@ -9,6 +9,13 @@ This file is the working product backlog for developers and AI agents. Keep it u
 - `[x]` Complete
 - `[!]` Blocked or waiting for a prerequisite
 
+## Lebanese Arabic interface copy (2026-10-18)
+
+- [x] Review existing Arabic interface text across landing/auth, owner/admin, gallery, billing, notifications, shared dialogs and all eight public templates; use natural Lebanese phrases and familiar terms.
+- [x] Use the owner's chosen «دليفري» for the Arabic WhatsApp-order flow, preserving English, behavior and restaurant-confirmation warnings; leave owner-authored names/descriptions untouched.
+- [x] Pass 85 tests, lint/build, Arabic mobile/desktop browser checks and static-text-only AST comparison; preserve billing/security semantics and production data/photos.
+- [ ] Deploy the tested frontend; no copy-related database migration is needed. Observe the separate pending 035 requirement if releasing notifications together.
+
 ## Cash subscriptions and subscriber management
 
 <<<<<<< Updated upstream

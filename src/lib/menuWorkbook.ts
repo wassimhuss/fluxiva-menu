@@ -78,8 +78,8 @@ function parsePrice(value: string, location: string, errors: string[], language:
   const price = Number(value.replace(/,/g, '').trim())
   if (!Number.isFinite(price) || price < 0 || (positive && price === 0)) {
     errors.push(positive
-      ? localized(language, `${location}: price must be greater than zero.`, `${location}: يجب أن يكون السعر أكبر من صفر.`)
-      : localized(language, `${location}: price must be zero or a positive number.`, `${location}: يجب أن يكون السعر صفراً أو رقماً موجباً.`))
+      ? localized(language, `${location}: price must be greater than zero.`, `${location}: السعر لازم يكون أكبر من صفر.`)
+      : localized(language, `${location}: price must be zero or a positive number.`, `${location}: السعر لازم يكون صفر أو أكتر.`))
     return 0
   }
   return price
@@ -89,14 +89,14 @@ function parseAvailable(value: string, location: string, errors: string[], langu
   const normalized = value.trim().toLowerCase()
   if (!normalized || ['true', 'yes', '1', 'نعم'].includes(normalized)) return true
   if (['false', 'no', '0', 'لا'].includes(normalized)) return false
-  errors.push(localized(language, `${location}: available must be TRUE or FALSE.`, `${location}: يجب أن تكون available إما TRUE أو FALSE.`))
+  errors.push(localized(language, `${location}: available must be TRUE or FALSE.`, `${location}: قيمة available لازم تكون TRUE أو FALSE.`))
   return true
 }
 
 function parseSecondary(value: string | undefined, location: string, errors: string[], language: Language) {
   if (!value?.trim()) return null
   const price = parsePrice(value, location, errors, language)
-  if (price > 999999999999.99 || Math.abs(price * 100 - Math.round(price * 100)) > 0.0001) errors.push(localized(language, `${location}: alternate price must have at most two decimals.`, `${location}: يجب ألا يتجاوز السعر بالعملة الأخرى منزلتين عشريتين.`))
+  if (price > 999999999999.99 || Math.abs(price * 100 - Math.round(price * 100)) > 0.0001) errors.push(localized(language, `${location}: alternate price must have at most two decimals.`, `${location}: السعر بالعملة التانية ما لازم يكون فيه أكتر من رقمين بعد الفاصلة.`))
   return price
 }
 
@@ -187,13 +187,13 @@ function addInstructions(workbook: import('exceljs').Workbook, currency: string)
     ['Fluxiva Menu Excel import', 'Use the three sheets exactly as provided. Do not rename sheets or column headers.'],
     ['1. Items', `One row per menu item. Prices use ${currency}. item_key must be unique inside this workbook.`],
     ['Alternate prices', `Enter price_secondary manually in ${currency === 'LBP' ? 'USD' : 'LBP'}. Blank means not entered; no currency conversion is performed. Older workbooks without this column remain supported.`],
-    ['السعر بالعملة الأخرى', 'أدخل price_secondary يدوياً بالعملة الأخرى. الخانة الفارغة تعني أن السعر غير مُدخل؛ لا يتم تحويل العملات تلقائياً.'],
+    ['السعر بالعملة الأخرى', 'حط price_secondary بإيدك بالعملة التانية. إذا الخانة فاضية، يعني بعد ما حطّيت سعر. ما منحوّل العملات لحالنا.'],
     ['2. Variants', 'Optional sizes or choices. Connect each row to an item using item_key. Variant names are entered once and shown in both menu languages.'],
     ['3. Extras', 'Optional add-ons. Connect each row using item_key and provide English and Arabic names.'],
     ['Availability', 'Use TRUE to show an item or FALSE to hide it.'],
     ['Photos', 'Photos are not embedded in Excel. Add or choose item photos in the Menu Editor after importing.'],
     ['Before import', 'Fluxiva validates the whole workbook first. Nothing is saved while errors remain. Imports add items; they do not replace existing items.'],
-    ['تعليمات بالعربية', 'أدخل الأصناف في صفحة Items، والأحجام في Variants، والإضافات في Extras. لا تغيّر أسماء الصفحات أو الأعمدة. استخدم item_key نفسه لربط الأحجام والإضافات بالصنف. أضف صور الأصناف من محرّر القائمة بعد الاستيراد.'],
+    ['تعليمات بالعربي', 'حط الأصناف بصفحة Items، والأحجام بـVariants، والإضافات بـExtras. ما تغيّر أسماء الصفحات أو الأعمدة. استعمل نفس item_key لتربط الأحجام والإضافات بالصنف. ضيف الصور من تعديل المنيو بعد ما ترفع الملف.'],
   ]
   rows.forEach((values, index) => {
     const row = sheet.addRow(values)

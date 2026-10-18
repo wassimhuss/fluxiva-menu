@@ -66,18 +66,18 @@ export function AddToOrder({ item, variantIndex, ordering, t, formatPrice, rtl, 
         type="button"
         className={styles.backdrop}
         onClick={() => setCustomizing(false)}
-        aria-label={t('Close extras', 'إغلاق الإضافات')}
+        aria-label={t('Close extras', 'تسكير الإضافات')}
       />
       <section className={styles.sheet} role="dialog" aria-modal="true" aria-labelledby={`extras-${item.id}`}>
         <header className={styles.sheetHead}>
           <div>
-            <span>{t('Customize your item', 'خصّص طلبك')}</span>
+            <span>{t('Customize your item', 'ظبّط طلبك عذوقك')}</span>
             <h2 id={`extras-${item.id}`}>{t(item.name_en, item.name_ar)}</h2>
           </div>
-          <button type="button" className={styles.close} onClick={() => setCustomizing(false)} aria-label={t('Close', 'إغلاق')}><X /></button>
+          <button type="button" className={styles.close} onClick={() => setCustomizing(false)} aria-label={t('Close', 'سكّر')}><X /></button>
         </header>
         <div className={styles.extraList}>
-          <p>{t('Choose any extras you want', 'اختر الإضافات التي تريدها')}</p>
+          <p>{t('Choose any extras you want', 'اختار الإضافات اللي بدّك ياها')}</p>
           {extras.map((extra) => {
             const id = extra.id as string
             const selected = selectedExtraIds.includes(id)
@@ -104,7 +104,7 @@ export function AddToOrder({ item, variantIndex, ordering, t, formatPrice, rtl, 
             setCustomizing(false)
           }}
         >
-          <span>{t('Add to order', 'أضف إلى الطلب')}</span>
+          <span>{t('Add to order', 'ضيف عالطلب')}</span>
           <b dir="ltr">{formatPrice(roundUsd(customizedPrice), customizedSecondary)}</b>
         </button>
       </section>
@@ -116,13 +116,13 @@ export function AddToOrder({ item, variantIndex, ordering, t, formatPrice, rtl, 
     return (
       <>
         <span className={`${styles.root} ${quantity > 0 ? styles.rootActive : ''} ${className}`}>
-          {quantity > 0 && <span className={styles.count} aria-label={t(`${quantity} in order`, `${quantity} في الطلب`)}>{quantity}</span>}
+          {quantity > 0 && <span className={styles.count} aria-label={t(`${quantity} in order`, `${quantity} بالطلب`)}>{quantity}</span>}
           <button
             type="button"
             className={styles.button}
             onClick={openCustomizer}
-            aria-label={t(`Customize and add ${item.name_en}`, `خصّص وأضف ${item.name_ar}`)}
-            title={t('Choose extras', 'اختر الإضافات')}
+            aria-label={t(`Customize and add ${item.name_en}`, `ظبّط وضيف ${item.name_ar}`)}
+            title={t('Choose extras', 'اختار الإضافات')}
           >
             <Plus />
           </button>
@@ -139,8 +139,8 @@ export function AddToOrder({ item, variantIndex, ordering, t, formatPrice, rtl, 
           type="button"
           className={styles.button}
           onClick={() => ordering.add(item.id, variantIndex)}
-          aria-label={t(`Add ${item.name_en} to order`, `أضف ${item.name_ar} إلى الطلب`)}
-          title={t('Add to order', 'أضف إلى الطلب')}
+          aria-label={t(`Add ${item.name_en} to order`, `ضيف ${item.name_ar} عالطلب`)}
+          title={t('Add to order', 'ضيف عالطلب')}
         >
           <Plus />
         </button>
@@ -155,17 +155,17 @@ export function AddToOrder({ item, variantIndex, ordering, t, formatPrice, rtl, 
         className={styles.button}
         onClick={() => ordering.setQuantity(item.id, variantIndex, quantity - 1)}
         aria-label={quantity === 1
-          ? t(`Remove ${item.name_en} from order`, `إزالة ${item.name_ar} من الطلب`)
-          : t(`One less ${item.name_en}`, `تقليل ${item.name_ar}`)}
+          ? t(`Remove ${item.name_en} from order`, `شيل ${item.name_ar} من الطلب`)
+          : t(`One less ${item.name_en}`, `نقص ${item.name_ar}`)}
       >
         {quantity === 1 ? <Trash2 /> : <Minus />}
       </button>
-      <span className={styles.count} aria-label={t(`${quantity} in order`, `${quantity} في الطلب`)}>{quantity}</span>
+      <span className={styles.count} aria-label={t(`${quantity} in order`, `${quantity} بالطلب`)}>{quantity}</span>
       <button
         type="button"
         className={styles.button}
         onClick={() => ordering.add(item.id, variantIndex)}
-        aria-label={t(`One more ${item.name_en}`, `زيادة ${item.name_ar}`)}
+        aria-label={t(`One more ${item.name_en}`, `زيد ${item.name_ar}`)}
       >
         <Plus />
       </button>

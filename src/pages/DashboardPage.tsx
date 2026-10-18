@@ -959,15 +959,15 @@ export function DashboardPage() {
     else window.location.assign(fullPreviewUrl)
   }
   const imageConfirmationCopy = {
-    eyebrow: localText(dashboardLanguage, 'Confirm menu change', 'تأكيد تغيير القائمة'),
-    showTitle: localText(dashboardLanguage, 'Show food photos?', 'إظهار صور الأطباق؟'),
-    hideTitle: localText(dashboardLanguage, 'Hide food photos?', 'إخفاء صور الأطباق؟'),
-    showDescription: localText(dashboardLanguage, 'Your saved item photos will appear again on the public menu, and photo-based templates will become available.', 'ستظهر صور الأطباق المحفوظة مجددًا في القائمة العامة، وستصبح القوالب المعتمدة على الصور متاحة.'),
-    hideDescription: localText(dashboardLanguage, 'Food photos will disappear from the public menu and photo-based templates will be hidden. Your uploaded photos will stay saved.', 'ستختفي صور الأطباق من القائمة العامة، كما ستُخفى القوالب المعتمدة على الصور. ستبقى الصور التي رفعتها محفوظة.'),
+    eyebrow: localText(dashboardLanguage, 'Confirm menu change', 'تأكيد تغيير المنيو'),
+    showTitle: localText(dashboardLanguage, 'Show food photos?', 'فرجي صور الأطباق؟'),
+    hideTitle: localText(dashboardLanguage, 'Hide food photos?', 'خبّي صور الأطباق؟'),
+    showDescription: localText(dashboardLanguage, 'Your saved item photos will appear again on the public menu, and photo-based templates will become available.', 'صور الأكل المحفوظة رح ترجع تبين للزبائن، والتصاميم اللي بتعتمد عالصور بترجع متاحة.'),
+    hideDescription: localText(dashboardLanguage, 'Food photos will disappear from the public menu and photo-based templates will be hidden. Your uploaded photos will stay saved.', 'صور الأكل والتصاميم اللي بتعتمد عليها ما بقى يبينوا للزبائن. الصور اللي رفعتها بتضلّ محفوظة.'),
     cancel: localText(dashboardLanguage, 'Cancel', 'إلغاء'),
-    showAction: localText(dashboardLanguage, 'Show photos', 'إظهار الصور'),
-    hideAction: localText(dashboardLanguage, 'Hide photos', 'إخفاء الصور'),
-    close: localText(dashboardLanguage, 'Close confirmation', 'إغلاق التأكيد'),
+    showAction: localText(dashboardLanguage, 'Show photos', 'فرجي الصور'),
+    hideAction: localText(dashboardLanguage, 'Hide photos', 'خبّي الصور'),
+    close: localText(dashboardLanguage, 'Close confirmation', 'تسكير التأكيد'),
   }
 
   function toggleItemImages() {
@@ -1001,7 +1001,7 @@ export function DashboardPage() {
         <div className="sidebar-bottom"><Link to={`/m/${menu.restaurant.slug}`} target="_blank"><ExternalLink /> {t('Open public menu')}</Link><button onClick={handleSignOut}><LogOut /> {t('Sign out')}</button></div>
       </aside>
       <section className="dashboard-main">
-<header className="dashboard-header">{panel !== 'overview' && <button className="mobile-menu" aria-label={t('Back to overview')} onClick={requestBackToOverview}><BackChevron /></button>}<button type="button" className="dashboard-current-place" onClick={() => setPlaceSwitcherOpen(true)}><span>{t('Restaurant dashboard')}</span><b>{menu.restaurant.name_en}</b></button><div className="header-actions"><button type="button" className="dashboard-notification-bell" aria-label={nt('Notifications and branch requests') + (notificationCount ? ' · ' + notificationCount.toLocaleString(dashboardLanguage) : '')} aria-pressed={panel === 'notifications'} onClick={openNotifications}><Bell size={19} />{notificationCount > 0 && <b className="notification-badge" aria-hidden="true">{notificationCount > 99 ? '99+' : notificationCount.toLocaleString(dashboardLanguage)}</b>}</button><button type="button" className="language-switch" onClick={() => changeDashboardLanguage(dashboardLanguage === 'ar' ? 'en' : 'ar')} aria-label={dashboardLanguage === 'ar' ? 'Switch to English' : 'التبديل إلى العربية'}>{dashboardLanguage === 'ar' ? 'EN' : 'عربي'}</button>{panel === 'overview' && <button type="button" className="dashboard-header-signout" onClick={handleSignOut}><LogOut /> <span>{t('Sign out')}</span></button>}<Link className="button button-small button-outline" to={`/m/${menu.restaurant.slug}`} target="_blank">{t('View menu')} <ExternalLink /></Link></div></header>
+<header className="dashboard-header">{panel !== 'overview' && <button className="mobile-menu" aria-label={t('Back to overview')} onClick={requestBackToOverview}><BackChevron /></button>}<button type="button" className="dashboard-current-place" onClick={() => setPlaceSwitcherOpen(true)}><span>{t('Restaurant dashboard')}</span><b>{menu.restaurant.name_en}</b></button><div className="header-actions"><button type="button" className="dashboard-notification-bell" aria-label={nt('Notifications and branch requests') + (notificationCount ? ' · ' + notificationCount.toLocaleString(dashboardLanguage) : '')} aria-pressed={panel === 'notifications'} onClick={openNotifications}><Bell size={19} />{notificationCount > 0 && <b className="notification-badge" aria-hidden="true">{notificationCount > 99 ? '99+' : notificationCount.toLocaleString(dashboardLanguage)}</b>}</button><button type="button" className="language-switch" onClick={() => changeDashboardLanguage(dashboardLanguage === 'ar' ? 'en' : 'ar')} aria-label={dashboardLanguage === 'ar' ? 'Switch to English' : 'حوّل للعربي'}>{dashboardLanguage === 'ar' ? 'EN' : 'عربي'}</button>{panel === 'overview' && <button type="button" className="dashboard-header-signout" onClick={handleSignOut}><LogOut /> <span>{t('Sign out')}</span></button>}<Link className="button button-small button-outline" to={`/m/${menu.restaurant.slug}`} target="_blank">{t('View menu')} <ExternalLink /></Link></div></header>
         <div className="dashboard-content">
           {error && <Notice tone="error">{error}</Notice>}
           {success && <div className="dashboard-toast" role="status"><Notice tone="success">{success}</Notice></div>}
@@ -1045,7 +1045,7 @@ export function DashboardPage() {
             <nav className="notification-tabs" aria-label={nt('Notifications')}><button type="button" aria-pressed={notificationView === 'messages'} onClick={() => setNotificationView('messages')}>{nt('Messages')} <b>{(notifications.data?.unread_count ?? 0).toLocaleString(dashboardLanguage)}</b></button><button type="button" aria-pressed={notificationView === 'requests'} onClick={() => setNotificationView('requests')}>{nt('Branch requests')} <b>{((notifications.data?.pending_requests ?? 0) + (notifications.data?.approved_requests ?? 0)).toLocaleString(dashboardLanguage)}</b></button></nav>
             {notificationView === 'messages' ? <OwnerMessages language={dashboardLanguage} data={notifications.data} loading={notifications.loading} error={notifications.error} reading={notifications.reading} onRead={id => void notifications.markRead(id)} onRefresh={notifications.refresh} onPage={notifications.setPage} /> : !placeModal && <BranchRequestsPanel key={accountKey} language={dashboardLanguage} overview refreshToken={branchRequestsRefresh} canCreate={!editingLocked && restaurants.every(place => subscriptionState(place, subscriptionNow).serving)} onView={openPlaceCreator} onCreate={openApprovedBranch} />}
           </section>}
-          {panel === 'billing' && editingLocked && <p className="notice">{dashboardLanguage==='ar'?'التعديل موقوف لهذا المطعم. يمكنك مراجعة دفعاتك أو الانتقال إلى مطعم آخر من أعلى الصفحة.':'Editing is paused for this shop. You can review payments or switch shops using the header.'}</p>}
+          {panel === 'billing' && editingLocked && <p className="notice">{dashboardLanguage==='ar'?'التعديل موقوف بهالمطعم. فيك تشوف دفعاتك أو تختار فرع تاني من فوق.':'Editing is paused for this shop. You can review payments or switch shops using the header.'}</p>}
           {panel === 'billing' && <ShopBillingPanel key={accountKey + ':' + menu.restaurant.id} shopId={menu.restaurant.id} language={dashboardLanguage} onChanged={billing => {
             accessRequest.current++
             applyAccess(billing)
@@ -1372,7 +1372,7 @@ export function DashboardPage() {
           </div>)}
         </div>
       </div><button className="button button-primary full" disabled={saving || !menu.categories.length}>{saving ? t('Saving…') : editingItem ? t('Save menu item') : t('Add menu item')}</button></form></div>}
-      {imagePreview && <ImageLightbox url={imagePreview.url} name={imagePreview.name} closeLabel={t('Close image preview')} loadingLabel={dashboardLanguage === 'ar' ? 'جارٍ تحميل الصورة بالحجم الكامل' : 'Loading full-size image'} onClose={() => setImagePreview(null)} />}
+      {imagePreview && <ImageLightbox url={imagePreview.url} name={imagePreview.name} closeLabel={t('Close image preview')} loadingLabel={dashboardLanguage === 'ar' ? 'عم نحمّل الصورة بالحجم الكامل' : 'Loading full-size image'} onClose={() => setImagePreview(null)} />}
       {galleryOpen && <GalleryPicker images={galleryImages} categories={galleryCategories} language={dashboardLanguage} loading={galleryLoading} selectedId={itemDraft.gallery_image_id} onSelect={selectGalleryImage} onRemove={() => { setItemDraft({ ...itemDraft, image_url: null, gallery_image_id: null, image_file: null }); setGalleryOpen(false) }} onClose={() => setGalleryOpen(false)} />}
       {pendingItemCrop && <PortraitImageCropper file={pendingItemCrop} language={dashboardLanguage} onCancel={() => setPendingItemCrop(null)} onConfirm={acceptItemCrop} />}
 

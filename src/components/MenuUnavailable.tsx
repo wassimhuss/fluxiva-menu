@@ -30,9 +30,9 @@ export function MenuUnavailable({ contact, onRetry }: { contact: MenuContactCard
   const name = contact ? (arabicFirst ? contact.name_ar || contact.name_en : contact.name_en) : ''
 
   const english = 'This menu isn’t available right now.'
-  const arabic = 'القائمة غير متاحة حالياً.'
+  const arabic = 'المنيو مش متاح هلّق.'
   const englishHint = 'Please ask a member of staff for today’s menu.'
-  const arabicHint = 'يرجى طلب قائمة اليوم من أحد الموظفين.'
+  const arabicHint = 'اسأل حدا من فريق المطعم عن منيو اليوم.'
 
   return (
     <main
@@ -45,7 +45,7 @@ export function MenuUnavailable({ contact, onRetry }: { contact: MenuContactCard
       } as React.CSSProperties}
     >
       <dialog ref={dialog} className={styles.card} dir={arabicFirst ? 'rtl' : 'ltr'} lang={arabicFirst ? 'ar' : 'en'} aria-labelledby="public-menu-unavailable-title" aria-describedby="public-menu-unavailable-hint" onCancel={event=>event.preventDefault()}>
-        <button className={styles.language} type="button" aria-label={arabicFirst ? 'Switch to English' : 'التبديل إلى العربية'} onClick={()=>setArabic(value=>!value)}><Languages aria-hidden="true" />{arabicFirst ? 'English' : 'العربية'}</button>
+        <button className={styles.language} type="button" aria-label={arabicFirst ? 'Switch to English' : 'حوّل للعربي'} onClick={()=>setArabic(value=>!value)}><Languages aria-hidden="true" />{arabicFirst ? 'English' : 'العربية'}</button>
         {contact?.logo_url
           ? <img className={styles.logo} src={contact.logo_url} alt="" />
           : <div className={styles.monogram}>{name ? name.slice(0, 2).toUpperCase() : <Utensils size={26} />}</div>}
@@ -70,7 +70,7 @@ export function MenuUnavailable({ contact, onRetry }: { contact: MenuContactCard
           </div>
         )}
 
-        <div className={styles.actions}><button type="button" className={styles.action} onClick={()=>onRetry ? onRetry() : window.location.reload()}><RefreshCw aria-hidden="true" />{arabicFirst ? 'التحقق مجدداً' : 'Try again'}</button><Link className={`${styles.action} ${styles.actionQuiet}`} to="/login">{arabicFirst ? 'تسجيل دخول صاحب المطعم' : 'Restaurant owner sign-in'}</Link></div>
+        <div className={styles.actions}><button type="button" className={styles.action} onClick={()=>onRetry ? onRetry() : window.location.reload()}><RefreshCw aria-hidden="true" />{arabicFirst ? 'جرّب كمان مرّة' : 'Try again'}</button><Link className={`${styles.action} ${styles.actionQuiet}`} to="/login">{arabicFirst ? 'دخول صاحب المطعم' : 'Restaurant owner sign-in'}</Link></div>
         <span className={styles.mark}>Menu by <b>fluxiva</b></span>
       </dialog>
     </main>

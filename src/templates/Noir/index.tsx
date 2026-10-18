@@ -43,7 +43,7 @@ function NoirItem({ item, index, t, formatPrice, rtl, ordering }: {
       </div>
       <RecommendedBadge item={item} t={t} />
       {description && <p className={styles.desc}>{description}</p>}
-      {!item.available && <span className={styles.soldOutLabel}>{t('Unavailable', 'غير متوفر')}</span>}
+      {!item.available && <span className={styles.soldOutLabel}>{t('Unavailable', 'مش متوفّر')}</span>}
       {ordering && (
         <div className={styles.itemOrder}>
           <AddToOrder item={item} variantIndex={variantIndex} ordering={ordering} t={t} formatPrice={formatPrice} rtl={rtl} />
@@ -100,11 +100,11 @@ export default function NoirTemplate(props: MenuTemplateProps) {
           {restaurant.logo_url
             ? <img className={styles.logo} src={restaurant.logo_url} alt="" />
             : <div className={styles.monogram}>{restaurant.name_en.slice(0, 2).toUpperCase()}</div>}
-          <span className={styles.eyebrow}>{t('Menu', 'قائمة الطعام')}</span>
+          <span className={styles.eyebrow}>{t('Menu', 'المنيو')}</span>
           <h1 className={styles.name}>{t(restaurant.name_en, restaurant.name_ar)}</h1>
           <div className={styles.rule} />
           <p className={styles.tagline}>
-            {t(restaurant.description_en ?? 'Freshly made for you.', restaurant.description_ar ?? 'نحضّره طازجاً من أجلك.')}
+            {t(restaurant.description_en ?? 'Freshly made for you.', restaurant.description_ar ?? 'منحضّرو طازة كرمالك.')}
           </p>
         </div>
       </header>
@@ -125,11 +125,11 @@ export default function NoirTemplate(props: MenuTemplateProps) {
 
       <div className={styles.body}>
         {restaurant.temporarily_closed && (
-          <div className={styles.closed}>{t('The restaurant is temporarily closed', 'المطعم مغلق مؤقتاً')}</div>
+          <div className={styles.closed}>{t('The restaurant is temporarily closed', 'المطعم مسكّر مؤقّتاً')}</div>
         )}
 
         <h2 className={styles.sectionTitle}>
-          {t(activeCategoryEntry?.name_en ?? 'Menu', activeCategoryEntry?.name_ar ?? 'القائمة')}
+          {t(activeCategoryEntry?.name_en ?? 'Menu', activeCategoryEntry?.name_ar ?? 'المنيو')}
         </h2>
         <span className={styles.sectionCount}>
           {visibleItems.length} {t(visibleItems.length === 1 ? 'dish' : 'dishes', 'صنف')}
@@ -141,14 +141,14 @@ export default function NoirTemplate(props: MenuTemplateProps) {
             <NoirItem key={item.id} item={item} index={index} t={t} formatPrice={formatPrice} rtl={rtl} ordering={ordering} />
           ))}
         </div>
-        {!visibleItems.length && <p className={styles.empty}>{t('No items found here.', 'لا توجد أصناف هنا.')}</p>}
+        {!visibleItems.length && <p className={styles.empty}>{t('No items found here.', 'بعد ما في أصناف هون.')}</p>}
       </div>
 
       <footer className={styles.footer}>
         <div className={styles.contacts}>
           {restaurant.whatsapp && (
             <a className={styles.contact} href={`https://wa.me/${restaurant.whatsapp.replace(/\D/g, '')}`} target="_blank" rel="noreferrer">
-              <WhatsAppIcon /> {t('Message us', 'راسلنا')}
+              <WhatsAppIcon /> {t('Message us', 'احكي معنا')}
             </a>
           )}
           {(restaurant.address_en || restaurant.address_ar) && (

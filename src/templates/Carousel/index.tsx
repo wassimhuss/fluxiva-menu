@@ -96,7 +96,7 @@ export default function CarouselTemplate(props: MenuTemplateProps) {
             : <div className={styles.monogram}>{restaurant.name_en.slice(0, 2).toUpperCase()}</div>}
           <span className={styles.venue}>
             {t(restaurant.name_en, restaurant.name_ar)}
-            <span className={styles.venueSub}>{t('The menu', 'القائمة')}</span>
+            <span className={styles.venueSub}>{t('The menu', 'المنيو')}</span>
           </span>
         </div>
         <div className={styles.langToggle}>
@@ -118,7 +118,7 @@ export default function CarouselTemplate(props: MenuTemplateProps) {
       </nav>
 
       {restaurant.temporarily_closed && (
-        <div className={styles.closed}>{t('The restaurant is temporarily closed', 'المطعم مغلق مؤقتاً')}</div>
+        <div className={styles.closed}>{t('The restaurant is temporarily closed', 'المطعم مسكّر مؤقّتاً')}</div>
       )}
 
       <div className={styles.stage}>
@@ -128,7 +128,7 @@ export default function CarouselTemplate(props: MenuTemplateProps) {
               className={`${styles.arrow} ${styles.arrowPrev}`}
               onClick={() => step(-1)}
               disabled={active === 0}
-              aria-label={t('Previous dish', 'الصنف السابق')}
+              aria-label={t('Previous dish', 'الصنف اللي قبلو')}
             >
               <ChevronLeft />
             </button>
@@ -136,7 +136,7 @@ export default function CarouselTemplate(props: MenuTemplateProps) {
               className={`${styles.arrow} ${styles.arrowNext}`}
               onClick={() => step(1)}
               disabled={active === visibleItems.length - 1}
-              aria-label={t('Next dish', 'الصنف التالي')}
+              aria-label={t('Next dish', 'الصنف اللي بعدو')}
             >
               <ChevronRight />
             </button>
@@ -157,10 +157,10 @@ export default function CarouselTemplate(props: MenuTemplateProps) {
                 : <div className={styles.imageEmpty}>{t(item.name_en, item.name_ar).slice(0, 2).toUpperCase()}</div>}
               <div className={styles.cardFade} />
               <div className={styles.sheen} />
-              {!item.available && <span className={styles.soldOutTag}>{t('Sold out', 'نفد')}</span>}
+              {!item.available && <span className={styles.soldOutTag}>{t('Sold out', 'خلص هلّق')}</span>}
             </article>
           ))}
-          {!visibleItems.length && <p className={styles.empty}>{t('No items found here.', 'لا توجد أصناف هنا.')}</p>}
+          {!visibleItems.length && <p className={styles.empty}>{t('No items found here.', 'بعد ما في أصناف هون.')}</p>}
         </div>
       </div>
 
@@ -189,7 +189,7 @@ export default function CarouselTemplate(props: MenuTemplateProps) {
           <div className={styles.buy}>
             {activeItem.available
               ? <span className={`${styles.price} menu-dual-price`} dir="ltr"><PriceLabel text={formatPrice(activePrice, (activeVariant ?? activeItem).price_secondary)} /></span>
-              : <span className={styles.unavailable}>{t('Currently unavailable', 'غير متوفر حالياً')}</span>}
+              : <span className={styles.unavailable}>{t('Currently unavailable', 'مش متوفّر هلّق')}</span>}
             {ordering && <AddToOrder item={activeItem} variantIndex={activeVariantIndex} ordering={ordering} t={t} formatPrice={formatPrice} rtl={rtl} className={styles.addToOrder} />}
           </div>
         </section>
@@ -207,7 +207,7 @@ export default function CarouselTemplate(props: MenuTemplateProps) {
         </div>
         <div className={styles.contacts}>
           {restaurant.whatsapp && (
-            <a className={styles.contact} href={`https://wa.me/${restaurant.whatsapp.replace(/\D/g, '')}`} target="_blank" rel="noreferrer" aria-label={t('Message us', 'راسلنا')}>
+            <a className={styles.contact} href={`https://wa.me/${restaurant.whatsapp.replace(/\D/g, '')}`} target="_blank" rel="noreferrer" aria-label={t('Message us', 'احكي معنا')}>
               <WhatsAppIcon />
             </a>
           )}
