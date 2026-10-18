@@ -41,6 +41,31 @@ test('failed/loading owner reads are not presented as an empty inbox', () => {
   assert.match(render({ data: { ...page, messages: [], total: 0 } }), /No messages yet/)
 })
 
+test('mobile dashboard uses only the header bell, while retaining notifications navigation and dirty-state protection',()=>{
+  const code=readFileSync(new URL('../src/pages/DashboardPage.tsx',import.meta.url),'utf8')
+  const ast=ts.createSourceFile('DashboardPage.tsx',code,ts.ScriptTarget.Latest,true,ts.ScriptKind.TSX)
+  let mobileNotificationCards=0,bells=0
+  function visit(node){
+    if(ts.isJsxOpeningElement(node)&&node.tagName.getText(ast)==='button'){
+      const props=node.attributes.properties
+      const className=props.find(prop=>ts.isJsxAttribute(prop)&&prop.name.getText(ast)==='className')?.initializer
+      const onClick=props.find(prop=>ts.isJsxAttribute(prop)&&prop.name.getText(ast)==='onClick')?.initializer
+      if(className&&ts.isStringLiteral(className)){
+        if(className.text.includes('mobile-section-card')&&onClick?.getText(ast)==='{openNotifications}')mobileNotificationCards++
+        if(className.text==='dashboard-notification-bell'&&onClick?.getText(ast)==='{openNotifications}')bells++
+      }
+    }
+    ts.forEachChild(node,visit)
+  }
+  visit(ast)
+  assert.equal(mobileNotificationCards,0)
+  assert.equal(bells,1)
+  assert.match(code,/requestPanel\('notifications'\)/)
+  assert.match(code,/panel === 'design' && designDirty/)
+  assert.match(code,/panel === 'settings' && settingsDirty/)
+  assert.match(code,/nt\('Notifications'\).*notificationCount/)
+})
+
 test('only super admin UI includes the bilingual broadcast form and review confirmation', () => {
   const admin = renderToStaticMarkup(createElement(PlatformMessages, { language: 'en', canManage: true }))
   for (const label of ['English title', 'Arabic title', 'English message', 'Arabic message', 'Review message', 'Send to all owners?']) assert.ok(admin.includes(label))

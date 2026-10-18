@@ -57,6 +57,9 @@ This file is the working product backlog for developers and AI agents. Keep it u
 
 ### Owner notifications and admin messages (2026-10-17)
 
+- [x] Remove the duplicate mobile notification Overview card; keep the header bell and desktop navigation. Verify English/Arabic bell → Messages / Branch requests and 100 tests/lint/build (2026-10-18).
+- [x] Diagnose live notification failures read-only: both inbox and broadcast-list RPCs return 404/PGRST202. The pending 035 rollout below is still required; no migration/messages were executed during diagnosis.
+
 - [x] Move the mobile pending-request Overview card into Notifications with Messages / Branch requests, header badge and mobile shortcut; retain desktop request overview and unsaved-change protections.
 - [x] Add a bilingual super-admin broadcast composer with preview/confirmation, sent history and explicit owner read receipts; support stays read-only and delivery is in-app only.
 - [x] Add migration `035_owner_notifications.sql` with private owner-scoped recipients, guarded RPCs, snapshot fan-out, idempotent retries and transactional audit writes; preserve demo mode and editing locks.
