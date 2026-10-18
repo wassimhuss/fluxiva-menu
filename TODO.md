@@ -27,7 +27,7 @@ This file is the working product backlog for developers and AI agents. Keep it u
 - [x] Verify all 80 tests, lint/build, mobile/desktop English/Arabic manual fields, eight-template legacy-price rendering, save/reopen pairs and complete-only alternate basket/WhatsApp totals without sending messages or changing production prices.
 - [x] Apply migration `036_dual_menu_prices.sql` to production (2026-10-17, `20261017155000`), verifying unchanged existing prices/content/files, access policies and protected functions.
 - [x] Keep missing legacy alternate prices unset and hide incomplete alternate basket totals; require complete manually entered pairs before changing primary currency.
-- [ ] Apply `037_manual_menu_prices.sql` to remove the database currency-switch conversion fallback without rewriting existing data.
+- [x] Apply `037_manual_menu_prices.sql` (2026-10-18, `20261018110256`), removing the database conversion fallback with unchanged existing data, permissions and RLS.
 - [ ] Deploy the tested dual-pricing frontend; apply the still-pending 035 first if releasing the notifications UI together.
 >>>>>>> Stashed changes
 
