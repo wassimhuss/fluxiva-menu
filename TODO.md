@@ -35,6 +35,22 @@ This file is the working product backlog for developers and AI agents. Keep it u
 
 ## Cash subscriptions and subscriber management
 
+### Easier admin dates and visible review status (2026-11-20)
+
+- [x] Replace time pickers with dates, add explicit +1/+3/+6/+12 month expiry shortcuts and preserve exact existing boundaries when reused.
+- [x] Make selected expiry days inclusive in Beirut, handle DST/leap/month-end dates, maintain collection ordering and preserve interrupted receipt IDs/dates.
+- [x] Add amber Needs review / green Approved / neutral Setup incomplete badges to the initial Subscribers screen and request cards, with direct account-review navigation.
+- [x] Add the protected paginated review-metadata RPC in migration 039; verify owner/anonymous denial and support read access. All 110 tests, lint and build pass.
+- [ ] Complete browser verification and apply migrations 038–039 before deployment; project access remains denied through the Supabase connector.
+
+### Separate new-shop and branch requests (2026-11-20)
+
+- [x] Add bilingual New shops / Branches navigation, searchable registration queue, pending/approved filtering, setup and trial dates, subscriber details and super-admin approval.
+- [x] Add private review records and protected RPCs in migration 038; preserve the first shop's 14-day trial independently of review/payment and keep branch creation approvals separate.
+- [x] Verify isolated trial/approval/security/rollback/pagination behavior, demo and API tests; all 104 tests, lint, build and diff checks pass.
+- [ ] Apply migration 038 and review production advisors; Supabase connector access was denied in this session.
+- [ ] Verify desktop/mobile English/Arabic and browser console, then deploy; Windows browser URL validation blocked UI automation.
+
 <<<<<<< Updated upstream
 ### Simpler owner subscription view (2026-10-17)
 

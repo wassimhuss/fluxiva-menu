@@ -2,7 +2,8 @@ import { Check, Eye, Pencil, RefreshCw, Save, Undo2, X } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { getShopBilling, previewCashPayment, recordCashPayment, reviewLegacyAccess, setShopPrice, voidCashReceipt } from '../lib/api'
 import { useAuth } from '../lib/auth'
-import { beirutInput, cashDate, cashMoney, parseBeirutInput, usdCents } from '../lib/billing'
+import { cashDate, cashMoney, usdCents } from '../lib/billing'
+import {accessThroughDay,addBillingMonths,beirutDay,beirutDayExpiry,beirutDayStart,collectionDateInstant} from '../lib/billingDates'
 import { billingError, billingText } from '../lib/billingI18n'
 import type { BillingCopyKey } from '../lib/billingI18n'
 import type { CashPaymentPreview, CashPaymentRequest, CashReceipt, Language, ShopBilling } from '../lib/types'
@@ -36,9 +37,10 @@ export function ShopBillingPanel({ shopId, language, admin = false, onChanged, r
   const [price, setPrice] = useState('')
   const [legacyEnd, setLegacyEnd] = useState('')
   const [amount, setAmount] = useState(initial.current ? (initial.current.request.amount_input / 100).toFixed(2) : '')
-  const [collected, setCollected] = useState(initial.current ? beirutInput(new Date(initial.current.request.collected_input)) : beirutInput())
-  const [starts, setStarts] = useState(initial.current?.request.starts_input ? beirutInput(new Date(initial.current.request.starts_input)) : '')
-  const [ends, setEnds] = useState(initial.current?.request.ends_input ? beirutInput(new Date(initial.current.request.ends_input)) : '')
+  const [collected, setCollected] = useState(initial.current ? beirutDay(initial.current.request.collected_input) : beirutDay())
+  const [starts, setStarts] = useState(initial.current?.request.starts_input ? beirutDay(initial.current.request.starts_input) : '')
+  const [ends, setEnds] = useState(initial.current?.request.ends_input ? accessThroughDay(initial.current.request.ends_input) : '')
+  const exactStarts=useRef<string|null>(initial.current?.request.starts_input??null),exactEnds=useRef<string|null>(initial.current?.request.ends_input??null)
   const [reference, setReference] = useState(initial.current?.request.reference_input ?? 'FV-' + crypto.randomUUID().slice(0, 8).toUpperCase())
   const [note, setNote] = useState(initial.current?.request.note_input ?? '')
   const [voidTarget, setVoidTarget] = useState<CashReceipt | null>(null)
@@ -68,8 +70,8 @@ export function ShopBillingPanel({ shopId, language, admin = false, onChanged, r
     if (!pendingRef.current && previewRef.current && previewRef.current.version !== data.version) setPreview(null)
     if (pendingRef.current && data.agreements?.some(a => a.receipts.some(r => r.id === pendingRef.current?.request.request_input))) {
       savePending(null); setPreview(null); setAmount(''); setNote('')
-      setCollected(beirutInput())
-      setStarts(''); setEnds('')
+      setCollected(beirutDay())
+      setStarts(''); setEnds('');exactStarts.current=null;exactEnds.current=null
       setReference('FV-' + crypto.randomUUID().slice(0, 8).toUpperCase())
       setSuccess('Cash receipt recorded.')
     }
@@ -111,7 +113,9 @@ export function ShopBillingPanel({ shopId, language, admin = false, onChanged, r
     try {
       if (!reference.trim()) throw new Error('Enter a receipt reference and a note under 2000 characters')
       if (!starts || !ends) throw new Error('Enter access start and expiry dates manually')
-      const quote = await previewCashPayment(shopId, usdCents(amount), parseBeirutInput(collected), parseBeirutInput(starts), parseBeirutInput(ends))
+      const receipts=billing?.agreements?.[0]?.receipts??[]
+      const lastCollected=receipts.reduce<string|null>((latest,row)=>!latest||Date.parse(row.collected_at)>Date.parse(latest)?row.collected_at:latest,null)
+      const quote = await previewCashPayment(shopId, usdCents(amount), collectionDateInstant(collected,lastCollected), exactStarts.current??beirutDayStart(starts), exactEnds.current??beirutDayExpiry(ends))
       if (alive.current) setPreview(quote)
     } catch (caught) { if (alive.current) setError(caught) }
     finally { if (alive.current) setBusy(false) }
@@ -193,17 +197,18 @@ export function ShopBillingPanel({ shopId, language, admin = false, onChanged, r
         </form>
         {billing.legacy_access && !billing.paid_until && <form className="cash-price-form cash-legacy-review" onSubmit={event => {
           event.preventDefault()
-          try { const ends = parseBeirutInput(legacyEnd); void act(() => reviewLegacyAccess(shopId, ends, billing.version), 'Existing access date reviewed.') }
+          try { const ends = beirutDayExpiry(legacyEnd); void act(() => reviewLegacyAccess(shopId, ends, billing.version), 'Existing access date reviewed.') }
           catch (caught) { setError(caught) }
-        }}><label>{t('Existing paid-through date (Beirut time)')}<input type="datetime-local" value={legacyEnd} required onChange={event => setLegacyEnd(event.target.value)} disabled={busy || Boolean(pending)} /></label><p>{t('Enter the actual agreed expiry. This review changes access and creates no payment receipt.')}</p><button className="button button-outline" disabled={busy || Boolean(pending)}>{t('Confirm existing access end date')}</button></form>}</div>
+        }}><label>{t('Existing access through date')}<input type="date" value={legacyEnd} required onChange={event => setLegacyEnd(event.target.value)} disabled={busy || Boolean(pending)} /></label><p>{t('Access includes the selected expiry date, in Beirut time.')}</p><p>{t('Enter the actual agreed expiry. This review changes access and creates no payment receipt.')}</p><button className="button button-outline" disabled={busy || Boolean(pending)}>{t('Confirm existing access end date')}</button></form>}</div>
         <form className="cash-payment-form" onSubmit={quotePayment}>
           <h3>{t('Record cash payment')}</h3>
-          <p className="cash-date-guidance">{t('Choose the agreed access dates. The cash amount does not calculate expiry.')}</p>
+          <p className="cash-date-guidance">{t('Choose dates or use a month shortcut. The amount paid does not choose the expiry.')} {t('Access includes the selected expiry date, in Beirut time.')}</p>
           {!preview ? <div className="cash-form-grid">
             <label>{t('Cash amount (USD)')}<input dir="ltr" inputMode="decimal" value={amount} required onChange={e => setAmount(e.target.value)} placeholder="40.00" disabled={busy} /></label>
-            <label>{t('Collected at (Beirut time)')}<input dir="ltr" type="datetime-local" value={collected} max={beirutInput()} required onChange={e => setCollected(e.target.value)} disabled={busy} /></label>
-            <label>{t('Access starts at (Beirut time)')}<input dir="ltr" type="datetime-local" value={starts} required onChange={e => setStarts(e.target.value)} disabled={busy} /></label>
-            <label>{t('Access expires at (Beirut time)')}<input dir="ltr" type="datetime-local" value={ends} min={starts || undefined} required onChange={e => setEnds(e.target.value)} disabled={busy} /></label>
+            <label>{t('Collection date')}<input dir="ltr" type="date" value={collected} max={beirutDay()} required onChange={e => setCollected(e.target.value)} disabled={busy} /></label>
+            <div className="cash-date-field"><label>{t('Access start date')}<input dir="ltr" type="date" value={starts} required onChange={e => {setStarts(e.target.value);exactStarts.current=null}} disabled={busy} /></label>{billing.paid_until&&<button className="cash-date-shortcut" type="button" disabled={busy} onClick={()=>{setStarts(beirutDay(billing.paid_until!));exactStarts.current=billing.paid_until}}>{t('Start from current access end')}</button>}</div>
+            <div className="cash-date-field"><label>{t('Access through date')}<input dir="ltr" type="date" value={ends} required onChange={e => {setEnds(e.target.value);exactEnds.current=null}} disabled={busy} /></label>{billing.paid_until&&<button className="cash-date-shortcut" type="button" disabled={busy} onClick={()=>{setEnds(accessThroughDay(billing.paid_until!));exactEnds.current=billing.paid_until}}>{t('Keep current expiry unchanged')}</button>}</div>
+            <fieldset className="cash-month-shortcuts"><legend>{t('Set expiry from the start date')}</legend><div>{([1,3,6,12] as const).map(months=><button type="button" key={months} disabled={busy||!starts} onClick={()=>{setEnds(addBillingMonths(starts,months));exactEnds.current=null}}>{t(({1:'+1 month',3:'+3 months',6:'+6 months',12:'+12 months'} as const)[months])}</button>)}</div>{!starts&&<small>{t('Choose a start date first.')}</small>}</fieldset>
             <label>{t('Receipt reference')}<input dir="ltr" value={reference} required maxLength={120} onChange={e => setReference(e.target.value)} disabled={busy} /></label>
             <label>{t('Internal note (optional)')}<textarea value={note} maxLength={2000} onChange={e => setNote(e.target.value)} disabled={busy} /></label>
             <BillingIconButton icon={Eye} type="submit" label={busy ? t('Saving…') : t('Preview payment')} disabled={busy || billing.next_annual_cents == null} />
@@ -213,13 +218,14 @@ export function ShopBillingPanel({ shopId, language, admin = false, onChanged, r
             <dl>
               <div><dt>{t('Annual price')}</dt><dd><bdi>{money(preview.annual_cents)}</bdi></dd></div>
               <div><dt>{t('Cash amount (USD)')}</dt><dd><bdi>{money(preview.amount_cents)}</bdi></dd></div>
-              <div><dt>{t('Collected')}</dt><dd>{date(preview.collected_at, true)}</dd></div>
+              <div><dt>{t('Collected')}</dt><dd>{date(preview.collected_at)}</dd></div>
               <div><dt>{t('Receipt reference')}</dt><dd><bdi>{reference}</bdi></dd></div>
-              <div><dt>{t('Access starts')}</dt><dd>{date(preview.coverage_from, true)}</dd></div>
-              <div><dt>{t('Agreed expiry')}</dt><dd>{date(preview.paid_until, true)}</dd></div>
+              <div><dt>{t('Access starts')}</dt><dd>{date(preview.coverage_from)}</dd></div>
+              <div><dt>{t('Access through date')}</dt><dd>{cashDate(beirutDayStart(accessThroughDay(preview.paid_until)),language)}</dd></div>
               <div><dt>{t('Balance after this payment')}</dt><dd><bdi>{money(preview.remaining_cents)}</bdi></dd></div>
               <div><dt>{t('Payment number')}</dt><dd><bdi dir="ltr">{number(preview.payment_count)} / {number(3)}</bdi></dd></div>
             </dl>
+            {exactEnds.current&&<p>{t('The existing expiry is preserved exactly.')}</p>}
             <p>{t('Recording this receipt updates access. No money is charged online.')}</p>
             {preview.suspended && <Notice>{t('This shop stays suspended until an admin restores access.')}</Notice>}
             {!preview.is_published && <Notice>{t('This shop remains hidden from guests.')}</Notice>}

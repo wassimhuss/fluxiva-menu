@@ -8,6 +8,19 @@ import { ownerAccessState, subscriptionState } from './subscription'
 import type { AdminRole, BrandGroup, BrandPlaces, Category, GalleryCategory, GalleryImage, ItemExtra, MenuContactCard, MenuItem, MenuViewDay, MenuViewStats, PlatformAuditEntry, PlatformRestaurant, PlatformStorageUsage, Restaurant, RestaurantMenu, Variant } from './types'
 import type { BranchRequestInput, BranchRequestPage, CashCollections, CashPaymentPreview, CashPaymentRequest, ShopBilling, SubscriberDetails, SubscriberFilters, SubscriberPage } from './types'
 import {DEFAULT_SUBSCRIBER_FILTERS} from './subscriberFilters'
+import type {RegistrationFilter,ShopRegistrationPage} from './types'
+
+export async function listShopRegistrations(search='',status:RegistrationFilter='pending',page=0,signal?:AbortSignal):Promise<ShopRegistrationPage> {
+  if(!supabase) return (await import('./shopRegistrationsDemo')).demoShopRegistrations(search,status,page)
+  const {data,error}=await supabase.rpc('platform_shop_registrations',{search_input:search,status_input:status,page_input:page}).abortSignal(readSignal(signal))
+  if(error) throw error
+  return data as ShopRegistrationPage
+}
+export async function approveShopRegistration(ownerId:string,shopId:string) {
+  if(!supabase) return (await import('./shopRegistrationsDemo')).demoApproveShopRegistration(ownerId,shopId)
+  const {error}=await supabase.rpc('platform_approve_shop_registration',{owner_input:ownerId,shop_input:shopId})
+  if(error) throw error
+}
 import type { AnnouncementInput, AnnouncementPage, AnnouncementReceipt, OwnerNotificationPage } from './types'
 
 export async function getOwnerNotifications(page = 0, signal?: AbortSignal): Promise<OwnerNotificationPage> {
@@ -822,8 +835,13 @@ export async function listPlatformRestaurants(): Promise<PlatformRestaurant[]> {
 }
 
 export async function listSubscribers(search = '', page = 0, signal?: AbortSignal, filters:SubscriberFilters=DEFAULT_SUBSCRIBER_FILTERS): Promise<SubscriberPage> {
-  if (!supabase) return (await import('./billingDemo')).demoSubscribers(search, page,filters)
-  const { data, error } = await supabase.rpc('platform_search_subscribers', { search_input: search, filters_input:filters, page_input: page }).abortSignal(readSignal(signal))
+  if (!supabase) {
+    const [{demoSubscribers},{demoRegistrationReview}]=await Promise.all([import('./billingDemo'),import('./shopRegistrationsDemo')])
+    const result=demoSubscribers(search,page,filters)
+    result.subscribers=result.subscribers.map(owner=>({...owner,...(owner.archived?{registration_status:null}:demoRegistrationReview(owner.id))}))
+    return result
+  }
+  const { data, error } = await supabase.rpc('platform_subscribers_with_review', { search_input: search, filters_input:filters, page_input: page }).abortSignal(readSignal(signal))
   if (error) throw error
   return data as SubscriberPage
 }

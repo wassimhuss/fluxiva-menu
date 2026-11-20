@@ -1,4 +1,11 @@
 export type Language = 'en' | 'ar'
+export type RegistrationFilter = 'pending' | 'approved' | 'all'
+export interface ShopRegistration {
+  owner_id:string; owner_email:string; registered_at:string; email_confirmed_at:string|null
+  status:'pending'|'approved'; reviewed_at:string|null; reviewer_email:string|null
+  shop:(Pick<Restaurant,'id'|'name_en'|'name_ar'|'slug'|'whatsapp'|'subscription_status'|'trial_ends_at'|'subscription_ends_at'|'is_published'>&{created_at:string})|null
+}
+export interface ShopRegistrationPage { requests:ShopRegistration[];total:number;pending_count:number;page:number;page_size:number }
 export interface AnnouncementInput { title_en: string; title_ar: string; body_en: string; body_ar: string }
 export interface OwnerNotification extends AnnouncementInput { id: string; created_at: string; read_at: string | null }
 export interface OwnerNotificationPage { messages: OwnerNotification[]; total: number; unread_count: number; pending_requests: number; approved_requests: number; page: number; page_size: number }
@@ -88,6 +95,8 @@ export interface ShopBilling {
   agreements?: CashAgreement[]
 }
 export interface PlatformSubscriber {
+  registration_status?:'pending'|'approved'|null
+  registration_reviewed_at?:string|null
   id: string
   email: string
   created_at: string | null

@@ -37,6 +37,25 @@ async function loadApi(t) {
   return { api, ...client, ...cache, queryClient }
 }
 const session = (id = 'owner') => ({ user: { id } })
+
+test('registration requests forward filters, cancellation and the displayed first-shop identity to guarded RPCs',async(t)=>{
+  const {api,setClient}=await loadApi(t),calls=[],controller=new AbortController()
+  let error=null
+  setClient({rpc:(name,params)=>{
+    const result=Promise.resolve({data:{requests:[],total:0},error})
+    if(name==='platform_shop_registrations')result.abortSignal=signal=>{calls.push({name,params,signal});return result}
+    else calls.push({name,params})
+    return result
+  }})
+  await api.listShopRegistrations('shop','approved',2,controller.signal)
+  await api.approveShopRegistration('owner','first-shop')
+  assert.deepEqual(calls.map(({name,params})=>({name,params})),[
+    {name:'platform_shop_registrations',params:{search_input:'shop',status_input:'approved',page_input:2}},
+    {name:'platform_approve_shop_registration',params:{owner_input:'owner',shop_input:'first-shop'}},
+  ])
+  controller.abort();assert.equal(calls[0].signal.aborted,true)
+  error=new Error('Denied');await assert.rejects(api.listShopRegistrations(),/Denied/);await assert.rejects(api.approveShopRegistration('owner','first-shop'),/Denied/)
+})
 test('alternate prices survive item saves, cleaning and cached/demo primary currency changes',async(t)=>{
   const {api}=await loadApi(t)
   const original=await api.getOwnerMenu(null)
@@ -106,7 +125,7 @@ test('subscriber search forwards combined filters and sort with cancellation thr
   setClient({rpc:(name,params)=>({abortSignal:signal=>{calls.push({name,params,signal});return Promise.resolve({data:{total:0,subscribers:[]},error:null})}})})
   const filters={status:'expired',visibility:'hidden',payments:'balance',account:'current',shops:'with',registered_from:'2024-01-01',registered_to:'2024-02-01',sort:'email_asc'}
   await api.listSubscribers('Literal %_',2,controller.signal,filters)
-  assert.equal(calls[0].name,'platform_search_subscribers')
+  assert.equal(calls[0].name,'platform_subscribers_with_review')
   assert.deepEqual(calls[0].params,{search_input:'Literal %_',filters_input:filters,page_input:2})
   controller.abort();assert.equal(calls[0].signal.aborted,true)
 })

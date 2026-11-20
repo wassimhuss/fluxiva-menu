@@ -1,6 +1,22 @@
 import type { Language } from './types'
 
 const arabic = {
+  'Collection date':'تاريخ التحصيل',
+  'Access start date':'تاريخ بداية الاشتراك',
+  'Access through date':'الاشتراك ساري حتى',
+  'Existing access through date':'تاريخ انتهاء الاشتراك القائم',
+  'Choose dates or use a month shortcut. The amount paid does not choose the expiry.':'اختر التواريخ أو استعمل اختصارات الأشهر. المبلغ المدفوع لا يحدّد تاريخ الانتهاء.',
+  'Access includes the selected expiry date, in Beirut time.':'يبقى الاشتراك سارياً طوال تاريخ الانتهاء الذي تختاره، بتوقيت بيروت.',
+  'Set expiry from the start date':'حدّد الانتهاء انطلاقاً من تاريخ البداية',
+  '+1 month':'+ شهر واحد', '+3 months':'+ ٣ أشهر', '+6 months':'+ ٦ أشهر', '+12 months':'+ ١٢ شهراً',
+  'Choose a start date first.':'اختر تاريخ البداية أولاً.',
+  'Start from current access end':'ابدأ من نهاية الاشتراك الحالي',
+  'Keep current expiry unchanged':'احتفظ بتاريخ الانتهاء الحالي',
+  'The existing expiry is preserved exactly.':'يُحفظ تاريخ الانتهاء الحالي من دون أي تغيير.',
+  'Choose a valid date':'اختر تاريخاً صالحاً.',
+  'Choose a valid number of months':'اختر عدداً صالحاً من الأشهر.',
+  'Review new shops and additional branches separately.': 'راجع تسجيلات المطاعم الجديدة وطلبات الفروع كلّاً على حدة.',
+  'Shop registration approved': 'تمت الموافقة على تسجيل المطعم',
   'Subscription active': 'اشتراكك شغّال',
   'Subscription paused': 'اشتراكك موقوف',
   'Subscription ended': 'اشتراكك خلص',

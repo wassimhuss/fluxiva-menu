@@ -56,6 +56,7 @@ export function SubscriberDetails({ownerId,language,refreshToken,onBack,onBillin
     'subscription.suspended':'Menu suspended','subscription.active':'Menu activated','subscription.trial':'Trial activated',
     'billing.legacy_review':'Existing access reviewed',
     'branch.approved':'Branch request approved','branch.rejected':'Branch request rejected',
+    'registration.approved':'Shop registration approved',
     'branch.link_updated':'Branch request link updated',
   } as Record<string,BillingCopyKey>)[action]??'Access updated'
   return <div className="subscriber-profile" aria-busy={loading}>
